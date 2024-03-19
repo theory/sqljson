@@ -69,6 +69,10 @@ func TestIsIdentRune(t *testing.T) {
 		{"emoji_second", '🎉', 1, false},
 		{"backslash_first", '\\', 0, true},
 		{"backslash_second", '\\', 1, true},
+		{"slash_first", '/', 0, false},
+		{"slash_second", '/', 1, false},
+		{"space_first", ' ', 0, false},
+		{"space_second", ' ', 1, false},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
@@ -100,7 +104,7 @@ func TestScanError(t *testing.T) {
 	)
 }
 
-func TestLexIdent(t *testing.T) {
+func TestScanIdent(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 
@@ -215,7 +219,13 @@ func TestLexIdent(t *testing.T) {
 		{"Timestamp_tz", "Timestamp_tz", "Timestamp_tz", TIMESTAMP_TZ_P, ""},
 		{"TIMESTAMP_TZ", "TIMESTAMP_TZ", "TIMESTAMP_TZ", TIMESTAMP_TZ_P, ""},
 
+		// Basic identifiers.
+		{"underscore", "x_y_z", "x_y_z", IDENT_P, ""},
+		{"mixed_case", "XoX", "XoX", IDENT_P, ""},
+		{"unicode", "XöX", "XöX", IDENT_P, ""},
+
 		// Identifiers with escapes.
+		{"escaped_dot", `X\.X`, "X.X", IDENT_P, ""},
 		{"hex", `\x22hi\x22`, `"hi"`, IDENT_P, ""},
 		{"hex", `\x22hi\x22`, `"hi"`, IDENT_P, ""},
 		{"bell", `x\by`, "x\by", IDENT_P, ""},
@@ -285,7 +295,7 @@ func TestLexIdent(t *testing.T) {
 			sym := &pathSymType{str: ""}
 			l := newLexer(tc.word)
 			tok := l.scanner.Scan()
-			a.Equal(l.lexIdent(sym, tok), tc.tok)
+			a.Equal(l.scanIdent(sym, tok), tc.tok)
 			a.Equal(tc.exp, sym.str)
 
 			if tc.err == "" {
@@ -297,7 +307,7 @@ func TestLexIdent(t *testing.T) {
 	}
 }
 
-func TestLexString(t *testing.T) {
+func TestScanString(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 
@@ -442,6 +452,13 @@ func TestLexString(t *testing.T) {
 			STRING_P,
 			"literal not terminated at path:2:1",
 		},
+		{
+			"unterminated_backslash",
+			`"go \`,
+			"",
+			STRING_P,
+			"unexpected end after backslash at path:1:6",
+		},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
@@ -450,7 +467,7 @@ func TestLexString(t *testing.T) {
 			sym := &pathSymType{}
 			l := newLexer(tc.str)
 			a.Equal('"', l.scanner.Scan()) // Remove opening "
-			a.Equal(l.lexString(sym), tc.tok)
+			a.Equal(l.scanString(sym, tc.tok), tc.tok)
 			a.Equal(tc.exp, sym.str)
 
 			if tc.err == "" {
@@ -462,7 +479,7 @@ func TestLexString(t *testing.T) {
 	}
 }
 
-func TestLexNumbers(t *testing.T) {
+func TestScanNumbers(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 
@@ -656,6 +673,158 @@ func TestLexNumbers(t *testing.T) {
 	}
 }
 
+func TestScanVariable(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	for _, tc := range []struct {
+		name     string
+		variable string
+		exp      string
+		tok      int
+		err      string
+	}{
+		{"xxx", "$xxx", "xxx", VARIABLE_P, ""},
+		{"num_prefix", "$42x", "42x", VARIABLE_P, ""},
+		{"numeric", "$999", "999", VARIABLE_P, ""},
+		{"mixed_case", "$XoX", "XoX", VARIABLE_P, ""},
+		{"underscore", "$x_y_z", "x_y_z", VARIABLE_P, ""},
+		{"mixed_case", "$XoX", "XoX", VARIABLE_P, ""},
+		{"unicode", "$XöX", "XöX", VARIABLE_P, ""},
+		{"emoji", "$🤘🏻🤘🏻", "", '$', ""},
+		{"quoted", `$"xxx"`, "xxx", VARIABLE_P, ""},
+		{"with_spaces", `$"hi there"`, "hi there", VARIABLE_P, ""},
+		{"with_unicode", `$"Go on 🎉"`, "Go on 🎉", VARIABLE_P, ""},
+		{"surrogate_pair", `$"\uD834\uDD1E"`, "\U0001D11E", VARIABLE_P, ""},
+		{"root", "$", "", '$', ""},
+		{"root_path", "$.x.y", "", '$', ""},
+		{"root_path", "$.x.y", "", '$', ""},
+		{
+			"null_byte",
+			`$"go \x00"`,
+			"",
+			VARIABLE_P,
+			"invalid hexadecimal character sequence at path:1:10",
+		},
+		{
+			"invalid_hex",
+			`$"LO\xzz"`,
+			"",
+			VARIABLE_P,
+			"invalid hexadecimal character sequence at path:1:8",
+		},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			sym := &pathSymType{}
+			l := newLexer(tc.variable)
+			a.Equal('$', l.scanner.Scan())
+			a.Equal(l.scanVariable(sym), tc.tok)
+			a.Equal(tc.exp, sym.str)
+
+			if tc.err == "" {
+				a.Empty(l.errors)
+			} else {
+				a.Equal([]string{tc.err}, l.errors)
+			}
+		})
+	}
+}
+
+func TestScanComment(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	for _, tc := range []struct {
+		name string
+		path string
+		tok  int
+		err  string
+	}{
+		{"simple", "/* foo */", scanner.Comment, ""},
+		{"stars", "/*foo****/", scanner.Comment, ""},
+		{"escape_star", "/*foo \\**/", scanner.Comment, ""},
+		{"escape_other", "/*foo \\! */", scanner.Comment, ""},
+		{"multi_word", "/* foo bar baz */", scanner.Comment, ""},
+		{"multi_line", "/* foo bar\nbaz */", scanner.Comment, ""},
+		{"multi_line_prefix", "/* foo bar\n * baz */", scanner.Comment, ""},
+		{"EOF", "/* foo ", 0, "unexpected end of comment at path:1:8"},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			l := newLexer(tc.path)
+			a.Equal('/', l.scanner.Scan())
+			a.Equal(l.scanComment(), tc.tok)
+			a.Equal(len(tc.path), l.scanner.Pos().Offset)
+
+			if tc.err == "" {
+				a.Empty(l.errors)
+			} else {
+				a.Equal([]string{tc.err}, l.errors)
+			}
+		})
+	}
+}
+
+func TestScanOperator(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	for _, tc := range []struct {
+		name string
+		op   string
+		tok  int
+		exp  string
+	}{
+		{"equal_to", "==", EQUAL_P, "=="},
+		{"equal_sign_eof", "=", '=', "="},
+		{"equal_sign_stop", "=[xyz]", '=', "="},
+		{"ge", ">=", GREATEREQUAL_P, ">="},
+		{"ge_stop", ">=x", GREATEREQUAL_P, ">="},
+		{"gt", ">", GREATER_P, ">"},
+		{"gt_stop", ">{x}", GREATER_P, ">"},
+		{"le", "<=", LESSEQUAL_P, "<="},
+		{"le_stop", "<=x", LESSEQUAL_P, "<="},
+		{"le_ne", "<>", NOTEQUAL_P, "!="},
+		{"le_ne_stop", "<>x", NOTEQUAL_P, "!="},
+		{"lt", "<", LESS_P, "<"},
+		{"lt_stop", "<{x}", LESS_P, "<"},
+		{"not", "!", NOT_P, "!"},
+		{"not_stop", "!x", NOT_P, "!"},
+		{"not_equal", "!=", NOTEQUAL_P, "!="},
+		{"not_equal_stop", "!=!", NOTEQUAL_P, "!="},
+		{"and", "&&", AND_P, "&&"},
+		{"and_stop", "&&.", AND_P, "&&"},
+		{"ampersand", "&", '&', "&"},
+		{"ampersand_stop", "&=", '&', "&"},
+		{"or", "||", OR_P, "||"},
+		{"or_stop", "||.", OR_P, "||"},
+		{"pipe", "|", '|', "|"},
+		{"pipe_stop", "|=", '|', "|"},
+		{"any", "**", ANY_P, "**"},
+		{"any_stop", "**.", ANY_P, "**"},
+		{"star", "*", '*', "*"},
+		{"star_stop", "*=", '*', "*"},
+		{"something_else", "^^", '^', "^"},
+	} {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			l := newLexer(tc.op)
+			tok := l.scanner.Scan()
+			a.Equal(rune(tc.op[0]), tok)
+			sym := &pathSymType{str: string(tok)}
+			a.Equal(l.scanOperator(sym, tok), tc.tok)
+			a.Equal(tc.exp, sym.str)
+			a.Empty(l.errors)
+		})
+	}
+}
+
 func TestLexer(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
@@ -678,6 +847,15 @@ func TestLexer(t *testing.T) {
 		{"string", `"xxx"`, "xxx", STRING_P, ""},
 		{"string_with_spaces", `"hi there"`, "hi there", STRING_P, ""},
 		{"string_with_unicode", `"Go on 🎉"`, "Go on 🎉", STRING_P, ""},
+		{"variable", `$xxx`, "xxx", VARIABLE_P, ""},
+		{"quoted_variable", `$"xxx"`, "xxx", VARIABLE_P, ""},
+		{"variable_with_spaces", `$"hi there"`, "hi there", VARIABLE_P, ""},
+		{"variable_with_unicode", `$"Go on 🎉"`, "Go on 🎉", VARIABLE_P, ""},
+		{"comment", "/* foo */", "", scanner.EOF, ""},
+		{"comment_token", "/* foo */ $", "$", '$', ""},
+		{"comment", "/* foo */", "", scanner.EOF, ""},
+		{"not_comment", "/ foo", "/", '/', ""},
+		{"op", "==foo", "==", EQUAL_P, ""},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {

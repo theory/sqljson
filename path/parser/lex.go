@@ -34,25 +34,25 @@ package parser
 // # Issues
 //
 //  - Number parsing varies from Postgres. It relies on text/scanner, which
-//    all Go formats, a superset of what Postgres supports. The validateInt and
-//    validateNumeric functions compensate for this, but when the find issues the
-//    errors are reported at the position after the number, not at the problematic
-//    character.
+// 	  parses Go formats, a superset of what Postgres supports. The
+//    validateInt and validateNumeric functions compensate for this, but when
+// 	  they find issues the errors are reported at the position after the
+//    number, not at the problematic character.
 //  - Some of these issues could be addressed by tweaking the position in the
 //    error message, but text/scanner doesn't support backtracking.
 //  - There is a circular reference between the lexer object and the
 //    scanner.Scanner.
-//  - The handling of UTF-8 surrogate pairs in lexUnicode consumes one too many
-//    bytes if the second escapes starts with a slash but is not followed by a u.
-//    Ideally it would reset the scanner to before the backslash, but the lack of
-//    backtracking in scanner.Scanner disallows it.
+//  - The handling of UTF-8 surrogate pairs in scanUnicode consumes one too
+//    many bytes if the second escape starts with a slash but is not followed
+//    by a u. Ideally it would reset the scanner to before the backslash, but
+//    the lack of backtracking in scanner.Scanner disallows it.
 //
-// These issues could be addressed by extracting the number parsing from
+// These issues should be addressed by extracting the number parsing from
 // text/scanner and having it do the right thing here, removing the unsupported
-// syntax. this would also allow elimination of the text.Scanner object, and
-// therefor the circular reference, but we'd need to support the position data
-// and moving through the text. Could be simpler, though, iterating on the bytes
-// in a string or a byte slice.
+// syntax. This would eliminate the need for text.Scanner, and therefor the
+// circular reference, but we'd need to support the position data and moving
+// through the text. Could be simpler, though, iterating on the bytes in a
+// string or a byte slice.
 
 import (
 	"fmt"
@@ -61,6 +61,8 @@ import (
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
+
+	"github.com/smasher164/xid"
 )
 
 // lexer lexes a path.
@@ -85,30 +87,6 @@ func newLexer(path string) *lexer {
 	return l
 }
 
-// isIdentRune is a predicate controlling the characters accepted as the ith
-// rune in an identifier. These follow JavaScript [identifier syntax], including
-// support for \u0000 and \u{000000} unicode escapes.
-//
-// [identifier syntax]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#identifiers
-func isIdentRune(ch rune, i int) bool {
-	// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#identifiers:
-	// > In JavaScript, identifiers are commonly made of alphanumeric
-	// > characters, underscores (_), and dollar signs ($). Identifiers are not
-	// > allowed to start with numbers. However, JavaScript identifiers are not
-	// > only limited to ASCII — many Unicode code points are allowed as well.
-	// > Namely, any character in the ID_Start category can start an identifier,
-	// > while any character in the ID_Continue category can appear after the
-	// > first character.
-	// >
-	// > In addition, JavaScript allows using Unicode escape sequences in the
-	// > form of \u0000 or \u{000000} in identifiers, which encode the same
-	// > string value as the actual Unicode characters.
-	//
-	// But Postgres doesn't support literal dollar signs:
-	// https://www.postgresql.org/message-id/9F84036F-007A-432D-8DCD-1D5C3F51F76E%40justatheory.com
-	return ch == '_' || ch == '\\' || unicode.IsLetter(ch) || unicode.IsDigit(ch) && i > 0
-}
-
 // scanError logs error message msg along with the position from s.
 func (l *lexer) scanError(s *scanner.Scanner, msg string) {
 	l.Error(fmt.Sprintf("%v at %v", msg, s.Pos()))
@@ -127,15 +105,51 @@ func (l *lexer) Lex(lval *pathSymType) int {
 
 	switch {
 	case isIdentRune(tok, 0):
-		return l.lexIdent(lval, tok)
+		return l.scanIdent(lval, tok)
 	case tok == scanner.Int:
 		return l.validateInt(lval)
 	case tok == scanner.Float:
 		return l.validateNumeric(lval)
 	case tok == '"':
-		return l.lexString(lval)
+		return l.scanString(lval, STRING_P)
+	case tok == '$':
+		return l.scanVariable(lval)
+	case tok == '/':
+		t2 := l.scanComment()
+		if t2 == scanner.Comment {
+			return l.Lex(lval)
+		}
+
+		return t2
 	default:
-		return int(tok)
+		return l.scanOperator(lval, tok)
+	}
+}
+
+// scanVariable scans a variable name from l.scanner, assigns the resulting
+// string to lval.str, and returns VARIABLE_P.
+func (l *lexer) scanVariable(lval *pathSymType) int {
+	tok := l.scanner.Peek()
+
+	switch {
+	case tok == '"':
+		// $"xyz"
+		l.scanner.Next() // Consume the '""
+		return l.scanString(lval, VARIABLE_P)
+	case isVariableRune(tok):
+		// $xyz
+		s := l.scanner
+
+		str := new(strings.Builder)
+		for isVariableRune(s.Peek()) {
+			str.WriteRune(s.Next())
+		}
+		lval.str = str.String()
+
+		return VARIABLE_P
+	default:
+		// Not a variable.
+		return '$'
 	}
 }
 
@@ -168,6 +182,16 @@ func (l *lexer) validateInt(lval *pathSymType) int {
 	return INT_P
 }
 
+// validateNumeric validates a numeric value. The rules for SQL jsonpath are
+// slightly different than for Go, namely:
+//
+//   - A leading 0 is an error unless it's followed by a dot (decimal).
+//   - And except for octal, hex, and binary literals (0o, 0b, 0x).
+//   - But for those literals, underscores are allowed only after the first
+//     digit, not after the letter.
+//   - In other words, '0xa_b' is okay, but not '0x_ab'.
+//   - Also, Go-style p exponent in hex representations is not supported by
+//     Postgres.
 func (l *lexer) validateNumeric(lval *pathSymType) int {
 	lval.str = l.scanner.TokenText()
 
@@ -183,12 +207,120 @@ func (l *lexer) validateNumeric(lval *pathSymType) int {
 			// Underscore after letter (0o_, 0b_, 0x_) disallowed.
 			l.scanError(l.scanner, "underscore disallowed at start of numeric literal")
 		case strings.ContainsAny(lval.str, "pP"):
-			// Got-style p exponent not supported by Postgres.
+			// Go-style p exponent not supported by Postgres.
 			l.scanError(l.scanner, "trailing junk after numeric literal")
 		}
 	}
 
 	return NUMERIC_P
+}
+
+// scanComment scans and discards a c-style /* */ comment. Returns
+// scanner.Comment for a complete comment and 0 for an error.
+func (l *lexer) scanComment() int {
+	s := l.scanner
+	if s.Peek() != '*' {
+		return '/'
+	}
+
+	s.Next() // Consume '*'
+
+	for {
+		switch s.Next() {
+		case '*':
+			if s.Peek() == '/' {
+				s.Next()
+				return scanner.Comment
+			}
+		case scanner.EOF:
+			l.scanError(s, "unexpected end of comment")
+			return 0
+		}
+	}
+}
+
+// scanOperator scans an operator from l.scanner if there is one, or else
+// returns tok. Operators scanned:
+//
+//   - ==
+//   - >
+//   - >=
+//   - <
+//   - <=
+//   - <>, !=
+//   - !
+//   - &&
+//   - ||
+//   - **
+//
+// Which all mean what you'd expect mathematically and in SQL, except for
+// '**', which represents the Postgres-specific '.**' any path selector.
+//
+//nolint:funlen,wsl
+func (l *lexer) scanOperator(lval *pathSymType, tok rune) int {
+	s := l.scanner
+	peek := s.Peek()
+
+	switch tok {
+	case '=':
+		if peek == '=' {
+			s.Next()
+			lval.str = "=="
+			return EQUAL_P
+		}
+	case '>':
+		if peek == '=' {
+			s.Next()
+			lval.str = ">="
+			return GREATEREQUAL_P
+		}
+		lval.str = ">"
+		return GREATER_P
+	case '<':
+		switch peek {
+		case '=':
+			s.Next()
+			lval.str = "<="
+			return LESSEQUAL_P
+		case '>':
+			s.Next()
+			lval.str = "!="
+			return NOTEQUAL_P
+		default:
+			lval.str = "<"
+			return LESS_P
+		}
+	case '!':
+		if peek == '=' {
+			s.Next()
+			lval.str = "!="
+			return NOTEQUAL_P
+		}
+		lval.str = "!"
+		return NOT_P
+	case '&':
+		if peek == tok {
+			s.Next()
+			lval.str = "&&"
+			return AND_P
+		}
+	case '|':
+		if peek == tok {
+			s.Next()
+			lval.str = "||"
+			return OR_P
+		}
+	case '*':
+		if peek == tok {
+			s.Next()
+			lval.str = "**"
+			return ANY_P
+		}
+	default:
+		return int(tok)
+	}
+
+	return int(tok)
 }
 
 const (
@@ -200,26 +332,24 @@ const (
 	null      = rune(0)
 )
 
-// lexIdent lexes an identifier, the first character of which is ch; remaining
-// characters are lexed from the scanner. Identifiers are subject to the same
-// escapes as strings.
-func (l *lexer) lexIdent(lval *pathSymType, ch rune) int {
+// scanIdent scans an identifier, the first character of which is ch; remaining
+// characters are scanned. Identifiers are subject to the same escapes as
+// strings.
+func (l *lexer) scanIdent(lval *pathSymType, ch rune) int {
 	str := new(strings.Builder)
 	s := l.scanner
 
 	// Scan the identifier as long as we have legit identifier runes.
-	for i := 1; isIdentRune(ch, i); i++ {
+	for i := 1; isIdentRune(ch, i); i, ch = i+1, s.Next() {
 		switch ch {
 		case backslash:
 			// An escape sequence.
-			if !l.lexEscape(str) {
+			if !l.scanEscape(str) {
 				return IDENT_P
 			}
 		default:
 			str.WriteRune(ch)
 		}
-
-		ch = s.Next()
 	}
 
 	// Done, grab the string and return the appropriate token.
@@ -228,10 +358,10 @@ func (l *lexer) lexIdent(lval *pathSymType, ch rune) int {
 	return identToken(lval.str)
 }
 
-// lexString lexes a jsonpath string. The opening double-quotation mark is
+// scanString scans a jsonpath string. The opening double-quotation mark is
 // expected ot have already been scanned, so the function scans until the
 // closing quotation mark. It writes the resulting string to lval.str.
-func (l *lexer) lexString(lval *pathSymType) int {
+func (l *lexer) scanString(lval *pathSymType, ret int) int {
 	str := new(strings.Builder)
 	s := l.scanner
 	ch := s.Next() // read character after quote
@@ -240,13 +370,13 @@ func (l *lexer) lexString(lval *pathSymType) int {
 	for ch != quote && !l.hasError() {
 		if ch == newline || ch <= null {
 			l.scanError(s, "literal not terminated")
-			return STRING_P
+			return ret
 		}
 
 		if ch == backslash {
 			// An escape sequence.
-			if !l.lexEscape(str) {
-				return STRING_P
+			if !l.scanEscape(str) {
+				return ret
 			}
 		} else {
 			str.WriteRune(ch)
@@ -258,11 +388,11 @@ func (l *lexer) lexString(lval *pathSymType) int {
 	// Done, grab the string and return.
 	lval.str = str.String()
 
-	return STRING_P
+	return ret
 }
 
-// lexEscape lexes an escape sequence and appends the decoded value to str.
-func (l *lexer) lexEscape(str *strings.Builder) bool {
+// scanEscape scans an escape sequence and appends the decoded value to str.
+func (l *lexer) scanEscape(str *strings.Builder) bool {
 	s := l.scanner
 
 	ch := s.Next() // read character after '\'
@@ -280,9 +410,12 @@ func (l *lexer) lexEscape(str *strings.Builder) bool {
 	case 'v':
 		str.WriteRune('\v')
 	case 'x':
-		return lexHex(s, str)
+		return scanHex(s, str)
 	case 'u':
-		return l.lexUnicode(s, str)
+		return l.scanUnicode(s, str)
+	case scanner.EOF:
+		l.scanError(s, "unexpected end after backslash")
+		return false
 	default:
 		// Everything else is literal.
 		str.WriteRune(ch)
@@ -293,7 +426,7 @@ func (l *lexer) lexEscape(str *strings.Builder) bool {
 
 // writeUnicode decodes \uNNNN and \u{NN...} UTF-16 code points into UTF-8 and
 // writes it to lval.str. Returns false on error.
-func (l *lexer) lexUnicode(s *scanner.Scanner, str *strings.Builder) bool {
+func (l *lexer) scanUnicode(s *scanner.Scanner, str *strings.Builder) bool {
 	// Parsing borrowed from Postgres:
 	// https://github.com/postgres/postgres/blob/b4a71cf/src/backend/utils/adt/jsonpath_scan.l#L669-L718
 	// and from encoding/json:
@@ -343,6 +476,49 @@ func (l *lexer) lexUnicode(s *scanner.Scanner, str *strings.Builder) bool {
 	return writeUnicode(rr, str)
 }
 
+// isIdentRune is a predicate controlling the characters accepted as the ith
+// rune in an identifier. These follow JavaScript [identifier syntax], including
+// support for \u0000 and \u{000000} unicode escapes:
+//
+// > In JavaScript, identifiers are commonly made of alphanumeric characters,
+// > underscores (_), and dollar signs ($). Identifiers are not allowed to
+// > start with numbers. However, JavaScript identifiers are not only limited
+// > to ASCII — many Unicode code points are allowed as well. Namely, any
+// > character in the [ID_Start] category can start an identifier, while any
+// > character in the [ID_Continue] category can appear after the first
+// >  character.
+// >
+// > In addition, JavaScript allows using Unicode escape sequences in the
+// > form of \u0000 or \u{000000} in identifiers, which encode the same
+// > string value as the actual Unicode characters.
+//
+// Variations from the spec:
+//
+//   - Postgres does not support literal [dollar signs], and so neither do we.
+//     One can They can still be specified via '\$` or '\u0024'.
+//
+// Variations from Postgres:
+//
+//   - Postgres allows a much wider range of Unicode characters than the
+//     JavaScript spec requires, including Emoji, but this function follows
+//     the spec.
+//
+// [identifier syntax]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#identifiers
+// [ID_Start]: https://util.unicode.org/UnicodeJsps/list-unicodeset.jsp?a=%5Cp%7BID_Start%7D
+// [ID_Continue]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#identifiers
+// [dollar signs]: https://www.postgresql.org/message-id/9F84036F-007A-432D-8DCD-1D5C3F51F76E%40justatheory.com
+func isIdentRune(ch rune, i int) bool {
+	return ch == '_' || ch == '\\' || (i == 0 && xid.Start(ch)) || (i > 0 && xid.Continue(ch))
+}
+
+// isVariableRune is a predicate controlling the characters accepted as a rune
+// in a variable name. It follows the same conventions as isIdentRune, except
+// that the first character is not treated different, because in SQL/JSON paths,
+// variables always start with '$'.
+func isVariableRune(ch rune) bool {
+	return xid.Continue(ch)
+}
+
 // writeUnicode UTF-8 encodes r and writes it to str. Required for UTF-16 code
 // points expressed with \u escapes.
 func writeUnicode(r rune, str *strings.Builder) bool {
@@ -364,9 +540,9 @@ func merge(r1, r2 rune) rune {
 	return (r1 << four) | r2
 }
 
-// lexHex lexes a '\xNN' hex escape sequence. Returns false for invalid hex
+// scanHex scans a '\xNN' hex escape sequence. Returns false for invalid hex
 // characters.
-func lexHex(s *scanner.Scanner, str *strings.Builder) bool {
+func scanHex(s *scanner.Scanner, str *strings.Builder) bool {
 	// Parsing borrowed from the Postgres JSON Path scanner:
 	// https://github.com/postgres/postgres/blob/b4a71cf/src/backend/utils/adt/jsonpath_scan.l#L720-L733
 	if c1 := hexChar(s.Next()); c1 >= 0 {
