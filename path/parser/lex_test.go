@@ -74,7 +74,6 @@ func TestIsIdentRune(t *testing.T) {
 		{"space_first", ' ', 0, false},
 		{"space_second", ' ', 1, false},
 	} {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			a.Equal(tc.exp, isIdentRune(tc.val, tc.char))
@@ -288,7 +287,6 @@ func TestScanIdent(t *testing.T) {
 			"invalid hexadecimal character sequence at path:1:6",
 		},
 	} {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -460,7 +458,6 @@ func TestScanString(t *testing.T) {
 			"unexpected end after backslash at path:1:6",
 		},
 	} {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -655,7 +652,6 @@ func TestScanNumbers(t *testing.T) {
 			"underscore disallowed at start of numeric literal at path:1:10",
 		},
 	} {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -714,7 +710,6 @@ func TestScanVariable(t *testing.T) {
 			"invalid hexadecimal character sequence at path:1:8",
 		},
 	} {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -752,7 +747,6 @@ func TestScanComment(t *testing.T) {
 		{"multi_line_prefix", "/* foo bar\n * baz */", scanner.Comment, ""},
 		{"EOF", "/* foo ", 0, "unexpected end of comment at path:1:8"},
 	} {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -811,7 +805,6 @@ func TestScanOperator(t *testing.T) {
 		{"star_stop", "*=", '*', "*"},
 		{"something_else", "^^", '^', "^"},
 	} {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			l := newLexer(tc.op)
@@ -857,7 +850,6 @@ func TestLexer(t *testing.T) {
 		{"not_comment", "/ foo", "/", '/', ""},
 		{"op", "==foo", "==", EQUAL_P, ""},
 	} {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
