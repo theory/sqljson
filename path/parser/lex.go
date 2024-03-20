@@ -256,7 +256,7 @@ func (l *lexer) scanComment() int {
 // Which all mean what you'd expect mathematically and in SQL, except for
 // '**', which represents the Postgres-specific '.**' any path selector.
 //
-//nolint:funlen,wsl
+//nolint:funlen
 func (l *lexer) scanOperator(lval *pathSymType, tok rune) int {
 	s := l.scanner
 	peek := s.Peek()
@@ -591,7 +591,7 @@ func decodeUnicode(s *scanner.Scanner) rune {
 		const sixteen = 16
 
 		// Get the next four bytes.
-		for i := 0; i < 4; i++ {
+		for range 4 {
 			c := hexChar(s.Next())
 			if c < 0 {
 				s.Error(s, "invalid hexadecimal character sequence")
