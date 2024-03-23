@@ -98,7 +98,7 @@ func TestScanError(t *testing.T) {
 
 	l.Error("hello")
 	a.Equal(
-		[]string{"oops at path:1:1", "yikes at path:1:2", "hello"},
+		[]string{"oops at path:1:1", "yikes at path:1:2", "hello at path:1:2"},
 		l.errors,
 	)
 }

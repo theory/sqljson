@@ -1,4 +1,3 @@
-// Package parser parses SQL/JSON paths.
 package parser
 
 // https://www.postgresql.org/docs/current/datatype-json.html#DATATYPE-JSONPATH:
@@ -63,12 +62,14 @@ import (
 	"unicode/utf8"
 
 	"github.com/smasher164/xid"
+	"github.com/theory/sqljson/path/ast"
 )
 
 // lexer lexes a path.
 type lexer struct {
 	errors  []string
 	scanner *scanner.Scanner
+	result  *ast.AST
 }
 
 // newLexer creates a new lexer configured to lex path.
@@ -89,12 +90,12 @@ func newLexer(path string) *lexer {
 
 // scanError logs error message msg along with the position from s.
 func (l *lexer) scanError(s *scanner.Scanner, msg string) {
-	l.Error(fmt.Sprintf("%v at %v", msg, s.Pos()))
+	l.errors = append(l.errors, fmt.Sprintf("%v at %v", msg, s.Pos()))
 }
 
-// Error logs error message msg.
+// Error logs error message msg at the current scanner position.
 func (l *lexer) Error(msg string) {
-	l.errors = append(l.errors, msg)
+	l.scanError(l.scanner, msg)
 }
 
 // Lex lexes the path, returning the next token from the path. The text
@@ -428,7 +429,7 @@ func (l *lexer) scanEscape(str *strings.Builder) bool {
 // writes it to lval.str. Returns false on error.
 func (l *lexer) scanUnicode(s *scanner.Scanner, str *strings.Builder) bool {
 	// Parsing borrowed from Postgres:
-	// https://github.com/postgres/postgres/blob/b4a71cf/src/backend/utils/adt/jsonpath_scan.l#L669-L718
+	// https://github.com/postgres/postgres/blob/adcdb2c/src/backend/utils/adt/jsonpath_scan.l#L669-L718
 	// and from encoding/json:
 	// https://cs.opensource.google/go/go/+/refs/tags/go1.22.1:src/encoding/json/decode.go;l=1253-1272
 	rr := decodeUnicode(s)
@@ -524,7 +525,7 @@ func isVariableRune(ch rune) bool {
 func writeUnicode(r rune, str *strings.Builder) bool {
 	// Should never need more than 4 max size UTF-8 characters (16 bytes) for a
 	// UTF-16 code point.
-	// https://github.com/postgres/postgres/blob/c20d90a/src/include/mb/pg_wchar.h#L345
+	// https://github.com/postgres/postgres/blob/adcdb2c/src/include/mb/pg_wchar.h#L345
 	const maxUnicodeEquivalentString = utf8.UTFMax * 4
 	b := make([]byte, maxUnicodeEquivalentString)
 	n := utf8.EncodeRune(b, r)
@@ -544,7 +545,7 @@ func merge(r1, r2 rune) rune {
 // characters.
 func scanHex(s *scanner.Scanner, str *strings.Builder) bool {
 	// Parsing borrowed from the Postgres JSON Path scanner:
-	// https://github.com/postgres/postgres/blob/b4a71cf/src/backend/utils/adt/jsonpath_scan.l#L720-L733
+	// https://github.com/postgres/postgres/blob/adcdb2c/src/backend/utils/adt/jsonpath_scan.l#L720-L733
 	if c1 := hexChar(s.Next()); c1 >= 0 {
 		if c2 := hexChar(s.Next()); c2 >= 0 {
 			decoded := merge(c1, c2)
@@ -613,7 +614,7 @@ func decodeUnicode(s *scanner.Scanner) rune {
 
 // hexVal turns a hex character into a rune. Returns -1 for an invalid hex code.
 // Adapted from the Postgres hexval function encoding/json's getu4 function:
-// https://github.com/postgres/postgres/blob/84c18ac/src/backend/utils/adt/jsonpath_scan.l#L575-L596
+// https://github.com/postgres/postgres/blob/adcdb2c/src/backend/utils/adt/jsonpath_scan.l#L575-L596
 // https://cs.opensource.google/go/go/+/refs/tags/go1.22.0:src/encoding/json/decode.go;l=1149-1170
 func hexChar(c rune) rune {
 	const decimal = 10
