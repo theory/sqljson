@@ -98,6 +98,19 @@ func (l *lexer) Error(msg string) {
 	l.scanError(l.scanner, msg)
 }
 
+// setResult creates an ast.AST and assigns it to l.result unless
+// there are parser or ast.New errors.
+func (l *lexer) setResult(strict bool, node ast.Node) {
+	if l.hasError() {
+		return
+	}
+	ast, err := ast.New(strict, node)
+	if err != nil {
+		l.errors = append(l.errors, err.Error())
+	}
+	l.result = ast
+}
+
 // Lex lexes the path, returning the next token from the path. The text
 // representation of the token will be stored in lval.str.
 func (l *lexer) Lex(lval *pathSymType) int {
@@ -173,13 +186,20 @@ func (l *lexer) validateInt(lval *pathSymType) int {
 		// Leading 0 with subsequent characters.
 		if !unicode.IsLetter(rune(lval.str[1])) {
 			// Leading 0 followed by digit disallowed.
-			l.scanError(l.scanner, "trailing junk after numeric literal")
+			l.Error("trailing junk after numeric literal")
 		} else if len(lval.str) > 2 && lval.str[2] == '_' {
 			// Underscore after letter (0o_, 0b_, 0x_) disallowed.
-			l.scanError(l.scanner, "underscore disallowed at start of numeric literal")
+			l.Error("underscore disallowed at start of numeric literal")
 		}
 	}
 
+	if !l.hasError() && isIdentRune(l.scanner.Peek(), 0) {
+		l.Error("trailing junk after numeric literal")
+	}
+
+	if l.hasError() {
+		return scanner.EOF
+	}
 	return INT_P
 }
 
@@ -213,6 +233,13 @@ func (l *lexer) validateNumeric(lval *pathSymType) int {
 		}
 	}
 
+	if !l.hasError() && isIdentRune(l.scanner.Peek(), 0) {
+		l.Error("trailing junk after numeric literal")
+	}
+
+	if l.hasError() {
+		return scanner.EOF
+	}
 	return NUMERIC_P
 }
 
@@ -340,17 +367,31 @@ func (l *lexer) scanIdent(lval *pathSymType, ch rune) int {
 	str := new(strings.Builder)
 	s := l.scanner
 
+	switch ch {
+	case backslash:
+		// An escape sequence.
+		if !l.scanEscape(str) {
+			return scanner.EOF
+		}
+	default:
+		str.WriteRune(ch)
+	}
+
 	// Scan the identifier as long as we have legit identifier runes.
-	for i := 1; isIdentRune(ch, i); i, ch = i+1, s.Next() {
-		switch ch {
+	for i := 1; isIdentRune(s.Peek(), i); i++ {
+		switch ch = s.Next(); ch {
 		case backslash:
 			// An escape sequence.
 			if !l.scanEscape(str) {
-				return IDENT_P
+				return scanner.EOF
 			}
 		default:
 			str.WriteRune(ch)
 		}
+	}
+
+	if l.hasError() {
+		return scanner.EOF
 	}
 
 	// Done, grab the string and return the appropriate token.
@@ -371,13 +412,13 @@ func (l *lexer) scanString(lval *pathSymType, ret int) int {
 	for ch != quote && !l.hasError() {
 		if ch == newline || ch <= null {
 			l.scanError(s, "literal not terminated")
-			return ret
+			return scanner.EOF
 		}
 
 		if ch == backslash {
 			// An escape sequence.
 			if !l.scanEscape(str) {
-				return ret
+				return scanner.EOF
 			}
 		} else {
 			str.WriteRune(ch)
@@ -575,8 +616,8 @@ func decodeUnicode(s *scanner.Scanner) rune {
 		// single rune.
 		for i := 0; i < 6 && c != '}'; i, c = i+1, s.Next() {
 			si := hexChar(c)
-			if si < 0 {
-				s.Error(s, "invalid hexadecimal character sequence")
+			if si < null {
+				s.Error(s, "invalid Unicode escape sequence")
 				return null
 			}
 
@@ -594,8 +635,8 @@ func decodeUnicode(s *scanner.Scanner) rune {
 		// Get the next four bytes.
 		for range 4 {
 			c := hexChar(s.Next())
-			if c < 0 {
-				s.Error(s, "invalid hexadecimal character sequence")
+			if c < null {
+				s.Error(s, "invalid Unicode escape sequence")
 				return null
 			}
 
@@ -603,9 +644,9 @@ func decodeUnicode(s *scanner.Scanner) rune {
 		}
 	}
 
-	if rr < 1 {
-		// Invalid encoding or \u0000, null, not supported.
-		s.Error(s, "invalid Unicode escape sequence")
+	if rr == null {
+		// \u0000, null, not supported.
+		s.Error(s, `\u0000 cannot be converted to text`)
 		return null
 	}
 

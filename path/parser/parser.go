@@ -4,7 +4,6 @@ package parser
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/theory/sqljson/path/ast"
 )
@@ -20,9 +19,7 @@ func Parse(path string) (*ast.AST, error) {
 	_ = pathParse(lexer)
 
 	if len(lexer.errors) > 0 {
-		return nil, fmt.Errorf(
-			"%w: %v", ErrParse, strings.Join(lexer.errors, "\n"),
-		)
+		return nil, fmt.Errorf("%w: %v", ErrParse, lexer.errors[0])
 	}
 
 	return lexer.result, nil

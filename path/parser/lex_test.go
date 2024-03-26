@@ -7,6 +7,8 @@ import (
 	"text/scanner"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/theory/sqljson/path/ast"
 )
 
 func TestNewLexer(t *testing.T) {
@@ -73,6 +75,7 @@ func TestIsIdentRune(t *testing.T) {
 		{"slash_second", '/', 1, false},
 		{"space_first", ' ', 0, false},
 		{"space_second", ' ', 1, false},
+		{"eof", scanner.EOF, 0, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -255,49 +258,59 @@ func TestScanIdent(t *testing.T) {
 			"invalid_hex",
 			`LO\xzz`,
 			"",
-			IDENT_P,
+			scanner.EOF,
 			"invalid hexadecimal character sequence at path:1:6",
 		},
 		{
 			"brace_unicode_eight",
 			`LO\u{00004C00}`,
 			"",
-			IDENT_P,
+			scanner.EOF,
 			"invalid Unicode escape sequence at path:1:13",
 		},
 		{
 			"missing_brace",
 			`LO\u{0067`,
 			"",
-			IDENT_P,
-			"invalid hexadecimal character sequence at path:1:10",
+			scanner.EOF,
+			"invalid Unicode escape sequence at path:1:11",
 		},
 		{
 			"bad_unicode_brace_hex",
 			`LO\u{zzzz}`,
 			"",
-			IDENT_P,
-			"invalid hexadecimal character sequence at path:1:7",
+			scanner.EOF,
+			"invalid Unicode escape sequence at path:1:7",
 		},
 		{
 			"bad_unicode_hex",
 			`LO\uzzzz`,
 			"",
-			IDENT_P,
-			"invalid hexadecimal character sequence at path:1:6",
+			scanner.EOF,
+			"invalid Unicode escape sequence at path:1:6",
+		},
+		{
+			"bad_lead_backslash",
+			`\xyy`,
+			"",
+			scanner.EOF,
+			"invalid hexadecimal character sequence at path:1:4",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
+			// Append a '.' to check that scanIdent doesn't slurp it up.
 			sym := &pathSymType{str: ""}
-			l := newLexer(tc.word)
+			l := newLexer(tc.word + ".")
 			tok := l.scanner.Scan()
 			a.Equal(l.scanIdent(sym, tok), tc.tok)
 			a.Equal(tc.exp, sym.str)
 
 			if tc.err == "" {
+				// Should have no errors and the trailing '.' should be teed up.
 				a.Empty(l.errors)
+				a.Equal('.', l.scanner.Peek())
 			} else {
 				a.Equal([]string{tc.err}, l.errors)
 			}
@@ -351,110 +364,113 @@ func TestScanString(t *testing.T) {
 		{
 			"invalid_surrogate_pair",
 			`"\uD834\ufffd"`,
-			"", STRING_P,
+			"",
+			scanner.EOF,
 			"Unicode low surrogate must follow a high surrogate at path:1:14",
 		},
 		{
 			"missing_surrogate_pair",
 			`"\uD834lol"`,
-			"", STRING_P,
+			"",
+			scanner.EOF,
 			"Unicode low surrogate must follow a high surrogate at path:1:8",
 		},
 		{
 			"bad_surrogate_pair",
 			`"\uD834\uzzzz`,
-			"", STRING_P,
-			"invalid hexadecimal character sequence at path:1:11",
+			"",
+			scanner.EOF,
+			"invalid Unicode escape sequence at path:1:11",
 		},
 		{
 			"wrong_surrogate_pair",
 			`"\uD834\x34"`,
 			"",
-			STRING_P,
+			scanner.EOF,
 			"Unicode low surrogate must follow a high surrogate at path:1:9",
 		},
 		{
 			"null_byte",
 			`"go \x00"`,
 			"",
-			STRING_P,
+			scanner.EOF,
 			"invalid hexadecimal character sequence at path:1:9",
 		},
 		{
 			"invalid_hex",
 			`"LO\xzz"`,
 			"",
-			STRING_P,
+			scanner.EOF,
 			"invalid hexadecimal character sequence at path:1:7",
 		},
 		{
 			"null_hex",
 			`"LO\x00"`,
 			"",
-			STRING_P,
+			scanner.EOF,
 			"invalid hexadecimal character sequence at path:1:8",
 		},
 		{
 			"null_unicode",
 			`"LO\u0000"`,
 			"",
-			STRING_P,
-			"invalid Unicode escape sequence at path:1:10",
+			scanner.EOF,
+			"\\u0000 cannot be converted to text at path:1:10",
 		},
 		{
 			"null_unicode_brace",
 			`"LO\u{000000}"`,
 			"",
-			STRING_P,
-			"invalid Unicode escape sequence at path:1:14",
+			scanner.EOF,
+			"\\u0000 cannot be converted to text at path:1:14",
 		},
 		{
 			"brace_unicode_eight",
 			`"LO\u{00004C00}"`,
 			"",
-			STRING_P,
+			scanner.EOF,
 			"invalid Unicode escape sequence at path:1:14",
 		},
 		{
 			"missing_brace",
 			`"LO\u{0067"`,
 			"",
-			STRING_P,
-			"invalid hexadecimal character sequence at path:1:12",
+			scanner.EOF,
+			"invalid Unicode escape sequence at path:1:12",
 		},
 		{
 			"bad_unicode_brace_hex",
 			`"LO\u{zzzz}"`,
 			"",
-			STRING_P,
-			"invalid hexadecimal character sequence at path:1:8",
+			scanner.EOF,
+			"invalid Unicode escape sequence at path:1:8",
 		},
 		{
 			"bad_unicode_hex",
 			`"LO\uzzzz"`,
 			"",
-			STRING_P,
-			"invalid hexadecimal character sequence at path:1:7",
+			scanner.EOF,
+			"invalid Unicode escape sequence at path:1:7",
 		},
 		{
 			"unclosed_string",
 			`"go`,
 			"",
-			STRING_P,
+			scanner.EOF,
 			"literal not terminated at path:1:4",
 		},
 		{
 			"string_with_newline",
 			"\"go\nhome\"",
 			"",
-			STRING_P,
+			scanner.EOF,
 			"literal not terminated at path:2:1",
 		},
 		{
 			"unterminated_backslash",
 			`"go \`,
 			"",
-			STRING_P,
+			scanner.EOF,
 			"unexpected end after backslash at path:1:6",
 		},
 	} {
@@ -497,7 +513,12 @@ func TestScanNumbers(t *testing.T) {
 		{"octal", "0o273", "0o273", INT_P, ""},
 		{"underscore_octal", "0o27_3", "0o27_3", INT_P, ""},
 		{"OCTAL", "0O273", "0O273", INT_P, ""},
-		{"zero_octal", "0273", "0273", INT_P, "trailing junk after numeric literal at path:1:5"}, // Not supported by Postgres
+		{
+			"zero_octal",
+			"0273", // Not supported by Postgres
+			"0273", scanner.EOF,
+			"trailing junk after numeric literal at path:1:5",
+		},
 		{"binary", "0b100101", "0b100101", INT_P, ""},
 		{"underscore_binary", "0b10_0101", "0b10_0101", INT_P, ""},
 		{"BINARY", "0B100101", "0B100101", INT_P, ""},
@@ -524,14 +545,14 @@ func TestScanNumbers(t *testing.T) {
 			"go_int_example_03",
 			"0600", // Not supported by Postgres
 			"0600",
-			INT_P,
+			scanner.EOF,
 			"trailing junk after numeric literal at path:1:5",
 		},
 		{
 			"go_int_example_04",
 			"0_600", // Not supported by Postgres
 			"0_600",
-			INT_P,
+			scanner.EOF,
 			"trailing junk after numeric literal at path:1:6",
 		},
 		{"go_int_example_05", "0o600", "0o600", INT_P, ""},
@@ -543,7 +564,7 @@ func TestScanNumbers(t *testing.T) {
 			"go_int_example_10",
 			"0x_67_7a_2f_cc_40_c6", // Not supported by Postgres
 			"0x_67_7a_2f_cc_40_c6",
-			INT_P,
+			scanner.EOF,
 			"underscore disallowed at start of numeric literal at path:1:21",
 		},
 		{
@@ -561,10 +582,10 @@ func TestScanNumbers(t *testing.T) {
 			"",
 		},
 		{"go_int_example_13", "_42", "_42", IDENT_P, ""},
-		{"go_int_example_14", "42_", "42_", INT_P, "'_' must separate successive digits at path:1:4"},
-		{"go_int_example_15", "42_", "42_", INT_P, "'_' must separate successive digits at path:1:4"},
-		{"go_int_example_16", "4__2", "4__2", INT_P, "'_' must separate successive digits at path:1:5"},
-		{"go_int_example_17", "0_xBadFace", "0_", INT_P, "'_' must separate successive digits at path:1:3"},
+		{"go_int_example_14", "42_", "42_", scanner.EOF, "'_' must separate successive digits at path:1:4"},
+		{"go_int_example_15", "42_", "42_", scanner.EOF, "'_' must separate successive digits at path:1:4"},
+		{"go_int_example_16", "4__2", "4__2", scanner.EOF, "'_' must separate successive digits at path:1:5"},
+		{"go_int_example_17", "0_xBadFace", "0_", scanner.EOF, "'_' must separate successive digits at path:1:3"},
 
 		// https://go.dev/ref/spec#Floating-point_literals
 		{"go_float_example_01", "0.", "0.", NUMERIC_P, ""},
@@ -573,7 +594,7 @@ func TestScanNumbers(t *testing.T) {
 			"go_float_example_03",
 			"072.40", // Not supported by Postgres
 			"072.40",
-			NUMERIC_P,
+			scanner.EOF,
 			"trailing junk after numeric literal at path:1:7",
 		},
 		{"go_float_example_04", "2.71828", "2.71828", NUMERIC_P, ""},
@@ -588,67 +609,73 @@ func TestScanNumbers(t *testing.T) {
 			"go_float_example_11",
 			"0x1p-2", // Not supported by Postgres
 			"0x1p-2",
-			NUMERIC_P,
+			scanner.EOF,
 			"trailing junk after numeric literal at path:1:7",
 		},
 		{
 			"go_float_example_12",
 			"0x2.p10", // Not supported by Postgres
 			"0x2.p10",
-			NUMERIC_P,
+			scanner.EOF,
 			"trailing junk after numeric literal at path:1:8",
 		},
 		{
 			"go_float_example_13",
 			"0x1.Fp+0", // Not supported by Postgres
 			"0x1.Fp+0",
-			NUMERIC_P,
+			scanner.EOF,
 			"trailing junk after numeric literal at path:1:9",
 		},
 		{
 			"go_float_example_14",
 			"0X.8p-0", // Not supported by Postgres
 			"0X.8p-0",
-			NUMERIC_P,
+			scanner.EOF,
 			"trailing junk after numeric literal at path:1:8",
 		},
 		{
 			"go_float_example_15",
 			"0X_1FFFP-16", // Not supported by Postgres
 			"0X_1FFFP-16",
-			NUMERIC_P,
+			scanner.EOF,
 			"underscore disallowed at start of numeric literal at path:1:12",
 		},
 		{"go_float_example_16", "0x15e-2", "0x15e", INT_P, ""}, // (integer subtraction)
-		{"go_float_example_17", "0x.p1", "0x.p1", NUMERIC_P, "hexadecimal literal has no digits at path:1:4"},
-		{"go_float_example_18", "1p-2", "1p-2", NUMERIC_P, "'p' exponent requires hexadecimal mantissa at path:1:2"},
-		{"go_float_example_19", "0x1.5e-2", "0x1.5e", NUMERIC_P, "hexadecimal mantissa requires a 'p' exponent at path:1:7"},
-		{"go_float_example_20", "1_.5", "1_.5", NUMERIC_P, "'_' must separate successive digits at path:1:5"},
-		{"go_float_example_21", "1._5", "1._5", NUMERIC_P, "'_' must separate successive digits at path:1:5"},
-		{"go_float_example_22", "1.5_e1", "1.5_e1", NUMERIC_P, "'_' must separate successive digits at path:1:7"},
-		{"go_float_example_23", "1.5e_1", "1.5e_1", NUMERIC_P, "'_' must separate successive digits at path:1:7"},
-		{"go_float_example_24", "1.5e1_", "1.5e1_", NUMERIC_P, "'_' must separate successive digits at path:1:7"},
+		{"go_float_example_17", "0x.p1", "0x.p1", scanner.EOF, "hexadecimal literal has no digits at path:1:4"},
+		{"go_float_example_18", "1p-2", "1p-2", scanner.EOF, "'p' exponent requires hexadecimal mantissa at path:1:2"},
+		{
+			"go_float_example_19",
+			"0x1.5e-2",
+			"0x1.5e",
+			scanner.EOF,
+			"hexadecimal mantissa requires a 'p' exponent at path:1:7",
+		},
+		{"go_float_example_20", "1_.5", "1_.5", scanner.EOF, "'_' must separate successive digits at path:1:5"},
+		{"go_float_example_21", "1._5", "1._5", scanner.EOF, "'_' must separate successive digits at path:1:5"},
+		{"go_float_example_22", "1.5_e1", "1.5_e1", scanner.EOF, "'_' must separate successive digits at path:1:7"},
+		{"go_float_example_23", "1.5e_1", "1.5e_1", scanner.EOF, "'_' must separate successive digits at path:1:7"},
+		{"go_float_example_24", "1.5e1_", "1.5e1_", scanner.EOF, "'_' must separate successive digits at path:1:7"},
 
 		// Errors
 		{
 			"underscore_hex_early",
 			"0x_1EEEFFFF",
 			"0x_1EEEFFFF",
-			INT_P,
+			scanner.EOF,
 			"underscore disallowed at start of numeric literal at path:1:12",
 		},
 		{
 			"underscore_octal_early",
 			"0o_273",
 			"0o_273",
-			INT_P,
+			scanner.EOF,
 			"underscore disallowed at start of numeric literal at path:1:7",
 		},
 		{
 			"underscore_binary_early",
 			"0b_100101",
 			"0b_100101",
-			INT_P,
+			scanner.EOF,
 			"underscore disallowed at start of numeric literal at path:1:10",
 		},
 	} {
@@ -699,14 +726,14 @@ func TestScanVariable(t *testing.T) {
 			"null_byte",
 			`$"go \x00"`,
 			"",
-			VARIABLE_P,
+			scanner.EOF,
 			"invalid hexadecimal character sequence at path:1:10",
 		},
 		{
 			"invalid_hex",
 			`$"LO\xzz"`,
 			"",
-			VARIABLE_P,
+			scanner.EOF,
 			"invalid hexadecimal character sequence at path:1:8",
 		},
 	} {
@@ -862,6 +889,58 @@ func TestLexer(t *testing.T) {
 				a.Empty(l.errors)
 			} else {
 				a.Equal([]string{tc.err}, l.errors)
+			}
+		})
+	}
+}
+
+func TestSetResult(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+	r := require.New(t)
+
+	for _, tc := range []struct {
+		name string
+		lex  *lexer
+		lax  bool
+		node ast.Node
+		err  string
+	}{
+		{
+			name: "legit_lax",
+			lex:  &lexer{},
+			lax:  true,
+			node: ast.ConstNull,
+		},
+		{
+			name: "no_lax",
+			lex:  &lexer{},
+			node: ast.ConstNull,
+		},
+		{
+			name: "prev_err",
+			lex:  &lexer{errors: []string{"oops"}},
+			node: ast.ConstNull,
+			err:  "oops",
+		},
+		{
+			name: "ast_err",
+			lex:  &lexer{},
+			node: ast.ConstLast,
+			err:  "LAST is allowed only in array subscripts",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.lex.setResult(tc.lax, tc.node)
+			if tc.err == "" {
+				ast, err := ast.New(tc.lax, tc.node)
+				r.NoError(err)
+				a.Equal(ast, tc.lex.result)
+				a.Empty(tc.lex.errors)
+			} else {
+				a.Nil(tc.lex.result)
+				a.Equal(tc.err, tc.lex.errors[0])
 			}
 		})
 	}

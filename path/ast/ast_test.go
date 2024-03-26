@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,89 +16,106 @@ func TestConstNode(t *testing.T) {
 	a := assert.New(t)
 
 	for _, tc := range []struct {
-		name string
-		node ConstNode
-		str  string
+		name     string
+		node     ConstNode
+		str      string
+		inKeyStr string
 	}{
-		{"root", ConstRoot, "$"},
-		{"current", ConstCurrent, "@"},
-		{"last", ConstLast, "last"},
-		{"any_array", ConstAnyArray, "[*]"},
-		{"any_key", ConstAnyKey, "*"},
-		{"true", ConstTrue, "true"},
-		{"false", ConstFalse, "false"},
-		{"null", ConstNull, "null"},
-		{"unknown", -1, "ConstNode(-1)"},
+		{"root", ConstRoot, "$", ""},
+		{"current", ConstCurrent, "@", ""},
+		{"last", ConstLast, "last", ""},
+		{"any_array", ConstAnyArray, "[*]", ""},
+		{"any_key", ConstAnyKey, "*", ".*"},
+		{"true", ConstTrue, "true", ""},
+		{"false", ConstFalse, "false", ""},
+		{"null", ConstNull, "null", ""},
+		{"unknown", -1, "ConstNode(-1)", ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			a.Implements((*Node)(nil), tc.node)
 			a.Equal(tc.str, tc.node.String())
+			a.Equal(lowestPriority, tc.node.priority())
+
+			// Test writeTo.
+			buf := new(strings.Builder)
+			tc.node.writeTo(buf, false, false)
+			a.Equal(tc.str, buf.String())
+
+			// Test writeTo with knKey true.
+			buf.Reset()
+			tc.node.writeTo(buf, true, false)
+			if tc.inKeyStr == "" {
+				tc.inKeyStr = tc.str
+			}
+			a.Equal(tc.inKeyStr, buf.String())
 		})
 	}
 }
 
-func TestBinaryOperatorNode(t *testing.T) {
+func TestBinaryOperator(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 
 	for _, tc := range []struct {
-		name string
-		node BinaryOperator
-		str  string
+		name  string
+		op    BinaryOperator
+		str   string
+		prior uint8
 	}{
-		{"and", BinaryAnd, "&&"},
-		{"or", BinaryOr, "||"},
-		{"equal", BinaryEqual, "=="},
-		{"not_equal", BinaryNotEqual, "!="},
-		{"less", BinaryLess, "<"},
-		{"less_equal", BinaryLessOrEqual, "<="},
-		{"greater", BinaryGreater, ">"},
-		{"greater_equal", BinaryGreaterOrEqual, ">="},
-		{"starts_with", BinaryStartsWith, "starts with"},
-		{"add", BinaryAdd, "+"},
-		{"sub", BinarySub, "-"},
-		{"mul", BinaryMul, "*"},
-		{"div", BinaryDiv, "/"},
-		{"mod", BinaryMod, "%"},
-		{"subscript", BinarySubscript, "to"},
-		{"decimal", BinaryDecimal, ".decimal()"},
-		{"unknown", -1, "BinaryOperator(-1)"},
+		{"and", BinaryAnd, "&&", 1},
+		{"or", BinaryOr, "||", 0},
+		{"equal", BinaryEqual, "==", 2},
+		{"not_equal", BinaryNotEqual, "!=", 2},
+		{"less", BinaryLess, "<", 2},
+		{"less_equal", BinaryLessOrEqual, "<=", 2},
+		{"greater", BinaryGreater, ">", 2},
+		{"greater_equal", BinaryGreaterOrEqual, ">=", 2},
+		{"starts_with", BinaryStartsWith, "starts with", 2},
+		{"add", BinaryAdd, "+", 3},
+		{"sub", BinarySub, "-", 3},
+		{"mul", BinaryMul, "*", 4},
+		{"div", BinaryDiv, "/", 4},
+		{"mod", BinaryMod, "%", 4},
+		{"subscript", BinarySubscript, "to", 6},
+		{"decimal", BinaryDecimal, ".decimal()", 6},
+		{"unknown", -1, "BinaryOperator(-1)", 6},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			a.Implements((*Node)(nil), tc.node)
-			a.Equal(tc.str, tc.node.String())
+			a.Equal(tc.str, tc.op.String())
+			a.Equal(tc.prior, tc.op.priority())
 		})
 	}
 }
 
-func TestUnaryOperatorNode(t *testing.T) {
+func TestUnaryOperator(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 
 	for _, tc := range []struct {
-		name string
-		node UnaryOperator
-		str  string
+		name  string
+		op    UnaryOperator
+		str   string
+		prior uint8
 	}{
-		{"exists", UnaryExists, "exists"},
-		{"not", UnaryNot, "!"},
-		{"is_unknown", UnaryIsUnknown, "is unknown"},
-		{"plus", UnaryPlus, "+"},
-		{"minus", UnaryMinus, "-"},
-		{"filter", UnaryFilter, "?"},
-		{"datetime", UnaryDateTime, ".datetime"},
-		{"time", UnaryTime, ".time"},
-		{"time_tz", UnaryTimeTZ, ".time_tz"},
-		{"timestamp", UnaryTimestamp, ".timestamp"},
-		{"timestamp_tz", UnaryTimestampTZ, ".timestamp_tz"},
-		{"unknown", -1, "UnaryOperator(-1)"},
+		{"exists", UnaryExists, "exists", 6},
+		{"not", UnaryNot, "!", 6},
+		{"is_unknown", UnaryIsUnknown, "is unknown", 6},
+		{"plus", UnaryPlus, "+", 5},
+		{"minus", UnaryMinus, "-", 5},
+		{"filter", UnaryFilter, "?", 6},
+		{"datetime", UnaryDateTime, ".datetime", 6},
+		{"time", UnaryTime, ".time", 6},
+		{"time_tz", UnaryTimeTZ, ".time_tz", 6},
+		{"timestamp", UnaryTimestamp, ".timestamp", 6},
+		{"timestamp_tz", UnaryTimestampTZ, ".timestamp_tz", 6},
+		{"unknown", -1, "UnaryOperator(-1)", 6},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			a.Implements((*Node)(nil), tc.node)
-			a.Equal(tc.str, tc.node.String())
+			a.Equal(tc.str, tc.op.String())
+			a.Equal(tc.prior, tc.op.priority())
 		})
 	}
 }
@@ -129,6 +147,12 @@ func TestMethodNode(t *testing.T) {
 			t.Parallel()
 			a.Implements((*Node)(nil), tc.node)
 			a.Equal(tc.str, tc.node.String())
+			a.Equal(lowestPriority, tc.node.priority())
+
+			// Test writeTo.
+			buf := new(strings.Builder)
+			tc.node.writeTo(buf, false, false)
+			a.Equal(tc.str, buf.String())
 		})
 	}
 }
@@ -161,19 +185,35 @@ func TestStringNodes(t *testing.T) {
 			t.Parallel()
 
 			str := NewString(tc.expr)
+			a.Implements((*Node)(nil), str)
 			a.Equal(tc.str, str.String())
+			a.Equal(lowestPriority, str.priority())
+			buf := new(strings.Builder)
+			str.writeTo(buf, false, false)
+			a.Equal(tc.str, buf.String())
 
 			variable := NewVariable(tc.expr)
+			a.Implements((*Node)(nil), variable)
 			a.Equal(tc.val, variable.Text())
 			a.Equal("$"+tc.str, variable.String())
+			a.Equal(lowestPriority, variable.priority())
+			buf.Reset()
+			variable.writeTo(buf, false, false)
+			a.Equal("$"+tc.str, buf.String())
 
 			key := NewString(tc.expr)
+			a.Implements((*Node)(nil), key)
 			a.Equal(tc.val, key.Text())
 			a.Equal(tc.str, key.String())
+			a.Equal(lowestPriority, key.priority())
+			buf.Reset()
+			key.writeTo(buf, false, false)
+			a.Equal(tc.str, buf.String())
 		})
 	}
 }
 
+//nolint:dupl
 func TestNumericNode(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
@@ -186,7 +226,16 @@ func TestNumericNode(t *testing.T) {
 		err  string
 	}{
 		{"number", "42.3", 42.3, "42.3", ""},
-		{"zero_dot", "0.", 0.0, "0.", ""},
+		{"zero_dot", "0.", 0.0, "0", ""},
+		{"dot_one", ".1", 0.1, "0.1", ""},
+		{"zero_dot_zero", "0.0", 0.0, "0", ""},
+		{"zero_dot_000", "0.000", 0.0, "0", ""},
+		{"expo", "0.0010e-1", 0.0001, "0.0001", ""},
+		{"pos_expo", "0.0010e+2", 0.1, "0.1", ""},
+		{"dot_001", ".001", 0.001, "0.001", ""},
+		{"dot_expo", "1.e1", 10, "10", ""},
+		{"one_expo_3", "1e3", 1000, "1000", ""},
+		{"1_dot_2e3", "1.2e3", 1200, "1200", ""},
 		{
 			name: "max_float",
 			num:  fmt.Sprintf("%v", math.MaxFloat64),
@@ -216,13 +265,27 @@ func TestNumericNode(t *testing.T) {
 			}
 
 			num := NewNumeric(tc.num)
+			a.Implements((*Node)(nil), num)
+			a.Equal(tc.num, num.Literal())
 			a.Equal(tc.str, num.String())
+			a.Equal(lowestPriority, num.priority())
 			//nolint:testifylint
 			a.Equal(tc.val, num.Float())
+
+			// Test writeTo.
+			buf := new(strings.Builder)
+			num.writeTo(buf, false, false)
+			a.Equal(tc.str, buf.String())
+
+			// Test writeTo withParens true.
+			buf.Reset()
+			num.writeTo(buf, false, true)
+			a.Equal("("+tc.str+")", buf.String())
 		})
 	}
 }
 
+//nolint:dupl
 func TestIntegerNode(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
@@ -235,6 +298,10 @@ func TestIntegerNode(t *testing.T) {
 		err  string
 	}{
 		{"number", "42", 42, "42", ""},
+		{"underscores", "1_000_000", 1_000_000, "1000000", ""},
+		{"binary", "0b100101", 37, "37", ""},
+		{"octal", "0o273", 187, "187", ""},
+		{"hex", "0x42F", 1071, "1071", ""},
 		{
 			name: "max_int",
 			num:  strconv.Itoa(math.MaxInt64),
@@ -264,8 +331,21 @@ func TestIntegerNode(t *testing.T) {
 			}
 
 			num := NewInteger(tc.num)
+			a.Implements((*Node)(nil), num)
+			a.Equal(tc.num, num.Literal())
 			a.Equal(tc.str, num.String())
+			a.Equal(lowestPriority, num.priority())
 			a.Equal(tc.val, num.Int())
+
+			// Test writeTo.
+			buf := new(strings.Builder)
+			num.writeTo(buf, false, false)
+			a.Equal(tc.str, buf.String())
+
+			// Test writeTo withParens true.
+			buf.Reset()
+			num.writeTo(buf, false, true)
+			a.Equal("("+tc.str+")", buf.String())
 		})
 	}
 }
@@ -431,17 +511,46 @@ func TestBinaryNode(t *testing.T) {
 			op:   BinaryOperator(-1),
 			err:  "Unknown binary operator BinaryOperator(-1)",
 		},
+		{
+			name:  "priority_parens",
+			op:    BinaryAnd,
+			left:  NewBinary(BinaryOr, ConstCurrent, ConstCurrent),
+			right: NewBinary(BinaryOr, ConstCurrent, ConstCurrent),
+			str:   "(@ || @) && (@ || @)",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			node := NewBinary(tc.op, tc.left, tc.right)
+			a.Implements((*Node)(nil), node)
+			a.Equal(node.op.priority(), node.priority())
 			a.Equal(tc.op, node.Operator())
 			a.Equal(tc.left, node.Left())
 			a.Equal(tc.right, node.Right())
-			if tc.err == "" {
-				a.Equal(tc.str, node.String())
-			} else {
+			if tc.err != "" {
 				a.PanicsWithValue(tc.err, func() { _ = node.String() })
+				return
+			}
+			a.Equal(tc.str, node.String())
+
+			// Test writeTo.
+			buf := new(strings.Builder)
+			node.writeTo(buf, false, false)
+			a.Equal(tc.str, buf.String())
+
+			// Test writeTo withParens true
+			buf.Reset()
+			node.writeTo(buf, false, true)
+
+			//nolint:exhaustive
+			switch node.op {
+			case BinaryAnd, BinaryOr, BinaryEqual, BinaryNotEqual, BinaryLess,
+				BinaryGreater, BinaryLessOrEqual, BinaryGreaterOrEqual,
+				BinaryAdd, BinarySub, BinaryMul, BinaryDiv, BinaryMod,
+				BinaryStartsWith:
+				a.Equal("("+tc.str+")", buf.String())
+			default:
+				a.Equal(tc.str, buf.String())
 			}
 		})
 	}
@@ -534,13 +643,38 @@ func TestUnaryNode(t *testing.T) {
 			node: NewInteger("99"),
 			str:  "",
 		},
+		{
+			name: "priority_parens",
+			op:   UnaryPlus,
+			node: NewBinary(BinaryOr, ConstCurrent, ConstCurrent),
+			str:  "+(@ || @)",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			node := NewUnary(tc.op, tc.node)
+			a.Implements((*Node)(nil), node)
+			a.Equal(node.op.priority(), node.priority())
 			a.Equal(tc.op, node.Operator())
 			a.Equal(tc.node, node.Node())
 			a.Equal(tc.str, node.String())
+
+			// Test writeTo.
+			buf := new(strings.Builder)
+			node.writeTo(buf, false, false)
+			a.Equal(tc.str, buf.String())
+
+			// Test writeTo withParens true
+			buf.Reset()
+			node.writeTo(buf, false, true)
+
+			//nolint:exhaustive
+			switch node.op {
+			case UnaryPlus, UnaryMinus:
+				a.Equal("("+tc.str+")", buf.String())
+			default:
+				a.Equal(tc.str, buf.String())
+			}
 		})
 	}
 }
@@ -557,28 +691,48 @@ func TestAccessorNode(t *testing.T) {
 		{
 			name:  "single_key",
 			nodes: []Node{NewKey("foo")},
-			str:   `."foo"`,
+			str:   `"foo"`,
 		},
 		{
 			name:  "two_keys",
 			nodes: []Node{NewKey("foo"), NewKey("bar")},
-			str:   `."foo"."bar"`,
+			str:   `"foo"."bar"`,
 		},
 		{
 			name:  "numeric",
 			nodes: []Node{NewNumeric("42.2")},
-			str:   `.42.2`,
+			str:   `42.2`,
 		},
 		{
 			name:  "numeric_then_key",
 			nodes: []Node{NewNumeric("42.2"), NewKey("bar")},
-			str:   `.(42.2)."bar"`,
+			str:   `(42.2)."bar"`,
+		},
+		{
+			name:  "nested_nodes",
+			nodes: []Node{NewAccessor([]Node{NewNumeric("42.2")}), NewKey("bar")},
+			str:   `(42.2)."bar"`,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			node := NewAccessor(tc.nodes)
+			a.Implements((*Node)(nil), node)
+			a.Equal(lowestPriority, node.priority())
 			a.Equal(tc.str, node.String())
+
+			if n, ok := tc.nodes[0].(*AccessorNode); ok {
+				// Should have appended nodes.
+				a.Equal(n, node)
+				a.Equal(tc.nodes[1:], n.nodes[1:])
+			} else {
+				a.Equal(tc.nodes, node.Nodes())
+			}
+
+			// Test writeTo.
+			buf := new(strings.Builder)
+			node.writeTo(buf, false, false)
+			a.Equal(tc.str, buf.String())
 		})
 	}
 }
@@ -623,7 +777,14 @@ func TestArrayIndexNode(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			node := NewArrayIndex(tc.nodes)
+			a.Implements((*Node)(nil), node)
+			a.Equal(lowestPriority, node.priority())
 			a.Equal(tc.str, node.String())
+
+			// Test writeTo.
+			buf := new(strings.Builder)
+			node.writeTo(buf, false, false)
+			a.Equal(tc.str, buf.String())
 		})
 	}
 }
@@ -678,7 +839,19 @@ func TestAnyNode(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			node := NewAny(tc.first, tc.last)
+			a.Implements((*Node)(nil), node)
+			a.Equal(lowestPriority, node.priority())
 			a.Equal(tc.str, node.String())
+
+			// Test writeTo.
+			buf := new(strings.Builder)
+			node.writeTo(buf, false, false)
+			a.Equal(tc.str, buf.String())
+
+			// Test writeTo with inKey true
+			buf.Reset()
+			node.writeTo(buf, true, false)
+			a.Equal("."+tc.str, buf.String())
 		})
 	}
 }
@@ -703,7 +876,7 @@ func TestRegexNode(t *testing.T) {
 			name:    "dot",
 			node:    NewString("foo"),
 			re:      `.`,
-			str:     `like_regex "foo" "."`,
+			str:     `"foo" like_regex "."`,
 			match:   []string{"x", "abc", "123"},
 			noMatch: []string{"", "\n"},
 		},
@@ -711,7 +884,7 @@ func TestRegexNode(t *testing.T) {
 			name:    "anchor",
 			node:    NewString("foo"),
 			re:      `^a`,
-			str:     `like_regex "foo" "^a"`,
+			str:     `"foo" like_regex "^a"`,
 			match:   []string{"a", "abc", "a\nb\nc"},
 			noMatch: []string{"", "\na\n"},
 		},
@@ -721,7 +894,7 @@ func TestRegexNode(t *testing.T) {
 			re:      `^o.`,
 			flag:    "ims",
 			flags:   regexFlags(regexDotAll | regexICase | regexMLine),
-			str:     `like_regex "fOo" "^o." flag "ism"`,
+			str:     `"fOo" like_regex "^o." flag "ism"`,
 			match:   []string{"ox", "Ox", "oO", "a\no\nc"},
 			noMatch: []string{"xoxo", "a\nxo"},
 		},
@@ -731,7 +904,7 @@ func TestRegexNode(t *testing.T) {
 			re:      `xa+`,
 			flag:    "iqsm",
 			flags:   regexFlags(regexICase | regexQuote | regexDotAll | regexMLine),
-			str:     `like_regex "foo" "xa+" flag "ismq"`,
+			str:     `"foo" like_regex "xa+" flag "ismq"`,
 			match:   []string{"xa+", "XA+", "\nXa+", "bmXa+"},
 			noMatch: []string{`xa\+`, "x"},
 		},
@@ -740,13 +913,23 @@ func TestRegexNode(t *testing.T) {
 			node: NewString("foo"),
 			re:   `.`,
 			flag: "x",
-			err:  `parser: XQuery "x" flag (expanded regular expressions) is not implemented`,
+			err:  `XQuery "x" flag (expanded regular expressions) is not implemented`,
 		},
 		{
 			name: "bad_pattern",
 			node: NewString("foo"),
 			re:   `.(hi`,
-			err:  "parser: error parsing regexp: missing closing ): `.(hi`",
+			err:  "error parsing regexp: missing closing ): `.(hi`",
+		},
+		{
+			name:    "priority_parens",
+			node:    NewBinary(BinaryOr, ConstCurrent, ConstCurrent),
+			re:      `xa+`,
+			flag:    "iqsm",
+			flags:   regexFlags(regexICase | regexQuote | regexDotAll | regexMLine),
+			str:     `(@ || @) like_regex "xa+" flag "ismq"`,
+			match:   []string{"xa+", "XA+", "\nXa+", "bmXa+"},
+			noMatch: []string{`xa\+`, "x"},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -754,17 +937,28 @@ func TestRegexNode(t *testing.T) {
 			node, err := NewRegex(tc.node, tc.re, tc.flag)
 			if tc.err != "" {
 				r.EqualError(err, tc.err)
-				r.ErrorIs(err, ErrAST)
 				a.Nil(node)
 				return
 			}
 
 			r.NoError(err)
 			r.NotNil(node)
+			a.Implements((*Node)(nil), node)
+			a.Equal(lowestPriority, node.priority())
 			a.Equal(tc.re, node.pattern)
 			a.Equal(tc.flags, node.flags)
 			a.Equal(tc.node, node.node)
 			a.Equal(tc.str, node.String())
+
+			// Test writeTo.
+			buf := new(strings.Builder)
+			node.writeTo(buf, false, false)
+			a.Equal(tc.str, buf.String())
+
+			// Test writeTo with withParens true
+			buf.Reset()
+			node.writeTo(buf, false, true)
+			a.Equal("("+tc.str+")", buf.String())
 
 			// Make sure the regex matches what it should.
 			re := node.Regexp()
@@ -783,24 +977,286 @@ func TestRegexNode(t *testing.T) {
 	}
 }
 
-func TestAST(t *testing.T) {
+func TestNewUnaryOrNumber(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
+		op   UnaryOperator
 		node Node
+		exp  Node
+		err  string
 	}{
-		{"string", NewString("foo")},
+		{
+			name: "plus_integer",
+			op:   UnaryPlus,
+			node: NewInteger("42"),
+			exp:  NewInteger("42"),
+		},
+		{
+			name: "minus_integer",
+			op:   UnaryMinus,
+			node: NewInteger("42"),
+			exp:  NewInteger("-42"),
+		},
+		{
+			name: "other_integer",
+			op:   UnaryExists,
+			node: NewInteger("42"),
+			err:  "Operator must be + or - but is exists",
+		},
+		{
+			name: "plus_accessor_integer",
+			op:   UnaryPlus,
+			node: NewAccessor([]Node{NewInteger("42")}),
+			exp:  NewInteger("42"),
+		},
+		{
+			name: "minus_accessor_integer",
+			op:   UnaryMinus,
+			node: NewAccessor([]Node{NewInteger("42")}),
+			exp:  NewInteger("-42"),
+		},
+		{
+			name: "minus_accessor_multi",
+			op:   UnaryMinus,
+			node: NewAccessor([]Node{NewInteger("42"), NewInteger("42")}),
+			exp:  NewUnary(UnaryMinus, NewAccessor([]Node{NewInteger("42"), NewInteger("42")})),
+		},
+		{
+			name: "plus_numeric",
+			op:   UnaryPlus,
+			node: NewNumeric("42.0"),
+			exp:  NewNumeric("42.0"),
+		},
+		{
+			name: "minus_numeric",
+			op:   UnaryMinus,
+			node: NewNumeric("42.0"),
+			exp:  NewNumeric("-42.0"),
+		},
+		{
+			name: "other_numeric",
+			op:   UnaryNot,
+			node: NewNumeric("42"),
+			err:  "Operator must be + or - but is !",
+		},
+		{
+			name: "plus_accessor_numeric",
+			op:   UnaryPlus,
+			node: NewAccessor([]Node{NewNumeric("42.1")}),
+			exp:  NewNumeric("42.1"),
+		},
+		{
+			name: "minus_accessor_numeric",
+			op:   UnaryMinus,
+			node: NewAccessor([]Node{NewNumeric("42")}),
+			exp:  NewNumeric("-42"),
+		},
+		{
+			name: "minus_accessor_multi_numeric",
+			op:   UnaryMinus,
+			node: NewAccessor([]Node{NewNumeric("42"), ConstCurrent}),
+			exp:  NewUnary(UnaryMinus, NewAccessor([]Node{NewNumeric("42"), ConstCurrent})),
+		},
+		{
+			name: "plus_other",
+			op:   UnaryPlus,
+			node: ConstCurrent,
+			exp:  NewUnary(UnaryPlus, ConstCurrent),
+		},
+		{
+			name: "minus_other",
+			op:   UnaryMinus,
+			node: ConstCurrent,
+			exp:  NewUnary(UnaryMinus, ConstCurrent),
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tree := New(true, tc.node)
-			a.True(tree.strict)
+			if tc.err != "" {
+				a.PanicsWithValue(tc.err, func() { NewUnaryOrNumber(tc.op, tc.node) })
+				return
+			}
+			a.Equal(tc.exp, NewUnaryOrNumber(tc.op, tc.node))
+		})
+	}
+}
+
+func TestAST(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+	r := require.New(t)
+
+	for _, tc := range []struct {
+		name string
+		node Node
+		err  string
+	}{
+		{"string", NewString("foo"), ""},
+		{"string", ConstCurrent, "@ is not allowed in root expressions"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			if tc.err != "" {
+				tree, err := New(true, tc.node)
+				r.EqualError(err, tc.err)
+				a.Nil(tree)
+				return
+			}
+
+			tree, err := New(true, tc.node)
+			r.NoError(err)
+			a.True(tree.lax)
 			a.Equal(tc.node, tree.root)
-			tree = New(false, tc.node)
-			a.False(tree.strict)
+			a.Equal(tree.root.String(), tree.String())
+
+			tree, err = New(false, tc.node)
+			r.NoError(err)
+			a.False(tree.lax)
 			a.Equal(tc.node, tree.root)
+			a.Equal("strict "+tree.root.String(), tree.String())
+		})
+	}
+}
+
+func TestValidateNode(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+	goodRegex, _ := NewRegex(ConstRoot, ".", "")
+	badRegex, _ := NewRegex(ConstCurrent, ".", "")
+
+	for _, tc := range []struct {
+		name  string
+		node  Node
+		depth int
+		inSub bool
+		err   string
+	}{
+		{
+			name: "string",
+			node: NewString("foo"),
+		},
+		{
+			name: "variable",
+			node: NewVariable("foo"),
+		},
+		{
+			name: "key",
+			node: NewKey("foo"),
+		},
+		{
+			name: "numeric",
+			node: NewNumeric("42"),
+		},
+		{
+			name: "integer",
+			node: NewInteger("42"),
+		},
+		{
+			name: "binary",
+			node: NewBinary(BinaryAdd, NewInteger("42"), NewInteger("99")),
+		},
+		{
+			name: "binary_left_fail",
+			node: NewBinary(BinaryAdd, ConstCurrent, ConstRoot),
+			err:  "@ is not allowed in root expressions",
+		},
+		{
+			name: "binary_right_fail",
+			node: NewBinary(BinaryAdd, ConstRoot, ConstCurrent),
+			err:  "@ is not allowed in root expressions",
+		},
+		{
+			name:  "binary_current_okay_depth",
+			node:  NewBinary(BinaryAdd, ConstRoot, ConstCurrent),
+			depth: 1,
+		},
+		{
+			name: "unary",
+			node: NewUnary(UnaryNot, ConstRoot),
+		},
+		{
+			name: "unary_fail",
+			node: NewUnary(UnaryNot, ConstLast),
+			err:  "LAST is allowed only in array subscripts",
+		},
+		{
+			name:  "unary_current_okay_depth",
+			node:  NewUnary(UnaryNot, ConstCurrent),
+			depth: 1,
+		},
+		{
+			name: "regex",
+			node: goodRegex,
+		},
+		{
+			name: "bad_regex",
+			node: badRegex,
+			err:  "@ is not allowed in root expressions",
+		},
+		{
+			name:  "regex_current_okay_depth",
+			node:  badRegex,
+			depth: 1,
+		},
+		{
+			name: "current",
+			node: ConstCurrent,
+			err:  "@ is not allowed in root expressions",
+		},
+		{
+			name:  "current_depth",
+			node:  ConstCurrent,
+			depth: 1,
+		},
+		{
+			name: "last",
+			node: ConstLast,
+			err:  "LAST is allowed only in array subscripts",
+		},
+		{
+			name:  "last_in_sub",
+			node:  ConstLast,
+			inSub: true,
+		},
+		{
+			name: "array",
+			node: NewArrayIndex([]Node{NewBinary(BinarySubscript, ConstRoot, ConstRoot)}),
+		},
+		{
+			name: "array_last",
+			node: NewArrayIndex([]Node{NewBinary(BinarySubscript, ConstRoot, ConstLast)}),
+		},
+		{
+			name: "array_current",
+			node: NewArrayIndex([]Node{NewBinary(BinarySubscript, ConstRoot, ConstCurrent)}),
+			err:  "@ is not allowed in root expressions",
+		},
+		{
+			name: "accessor",
+			node: NewAccessor([]Node{ConstRoot}),
+		},
+		{
+			name: "accessor_current",
+			node: NewAccessor([]Node{ConstCurrent}),
+			err:  "@ is not allowed in root expressions",
+		},
+		{
+			name: "accessor_filter_current",
+			node: NewAccessor([]Node{ConstRoot, NewUnary(UnaryFilter, ConstCurrent)}),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			err := validateNode(tc.node, tc.depth, tc.inSub)
+			if tc.err == "" {
+				r.NoError(err)
+			} else {
+				r.EqualError(err, tc.err)
+			}
 		})
 	}
 }
