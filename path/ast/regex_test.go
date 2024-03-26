@@ -77,7 +77,7 @@ func TestRegexFlags(t *testing.T) {
 		{
 			name: "x",
 			expr: "x",
-			err:  `parser: XQuery "x" flag (expanded regular expressions) is not implemented`,
+			err:  `XQuery "x" flag (expanded regular expressions) is not implemented`,
 		},
 		{
 			name: "q",
@@ -96,7 +96,7 @@ func TestRegexFlags(t *testing.T) {
 		{
 			name: "unknown",
 			expr: "y",
-			err:  `parser: Unrecognized flag character "y" in LIKE_REGEX predicate`,
+			err:  `Unrecognized flag character "y" in LIKE_REGEX predicate`,
 		},
 		{
 			name: "qx",
@@ -144,7 +144,6 @@ func TestRegexFlags(t *testing.T) {
 			a.Equal(tc.exp, flags)
 			if tc.err != "" {
 				r.EqualError(err, tc.err)
-				r.ErrorIs(err, ErrAST)
 				return
 			}
 			r.NoError(err)
@@ -183,7 +182,7 @@ func TestValidateRegex(t *testing.T) {
 		{
 			name: "parse_failure",
 			re:   "(oops",
-			err:  "parser: error parsing regexp: missing closing ): `(oops`",
+			err:  "error parsing regexp: missing closing ): `(oops`",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -194,7 +193,6 @@ func TestValidateRegex(t *testing.T) {
 				r.NoError(err)
 			} else {
 				r.EqualError(err, tc.err)
-				r.ErrorIs(err, ErrAST)
 			}
 		})
 	}

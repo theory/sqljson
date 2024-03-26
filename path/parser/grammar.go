@@ -3,7 +3,7 @@
 //line grammar.y:2
 /*-------------------------------------------------------------------------
  *
- * grammar.y.y
+ * grammar.y
  *	 Grammar definitions for jsonpath datatype
  *
  * Transforms tokenized jsonpath into tree of JsonPathParseItem structs.
@@ -719,7 +719,7 @@ pathdefault:
 		pathDollar = pathS[pathpt-2 : pathpt+1]
 //line grammar.y:81
 		{
-			pathlex.(*lexer).result = ast.New(!pathDollar[1].boolean, pathDollar[2].value)
+			pathlex.(*lexer).setResult(pathDollar[1].boolean, pathDollar[2].value)
 		}
 	case 2:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
@@ -979,13 +979,13 @@ pathdefault:
 		pathDollar = pathS[pathpt-2 : pathpt+1]
 //line grammar.y:169
 		{
-			pathVAL.value = ast.NewUnary(ast.UnaryPlus, pathDollar[2].value)
+			pathVAL.value = ast.NewUnaryOrNumber(ast.UnaryPlus, pathDollar[2].value)
 		}
 	case 44:
 		pathDollar = pathS[pathpt-2 : pathpt+1]
 //line grammar.y:170
 		{
-			pathVAL.value = ast.NewUnary(ast.UnaryMinus, pathDollar[2].value)
+			pathVAL.value = ast.NewUnaryOrNumber(ast.UnaryMinus, pathDollar[2].value)
 		}
 	case 45:
 		pathDollar = pathS[pathpt-3 : pathpt+1]
@@ -1174,13 +1174,13 @@ pathdefault:
 		pathDollar = pathS[pathpt-2 : pathpt+1]
 //line grammar.y:241
 		{
-			pathVAL.value = ast.NewUnary(ast.UnaryPlus, ast.NewInteger(pathDollar[2].str))
+			pathVAL.value = ast.NewUnaryOrNumber(ast.UnaryPlus, ast.NewInteger(pathDollar[2].str))
 		}
 	case 75:
 		pathDollar = pathS[pathpt-2 : pathpt+1]
 //line grammar.y:243
 		{
-			pathVAL.value = ast.NewUnary(ast.UnaryMinus, ast.NewInteger(pathDollar[2].str))
+			pathVAL.value = ast.NewUnaryOrNumber(ast.UnaryMinus, ast.NewInteger(pathDollar[2].str))
 		}
 	case 76:
 		pathDollar = pathS[pathpt-1 : pathpt+1]

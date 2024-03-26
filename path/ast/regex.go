@@ -10,11 +10,6 @@ import (
 // regexFlag enums from their inline comments.
 //go:generate stringer -linecomment -output regex_string.go -type regexFlag
 
-// ErrAST wraps errors for Regexp parse failures and the unimplemented 'x' flag.
-// It uses the term "parser" because it's mainly called as a result of the
-// parser attempting to create a Regex node with invalid data.
-var ErrAST = errors.New("parser")
-
 // regexFlag represents a single JSON Path regex flag.
 type regexFlag uint16
 
@@ -55,9 +50,10 @@ func newRegexFlags(flags string) (regexFlags, error) {
 		case 'q':
 			bitMask |= regexQuote
 		default:
+			//nolint:goerr113,stylecheck
 			return 0, fmt.Errorf(
-				`%w: Unrecognized flag character "%c" in LIKE_REGEX predicate`,
-				ErrAST, f,
+				`Unrecognized flag character "%c" in LIKE_REGEX predicate`,
+				f,
 			)
 		}
 	}
@@ -125,9 +121,9 @@ func (f regexFlags) _syntaxFlags() (syntax.Flags, error) {
 	// Go regexp doesn't appear to support 'x', so we, too, treat it as
 	// unimplemented.
 	if bitMask&regexWSpace != 0 {
-		return 0, fmt.Errorf(
-			`%w: XQuery "x" flag (expanded regular expressions) is not implemented`,
-			ErrAST,
+		//nolint:goerr113
+		return 0, errors.New(
+			`XQuery "x" flag (expanded regular expressions) is not implemented`,
 		)
 	}
 
@@ -192,14 +188,15 @@ func validateRegex(pattern string, flags regexFlags) error {
 	// Make sure it parses.
 	_, err := syntax.Parse(pattern, flags.syntaxFlags())
 	if err != nil {
-		return fmt.Errorf("%w: %w", ErrAST, err)
+		//nolint:wrapcheck
+		return err
 	}
 
 	// (Compile never returns an error, so skip this bit.)
 	// Make sure it compiles.
 	// _, err = syntax.Compile(re.Simplify())
 	// if err != nil {
-	// 	return fmt.Errorf("%w: %w", ErrAST, err)
+	// 	return err
 	// }
 
 	return nil

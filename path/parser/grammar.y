@@ -78,7 +78,7 @@ import (
 %%
 
 result:
-	mode expr_or_predicate			{ pathlex.(*lexer).result = ast.New(!$1, $2) }
+	mode expr_or_predicate			{ pathlex.(*lexer).setResult($1, $2) }
 	;
 
 expr_or_predicate:
@@ -166,8 +166,8 @@ accessor_expr:
 expr:
 	accessor_expr					{ $$ = ast.NewAccessor($1) }
 	| '(' expr ')'					{ $$ = $2 }
-	| '+' expr %prec UMINUS			{ $$ = ast.NewUnary(ast.UnaryPlus, $2) }
-	| '-' expr %prec UMINUS			{ $$ = ast.NewUnary(ast.UnaryMinus, $2) }
+	| '+' expr %prec UMINUS			{ $$ = ast.NewUnaryOrNumber(ast.UnaryPlus, $2) }
+	| '-' expr %prec UMINUS			{ $$ = ast.NewUnaryOrNumber(ast.UnaryMinus, $2) }
 	| expr '+' expr					{ $$ = ast.NewBinary(ast.BinaryAdd, $1, $3) }
 	| expr '-' expr					{ $$ = ast.NewBinary(ast.BinarySub, $1, $3) }
 	| expr '*' expr					{ $$ = ast.NewBinary(ast.BinaryMul, $1, $3) }
@@ -238,9 +238,9 @@ csv_elem:
 	INT_P
 		{ $$ = ast.NewInteger($1) }
 	| '+' INT_P %prec UMINUS
-		{ $$ = ast.NewUnary(ast.UnaryPlus, ast.NewInteger($2)) }
+		{ $$ = ast.NewUnaryOrNumber(ast.UnaryPlus, ast.NewInteger($2)) }
 	| '-' INT_P %prec UMINUS
-		{ $$ = ast.NewUnary(ast.UnaryMinus, ast.NewInteger($2)) }
+		{ $$ = ast.NewUnaryOrNumber(ast.UnaryMinus, ast.NewInteger($2)) }
 	;
 
 csv_list:
