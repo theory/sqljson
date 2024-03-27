@@ -699,6 +699,18 @@ func (a *AST) String() string {
 	return buf.String()
 }
 
+// Root returns the root node of the AST.
+func (a *AST) Root() Node {
+	return a.root
+}
+
+// IsPredicate returns true if the AST represents a PostgreSQL-style "predicate
+// check" path.
+func (a *AST) IsPredicate() bool {
+	_, ok := a.root.(*AccessorNode)
+	return !ok
+}
+
 // validateNode recursively validates nodes. It's based on the Postgres
 // flattenJsonPathParseItem function, but does not turn the AST into a binary
 // representation, just does a second pass to detect any further issues.
