@@ -656,7 +656,7 @@ func TestUnaryNode(t *testing.T) {
 			a.Implements((*Node)(nil), node)
 			a.Equal(node.op.priority(), node.priority())
 			a.Equal(tc.op, node.Operator())
-			a.Equal(tc.node, node.Node())
+			a.Equal(tc.node, node.Operand())
 			a.Equal(tc.str, node.String())
 
 			// Test writeTo.
@@ -710,23 +710,23 @@ func TestAccessorNode(t *testing.T) {
 		},
 		{
 			name:  "nested_nodes",
-			nodes: []Node{NewAccessor([]Node{NewNumeric("42.2")}), NewKey("bar")},
+			nodes: []Node{NewAccessorList([]Node{NewNumeric("42.2")}), NewKey("bar")},
 			str:   `(42.2)."bar"`,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			node := NewAccessor(tc.nodes)
+			node := NewAccessorList(tc.nodes)
 			a.Implements((*Node)(nil), node)
 			a.Equal(lowestPriority, node.priority())
 			a.Equal(tc.str, node.String())
 
-			if n, ok := tc.nodes[0].(*AccessorNode); ok {
+			if n, ok := tc.nodes[0].(*AccessorListNode); ok {
 				// Should have appended nodes.
 				a.Equal(n, node)
-				a.Equal(tc.nodes[1:], n.nodes[1:])
+				a.Equal(tc.nodes[1:], n.accessors[1:])
 			} else {
-				a.Equal(tc.nodes, node.Nodes())
+				a.Equal(tc.nodes, node.Accessors())
 			}
 
 			// Test writeTo.
@@ -778,6 +778,8 @@ func TestArrayIndexNode(t *testing.T) {
 			t.Parallel()
 			node := NewArrayIndex(tc.nodes)
 			a.Implements((*Node)(nil), node)
+			a.Equal(tc.nodes, node.subscripts)
+			a.Equal(tc.nodes, node.Subscripts())
 			a.Equal(lowestPriority, node.priority())
 			a.Equal(tc.str, node.String())
 
@@ -947,7 +949,8 @@ func TestRegexNode(t *testing.T) {
 			a.Equal(lowestPriority, node.priority())
 			a.Equal(tc.re, node.pattern)
 			a.Equal(tc.flags, node.flags)
-			a.Equal(tc.node, node.node)
+			a.Equal(tc.node, node.operand)
+			a.Equal(tc.node, node.Operand())
 			a.Equal(tc.str, node.String())
 
 			// Test writeTo.
@@ -1009,20 +1012,20 @@ func TestNewUnaryOrNumber(t *testing.T) {
 		{
 			name: "plus_accessor_integer",
 			op:   UnaryPlus,
-			node: NewAccessor([]Node{NewInteger("42")}),
+			node: NewAccessorList([]Node{NewInteger("42")}),
 			exp:  NewInteger("42"),
 		},
 		{
 			name: "minus_accessor_integer",
 			op:   UnaryMinus,
-			node: NewAccessor([]Node{NewInteger("42")}),
+			node: NewAccessorList([]Node{NewInteger("42")}),
 			exp:  NewInteger("-42"),
 		},
 		{
 			name: "minus_accessor_multi",
 			op:   UnaryMinus,
-			node: NewAccessor([]Node{NewInteger("42"), NewInteger("42")}),
-			exp:  NewUnary(UnaryMinus, NewAccessor([]Node{NewInteger("42"), NewInteger("42")})),
+			node: NewAccessorList([]Node{NewInteger("42"), NewInteger("42")}),
+			exp:  NewUnary(UnaryMinus, NewAccessorList([]Node{NewInteger("42"), NewInteger("42")})),
 		},
 		{
 			name: "plus_numeric",
@@ -1045,20 +1048,20 @@ func TestNewUnaryOrNumber(t *testing.T) {
 		{
 			name: "plus_accessor_numeric",
 			op:   UnaryPlus,
-			node: NewAccessor([]Node{NewNumeric("42.1")}),
+			node: NewAccessorList([]Node{NewNumeric("42.1")}),
 			exp:  NewNumeric("42.1"),
 		},
 		{
 			name: "minus_accessor_numeric",
 			op:   UnaryMinus,
-			node: NewAccessor([]Node{NewNumeric("42")}),
+			node: NewAccessorList([]Node{NewNumeric("42")}),
 			exp:  NewNumeric("-42"),
 		},
 		{
 			name: "minus_accessor_multi_numeric",
 			op:   UnaryMinus,
-			node: NewAccessor([]Node{NewNumeric("42"), ConstCurrent}),
-			exp:  NewUnary(UnaryMinus, NewAccessor([]Node{NewNumeric("42"), ConstCurrent})),
+			node: NewAccessorList([]Node{NewNumeric("42"), ConstCurrent}),
+			exp:  NewUnary(UnaryMinus, NewAccessorList([]Node{NewNumeric("42"), ConstCurrent})),
 		},
 		{
 			name: "plus_other",
@@ -1096,7 +1099,7 @@ func TestAST(t *testing.T) {
 		err  string
 	}{
 		{"string", NewString("foo"), true, ""},
-		{"accessor", NewAccessor([]Node{ConstRoot}), false, ""},
+		{"accessor", NewAccessorList([]Node{ConstRoot}), false, ""},
 		{"current", ConstCurrent, false, "@ is not allowed in root expressions"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1243,16 +1246,16 @@ func TestValidateNode(t *testing.T) {
 		},
 		{
 			name: "accessor",
-			node: NewAccessor([]Node{ConstRoot}),
+			node: NewAccessorList([]Node{ConstRoot}),
 		},
 		{
 			name: "accessor_current",
-			node: NewAccessor([]Node{ConstCurrent}),
+			node: NewAccessorList([]Node{ConstCurrent}),
 			err:  "@ is not allowed in root expressions",
 		},
 		{
 			name: "accessor_filter_current",
-			node: NewAccessor([]Node{ConstRoot, NewUnary(UnaryFilter, ConstCurrent)}),
+			node: NewAccessorList([]Node{ConstRoot, NewUnary(UnaryFilter, ConstCurrent)}),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1263,6 +1266,35 @@ func TestValidateNode(t *testing.T) {
 			} else {
 				r.EqualError(err, tc.err)
 			}
+		})
+	}
+}
+
+func TestNodes(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	for _, tc := range []struct {
+		name string
+		node any
+	}{
+		{"ConstNode", ConstRoot},
+		{"MethodNode", MethodAbs},
+		{"StringNode", &StringNode{}},
+		{"VariableNode", &VariableNode{}},
+		{"KeyNode", &KeyNode{}},
+		{"NumericNode", &NumericNode{}},
+		{"IntegerNode", &IntegerNode{}},
+		{"AnyNode", &AnyNode{}},
+		{"BinaryNode", &BinaryNode{}},
+		{"UnaryNode", &UnaryNode{}},
+		{"RegexNode", &RegexNode{}},
+		{"AccessorNode", &AccessorListNode{}},
+		{"ArrayIndexNode", &ArrayIndexNode{}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			a.Implements((*Node)(nil), tc.node)
 		})
 	}
 }

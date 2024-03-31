@@ -29,12 +29,12 @@ func TestParser(t *testing.T) {
 		{
 			name: "root",
 			path: "$",
-			ast:  mkAST(t, true, ast.NewAccessor([]ast.Node{ast.ConstRoot})),
+			ast:  mkAST(t, true, ast.NewAccessorList([]ast.Node{ast.ConstRoot})),
 		},
 		{
 			name: "strict_root",
 			path: "strict $",
-			ast:  mkAST(t, false, ast.NewAccessor([]ast.Node{ast.ConstRoot})),
+			ast:  mkAST(t, false, ast.NewAccessorList([]ast.Node{ast.ConstRoot})),
 		},
 		{
 			name: "error",
