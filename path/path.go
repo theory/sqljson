@@ -70,7 +70,7 @@ func (path *Path) IsPredicate() bool {
 	return path.AST.IsPredicate()
 }
 
-// Matches returns the result of path evaluated against json. Returns true if
+// Exists returns the result of path evaluated against json. Returns true if
 // path is a SQL-standard path that return any item or if path is a predicate
 // check expression that returns true. PostgreSQL equivalents for SQL standard
 // paths:
@@ -84,9 +84,18 @@ func (path *Path) IsPredicate() bool {
 //	SELECT '{"a":[1,2,3,4,5]}'::jsonb @@ '$.a[*] > 2';
 //	SELECT jsonb_path_match('{"a":[1,2,3,4,5]}', 'exists($.a[*] ? (@ >= $min && @ <= $max))', '{"min":2, "max":4}')
 //
-// If the vars is not nil, its fields provide named values to be substituted
-// for variables in the jsonpath expression. If the silent is true, the
-// function suppresses the following errors:
+// The json parameter may be one of the following types:
+//
+//   - map[string]any — equivalent to an unmarshaled JSON object
+//   - []any - equivalent to an unmarshaled JSON array
+//   - float or int — equivalent to an unmarshaled JSON number
+//   - string — equivalent to an unmarshaled JSON string
+//   - [json.Number] — a JSON number
+//   - [json.RawMessage] or []byte — a raw JSON message
+//
+// If the vars parameter is not nil, its fields provide named values to be
+// substituted for variables in the JSON path expression. If the silent
+// parameter is true, the function suppresses the following errors:
 //
 //   - missing object field or array element
 //   - unexpected JSON item type
@@ -96,24 +105,34 @@ func (path *Path) IsPredicate() bool {
 // varying structure.
 //
 // NOTE: Currently unimplemented, just returns true.
-func (path *Path) Matches(json any, vars map[string]any, silent bool) bool {
+func (path *Path) Exists(json any, vars map[string]any, silent bool) (bool, error) {
 	_ = json
 	_ = vars
 	_ = silent
-	return true
+	return true, nil
 }
 
-// Select returns all JSON items returned by path evaluated against json. For
-// SQL-standard path expressions it returns the JSON values selected from
-// target. For predicate check expressions it returns the result of the
-// predicate check: true, false, or nil. The optional vars and silent act the
-// same as for [Matches].
+// Query returns all JSON items returned by path evaluated against json. For
+// SQL-standard path expressions it returns the unmarshaled JSON values
+// selected from target. For predicate check expressions it returns the result
+// of the predicate check: true, false, or nil. The type of json and the
+// optional vars and silent parameters act the same as for [Exists].
 //
 // NOTE: Currently unimplemented, just returns json.
-func (path *Path) Select(json any, vars map[string]any, silent bool) any {
+func (path *Path) Query(json any, vars map[string]any, silent bool) (any, error) {
 	_ = vars
 	_ = silent
-	return json
+	return json, nil
+}
+
+// MustQuery is like Query, but panics on error. Mostly provided for
+// documentation purposes.
+func (path *Path) MustQuery(json any, vars map[string]any, silent bool) any {
+	res, err := path.Query(json, vars, silent)
+	if err != nil {
+		panic(err)
+	}
+	return res
 }
 
 // Scan implements sql.Scanner so Paths can be read from databases
