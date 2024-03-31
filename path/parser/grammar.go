@@ -967,7 +967,7 @@ pathdefault:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:167
 		{
-			pathVAL.value = ast.NewAccessor(pathDollar[1].elems)
+			pathVAL.value = ast.NewAccessorList(pathDollar[1].elems)
 		}
 	case 42:
 		pathDollar = pathS[pathpt-3 : pathpt+1]

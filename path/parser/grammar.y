@@ -164,7 +164,7 @@ accessor_expr:
 	;
 
 expr:
-	accessor_expr					{ $$ = ast.NewAccessor($1) }
+	accessor_expr					{ $$ = ast.NewAccessorList($1) }
 	| '(' expr ')'					{ $$ = $2 }
 	| '+' expr %prec UMINUS			{ $$ = ast.NewUnaryOrNumber(ast.UnaryPlus, $2) }
 	| '-' expr %prec UMINUS			{ $$ = ast.NewUnaryOrNumber(ast.UnaryMinus, $2) }

@@ -7,6 +7,52 @@
 // Note that errors returned by AST are not wrapped, as they're expected to be
 // wrapped by parser.
 //
+// The complete list of types that implement Node:
+//
+//   - [ConstNode]
+//   - [MethodNode]
+//   - [StringNode]
+//   - [VariableNode]
+//   - [KeyNode]
+//   - [NumericNode]
+//   - [IntegerNode]
+//   - [AnyNode]
+//   - [BinaryNode]
+//   - [UnaryNode]
+//   - [RegexNode]
+//   - [AccessorListNode]
+//   - [ArrayIndexNode]
+//
+// Here's a starter recursive function for processing nodes.
+//
+//	func processNode(node ast.Node) {
+//		switch node := node.(type) {
+//		case ast.ConstNode:
+//		case ast.MethodNode:
+//		case *ast.StringNode:
+//		case *ast.VariableNode:
+//		case *ast.KeyNode:
+//		case *ast.NumericNode:
+//		case *ast.IntegerNode:
+//		case *ast.AnyNode:
+//		case *ast.BinaryNode:
+//			processNode(node.Left())
+//			processNode(node.Right())
+//		case *ast.UnaryNode:
+//			processNode(node.Operand())
+//		case *ast.RegexNode:
+//			processNode(node.Operand())
+//		case *ast.AccessorListNode:
+//			for _, n := range node.Accessors() {
+//				processNode(n)
+//			}
+//		case *ast.ArrayIndexNode:
+//			for _, n := range node.Subscripts() {
+//				processNode(n)
+//			}
+//		}
+//	}
+//
 // [jsonpath.c]: https://github.com/postgres/postgres/blob/adcdb2c/src/backend/utils/adt/jsonpath.c
 package ast
 
@@ -421,14 +467,14 @@ func (n *BinaryNode) Right() Node {
 
 // UnaryNode represents a unary operation.
 type UnaryNode struct {
-	op   UnaryOperator
-	node Node
+	op      UnaryOperator
+	operand Node
 }
 
 // NewUnary returns a new UnaryNode where op represents the unary operator
 // and node its operand.
 func NewUnary(op UnaryOperator, node Node) *UnaryNode {
-	return &UnaryNode{op: op, node: node}
+	return &UnaryNode{op: op, operand: node}
 }
 
 // String returns the SQL/JSON path string representation of the unary
@@ -448,27 +494,27 @@ func (n UnaryNode) priority() uint8 { return n.op.priority() }
 func (n *UnaryNode) writeTo(buf *strings.Builder, _, withParens bool) {
 	switch n.op {
 	case UnaryExists:
-		buf.WriteString("exists (" + n.node.String() + ")")
+		buf.WriteString("exists (" + n.operand.String() + ")")
 	case UnaryNot, UnaryFilter:
-		buf.WriteString(n.op.String() + "(" + n.node.String() + ")")
+		buf.WriteString(n.op.String() + "(" + n.operand.String() + ")")
 	case UnaryIsUnknown:
-		buf.WriteString("(" + n.node.String() + ") is unknown")
+		buf.WriteString("(" + n.operand.String() + ") is unknown")
 	case UnaryPlus, UnaryMinus:
 		if withParens {
 			buf.WriteRune('(')
 		}
 
 		buf.WriteString(n.op.String())
-		n.node.writeTo(buf, false, n.node.priority() <= n.priority())
+		n.operand.writeTo(buf, false, n.operand.priority() <= n.priority())
 
 		if withParens {
 			buf.WriteRune(')')
 		}
 	case UnaryDateTime, UnaryTime, UnaryTimeTZ, UnaryTimestamp, UnaryTimestampTZ:
-		if n.node == nil {
+		if n.operand == nil {
 			buf.WriteString(n.op.String() + "()")
 		} else {
-			buf.WriteString(n.op.String() + "(" + n.node.String() + ")")
+			buf.WriteString(n.op.String() + "(" + n.operand.String() + ")")
 		}
 	default:
 		// Write nothing.
@@ -480,66 +526,64 @@ func (n *UnaryNode) Operator() UnaryOperator {
 	return n.op
 }
 
-// Node returns the UnaryNode's operand.
-func (n *UnaryNode) Node() Node {
-	return n.node
+// Operand returns the UnaryNode's operand.
+func (n *UnaryNode) Operand() Node {
+	return n.operand
 }
 
-type listNode struct {
-	nodes []Node
+// AccessorListNode represents the nodes in an accessor path expression.
+type AccessorListNode struct {
+	accessors []Node
 }
 
-// Nodes returns all of the nods in n.
-func (n *listNode) Nodes() []Node {
-	return n.nodes
-}
-
-// AccessorNode represents the nodes in an accessor path expression.
-type AccessorNode struct {
-	*listNode
-}
-
-// NewAccessor creates a new AccessorNode consisting of nodes. If the first node
+// NewAccessorList creates a new AccessorNode consisting of nodes. If the first node
 // in nodes is an AccessorNode, it will be returned with the remaining nodes
 // appended to it.
-func NewAccessor(nodes []Node) *AccessorNode {
-	if acc, ok := nodes[0].(*AccessorNode); ok {
+func NewAccessorList(nodes []Node) *AccessorListNode {
+	if acc, ok := nodes[0].(*AccessorListNode); ok {
 		// Append items to existing list.
-		acc.nodes = append(acc.nodes, nodes[1:]...)
+		acc.accessors = append(acc.accessors, nodes[1:]...)
 		return acc
 	}
 
-	return &AccessorNode{&listNode{nodes: nodes}}
+	return &AccessorListNode{accessors: nodes}
 }
+
+// Accessors returns all of the accessor nodes in n.
+func (n *AccessorListNode) Accessors() []Node { return n.accessors }
 
 // String produces JSON Path accessor path string representation of the nodes in
 // n.
-func (n *AccessorNode) String() string {
+func (n *AccessorListNode) String() string {
 	buf := new(strings.Builder)
 	n.writeTo(buf, false, false)
 	return buf.String()
 }
 
 // writeTo writes the SQL/JSON path string representation of n to buf.
-func (n *AccessorNode) writeTo(buf *strings.Builder, _, _ bool) {
-	maxIdx := len(n.nodes) - 1
-	for i, node := range n.nodes {
+func (n *AccessorListNode) writeTo(buf *strings.Builder, _, _ bool) {
+	maxIdx := len(n.accessors) - 1
+	for i, node := range n.accessors {
 		node.writeTo(buf, i > 0, i < maxIdx)
 	}
 }
 
 // priority returns the priority of the AccessorNode, which is always 6.
-func (*AccessorNode) priority() uint8 { return lowestPriority }
+func (*AccessorListNode) priority() uint8 { return lowestPriority }
 
 // ArrayIndexNode represents the nodes in an array index expression.
 type ArrayIndexNode struct {
-	*listNode
+	subscripts []Node
 }
 
-// NewArrayIndex creates a new ArrayIndexNode consisting of nodes.
-func NewArrayIndex(nodes []Node) *ArrayIndexNode {
-	return &ArrayIndexNode{&listNode{nodes: nodes}}
+// NewArrayIndex creates a new ArrayIndexNode consisting of subscripts.
+// which must be BinaryNodes using the BinarySubscript operator.
+func NewArrayIndex(subscripts []Node) *ArrayIndexNode {
+	return &ArrayIndexNode{subscripts: subscripts}
 }
+
+// Subscripts returns all of the subscript nodes in n.
+func (n *ArrayIndexNode) Subscripts() []Node { return n.subscripts }
 
 // String produces JSON Path array index string representation of the nodes in
 // n.
@@ -552,7 +596,7 @@ func (n *ArrayIndexNode) String() string {
 // writeTo writes the SQL/JSON path representation of n to buf.
 func (n *ArrayIndexNode) writeTo(buf *strings.Builder, _, _ bool) {
 	buf.WriteRune('[')
-	for i, node := range n.nodes {
+	for i, node := range n.subscripts {
 		if i > 0 {
 			buf.WriteRune(',')
 		}
@@ -622,7 +666,7 @@ func (*AnyNode) priority() uint8 { return lowestPriority }
 // RegexNode represents a regular expression.
 type RegexNode struct {
 	// jpiLikeRegex
-	node    Node
+	operand Node
 	pattern string
 	flags   regexFlags
 }
@@ -637,7 +681,7 @@ func NewRegex(expr Node, pattern, flags string) (*RegexNode, error) {
 	if err := validateRegex(pattern, f); err != nil {
 		return nil, err
 	}
-	return &RegexNode{node: expr, pattern: pattern, flags: f}, nil
+	return &RegexNode{operand: expr, pattern: pattern, flags: f}, nil
 }
 
 // String returns the RegexNode as a SQL/JSON path 'like_regex' expression.
@@ -654,7 +698,7 @@ func (n *RegexNode) writeTo(buf *strings.Builder, _, withParens bool) {
 		buf.WriteRune('(')
 	}
 
-	n.node.writeTo(buf, false, n.node.priority() <= n.priority())
+	n.operand.writeTo(buf, false, n.operand.priority() <= n.priority())
 	buf.WriteString(fmt.Sprintf(" like_regex %q%v", n.pattern, n.flags))
 
 	if withParens {
@@ -672,6 +716,11 @@ func (n *RegexNode) Regexp() *regexp.Regexp {
 		return regexp.MustCompile(flags + regexp.QuoteMeta(n.pattern))
 	}
 	return regexp.MustCompile(n.flags.goFlags() + n.pattern)
+}
+
+// Operand returns the RegexNode's operand.
+func (n *RegexNode) Operand() Node {
+	return n.operand
 }
 
 // AST represents the complete abstract syntax tree for a parsed SQL/JSON path.
@@ -707,7 +756,7 @@ func (a *AST) Root() Node {
 // IsPredicate returns true if the AST represents a PostgreSQL-style "predicate
 // check" path.
 func (a *AST) IsPredicate() bool {
-	_, ok := a.root.(*AccessorNode)
+	_, ok := a.root.(*AccessorListNode)
 	return !ok
 }
 
@@ -732,11 +781,11 @@ func validateNode(node Node, depth int, inSubscript bool) error {
 		if node.op == UnaryFilter {
 			argDepth++
 		}
-		if err := validateNode(node.node, depth+argDepth, inSubscript); err != nil {
+		if err := validateNode(node.operand, depth+argDepth, inSubscript); err != nil {
 			return err
 		}
 	case *RegexNode:
-		if err := validateNode(node.node, depth, inSubscript); err != nil {
+		if err := validateNode(node.operand, depth, inSubscript); err != nil {
 			return err
 		}
 	case ConstNode:
@@ -754,13 +803,13 @@ func validateNode(node Node, depth int, inSubscript bool) error {
 			}
 		}
 	case *ArrayIndexNode:
-		for _, n := range node.Nodes() {
+		for _, n := range node.subscripts {
 			if err := validateNode(n, depth+argDepth, true); err != nil {
 				return err
 			}
 		}
-	case *AccessorNode:
-		for _, n := range node.Nodes() {
+	case *AccessorListNode:
+		for _, n := range node.accessors {
 			if err := validateNode(n, depth, inSubscript); err != nil {
 				return err
 			}
@@ -799,10 +848,10 @@ func NewUnaryOrNumber(op UnaryOperator, node Node) Node {
 		default:
 			panic(fmt.Sprintf("Operator must be + or - but is %v", op))
 		}
-	case *AccessorNode:
+	case *AccessorListNode:
 		// If node is an accessor with a single node, just use that node.
-		if len(node.Nodes()) == 1 {
-			return NewUnaryOrNumber(op, node.Nodes()[0])
+		if len(node.accessors) == 1 {
+			return NewUnaryOrNumber(op, node.accessors[0])
 		}
 	}
 
