@@ -21,8 +21,16 @@ func TestPath(t *testing.T) {
 		a.Equal(path.AST.String(), path.String())
 		a.Equal(path.AST.IsPredicate(), path.IsPredicate())
 		a.Equal(op, path.PgIndexOperator())
-		a.True(path.Matches(nil, nil, false))
-		a.Equal(jMap, path.Select(jMap, nil, false))
+
+		ok, err := path.Exists(nil, nil, false)
+		r.NoError(err)
+		a.True(ok)
+
+		res, err := path.Query(jMap, nil, false)
+		r.NoError(err)
+		a.Equal(jMap, res)
+		a.NotPanics(func() { res = path.MustQuery(jMap, nil, false) })
+		a.Equal(jMap, res)
 	}
 
 	for _, tc := range []struct {
