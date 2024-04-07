@@ -1,10 +1,8 @@
 package parser
 
 import (
-	"reflect"
 	"strings"
 	"testing"
-	"text/scanner"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,26 +16,23 @@ func TestNewLexer(t *testing.T) {
 
 	l := newLexer(path)
 	a.NotNil(l)
-
-	// Examine the scanner.
-	s := l.scanner
-	a.NotNil(s)
-	a.Equal("path", s.Filename)
-	a.Equal(uint(scanner.ScanInts|scanner.ScanFloats), s.Mode)
-	a.Equal(
-		reflect.ValueOf(isIdentRune).Pointer(),
-		reflect.ValueOf(s.IsIdentRune).Pointer(),
-	)
-	a.Equal(
-		reflect.ValueOf(l.scanError).Pointer(),
-		reflect.ValueOf(s.Error).Pointer(),
-	)
+	a.Equal(path, string(l.srcBuf))
+	a.Equal(0, l.srcPos)
+	a.Equal(len(path), l.srcEnd)
+	a.Equal(1, l.line)
+	a.Equal(0, l.column)
+	a.Equal(0, l.lastLineLen)
+	a.Equal(0, l.lastCharLen)
+	a.Equal(noChar, l.tokPos)
+	a.Equal(rune(noChar), l.ch)
+	a.Equal(1, l.line)
 
 	// Make sure path was loaded into the scanner.
 	buf := new(strings.Builder)
 
-	for tok := s.Scan(); tok != scanner.EOF; tok = s.Scan() {
-		buf.WriteString(s.TokenText())
+	lval := &pathSymType{}
+	for tok := l.Lex(lval); tok != stopTok; tok = l.Lex(lval) {
+		buf.WriteString(lval.str)
 	}
 
 	a.Equal(path, buf.String())
@@ -75,7 +70,7 @@ func TestIsIdentRune(t *testing.T) {
 		{"slash_second", '/', 1, false},
 		{"space_first", ' ', 0, false},
 		{"space_second", ' ', 1, false},
-		{"eof", scanner.EOF, 0, false},
+		{"eof", stopTok, 0, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -92,16 +87,16 @@ func TestScanError(t *testing.T) {
 	a.NotNil(l)
 	a.Equal([]string{}, l.errors)
 
-	l.scanError(l.scanner, "oops")
-	a.Equal([]string{"oops at path:1:1"}, l.errors)
+	l.Error("oops")
+	a.Equal([]string{"oops at 1:1"}, l.errors)
 
-	a.Equal('$', l.scanner.Scan())
-	l.scanError(l.scanner, "yikes")
-	a.Equal([]string{"oops at path:1:1", "yikes at path:1:2"}, l.errors)
+	a.Equal(int('$'), l.Lex(&pathSymType{}))
+	l.Error("yikes")
+	a.Equal([]string{"oops at 1:1", "yikes at 1:2"}, l.errors)
 
 	l.Error("hello")
 	a.Equal(
-		[]string{"oops at path:1:1", "yikes at path:1:2", "hello at path:1:2"},
+		[]string{"oops at 1:1", "yikes at 1:2", "hello at 1:2"},
 		l.errors,
 	)
 }
@@ -258,59 +253,57 @@ func TestScanIdent(t *testing.T) {
 			"invalid_hex",
 			`LO\xzz`,
 			"",
-			scanner.EOF,
-			"invalid hexadecimal character sequence at path:1:6",
+			stopTok,
+			"invalid hexadecimal character sequence at 1:5",
 		},
 		{
 			"brace_unicode_eight",
 			`LO\u{00004C00}`,
 			"",
-			scanner.EOF,
-			"invalid Unicode escape sequence at path:1:13",
+			stopTok,
+			"invalid Unicode escape sequence at 1:12",
 		},
 		{
 			"missing_brace",
 			`LO\u{0067`,
 			"",
-			scanner.EOF,
-			"invalid Unicode escape sequence at path:1:11",
+			stopTok,
+			"invalid Unicode escape sequence at 1:10",
 		},
 		{
 			"bad_unicode_brace_hex",
 			`LO\u{zzzz}`,
 			"",
-			scanner.EOF,
-			"invalid Unicode escape sequence at path:1:7",
+			stopTok,
+			"invalid Unicode escape sequence at 1:6",
 		},
 		{
 			"bad_unicode_hex",
 			`LO\uzzzz`,
 			"",
-			scanner.EOF,
-			"invalid Unicode escape sequence at path:1:6",
+			stopTok,
+			"invalid Unicode escape sequence at 1:5",
 		},
 		{
 			"bad_lead_backslash",
 			`\xyy`,
 			"",
-			scanner.EOF,
-			"invalid hexadecimal character sequence at path:1:4",
+			stopTok,
+			"invalid hexadecimal character sequence at 1:3",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
 			// Append a '.' to check that scanIdent doesn't slurp it up.
-			sym := &pathSymType{str: ""}
 			l := newLexer(tc.word + ".")
-			tok := l.scanner.Scan()
-			a.Equal(l.scanIdent(sym, tok), tc.tok)
-			a.Equal(tc.exp, sym.str)
+			a.Equal(l.Lex(&pathSymType{}), tc.tok)
+			a.Equal(tc.exp, l.strBuf.String())
 
 			if tc.err == "" {
 				// Should have no errors and the trailing '.' should be teed up.
 				a.Empty(l.errors)
-				a.Equal('.', l.scanner.Peek())
+				a.Equal('.', l.peek())
 			} else {
 				a.Equal([]string{tc.err}, l.errors)
 			}
@@ -330,12 +323,12 @@ func TestScanString(t *testing.T) {
 		err  string
 	}{
 		{"xxx", `"xxx"`, "xxx", STRING_P, ""},
+		{"empty_string", `""`, "", STRING_P, ""},
 		{"with_spaces", `"hi there"`, "hi there", STRING_P, ""},
 		{"with_unicode", `"Go on 🎉"`, "Go on 🎉", STRING_P, ""},
 		{"surrogate_pair", `"\uD834\uDD1E"`, "\U0001D11E", STRING_P, ""},
 
 		// Identifiers with escapes.
-		{"hex", `"\x22hi\x22"`, `"hi"`, STRING_P, ""},
 		{"hex", `"\x22hi\x22"`, `"hi"`, STRING_P, ""},
 		{"bell", `"x\by"`, "x\by", STRING_P, ""},
 		{"form_feed", `"x\fy"`, "x\fy", STRING_P, ""},
@@ -365,123 +358,121 @@ func TestScanString(t *testing.T) {
 			"invalid_surrogate_pair",
 			`"\uD834\ufffd"`,
 			"",
-			scanner.EOF,
-			"Unicode low surrogate must follow a high surrogate at path:1:14",
+			stopTok,
+			"Unicode low surrogate must follow a high surrogate at 1:13",
 		},
 		{
 			"missing_surrogate_pair",
 			`"\uD834lol"`,
 			"",
-			scanner.EOF,
-			"Unicode low surrogate must follow a high surrogate at path:1:8",
+			stopTok,
+			"Unicode low surrogate must follow a high surrogate at 1:8",
 		},
 		{
 			"bad_surrogate_pair",
 			`"\uD834\uzzzz`,
 			"",
-			scanner.EOF,
-			"invalid Unicode escape sequence at path:1:11",
+			stopTok,
+			"invalid Unicode escape sequence at 1:10",
 		},
 		{
 			"wrong_surrogate_pair",
 			`"\uD834\x34"`,
 			"",
-			scanner.EOF,
-			"Unicode low surrogate must follow a high surrogate at path:1:9",
+			stopTok,
+			"Unicode low surrogate must follow a high surrogate at 1:9",
 		},
 		{
 			"null_byte",
 			`"go \x00"`,
 			"",
-			scanner.EOF,
-			"invalid hexadecimal character sequence at path:1:9",
+			stopTok,
+			"invalid hexadecimal character sequence at 1:8",
 		},
 		{
 			"invalid_hex",
 			`"LO\xzz"`,
 			"",
-			scanner.EOF,
-			"invalid hexadecimal character sequence at path:1:7",
+			stopTok,
+			"invalid hexadecimal character sequence at 1:6",
 		},
 		{
 			"null_hex",
 			`"LO\x00"`,
 			"",
-			scanner.EOF,
-			"invalid hexadecimal character sequence at path:1:8",
+			stopTok,
+			"invalid hexadecimal character sequence at 1:7",
 		},
 		{
 			"null_unicode",
 			`"LO\u0000"`,
 			"",
-			scanner.EOF,
-			"\\u0000 cannot be converted to text at path:1:10",
+			stopTok,
+			"\\u0000 cannot be converted to text at 1:9",
 		},
 		{
 			"null_unicode_brace",
 			`"LO\u{000000}"`,
 			"",
-			scanner.EOF,
-			"\\u0000 cannot be converted to text at path:1:14",
+			stopTok,
+			"\\u0000 cannot be converted to text at 1:13",
 		},
 		{
 			"brace_unicode_eight",
 			`"LO\u{00004C00}"`,
 			"",
-			scanner.EOF,
-			"invalid Unicode escape sequence at path:1:14",
+			stopTok,
+			"invalid Unicode escape sequence at 1:13",
 		},
 		{
 			"missing_brace",
 			`"LO\u{0067"`,
 			"",
-			scanner.EOF,
-			"invalid Unicode escape sequence at path:1:12",
+			stopTok,
+			"invalid Unicode escape sequence at 1:11",
 		},
 		{
 			"bad_unicode_brace_hex",
 			`"LO\u{zzzz}"`,
 			"",
-			scanner.EOF,
-			"invalid Unicode escape sequence at path:1:8",
+			stopTok,
+			"invalid Unicode escape sequence at 1:7",
 		},
 		{
 			"bad_unicode_hex",
 			`"LO\uzzzz"`,
 			"",
-			scanner.EOF,
-			"invalid Unicode escape sequence at path:1:7",
+			stopTok,
+			"invalid Unicode escape sequence at 1:6",
 		},
 		{
 			"unclosed_string",
 			`"go`,
 			"",
-			scanner.EOF,
-			"literal not terminated at path:1:4",
+			stopTok,
+			"literal not terminated at 1:4",
 		},
 		{
 			"string_with_newline",
 			"\"go\nhome\"",
 			"",
-			scanner.EOF,
-			"literal not terminated at path:2:1",
+			stopTok,
+			"literal not terminated at 1:4",
 		},
 		{
 			"unterminated_backslash",
 			`"go \`,
 			"",
-			scanner.EOF,
-			"unexpected end after backslash at path:1:6",
+			stopTok,
+			"unexpected end after backslash at 1:6",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			sym := &pathSymType{}
 			l := newLexer(tc.str)
-			a.Equal('"', l.scanner.Scan()) // Remove opening "
-			a.Equal(l.scanString(sym, tc.tok), tc.tok)
-			a.Equal(tc.exp, sym.str)
+			a.Equal(l.Lex(&pathSymType{}), tc.tok)
+			a.Equal(tc.exp, l.strBuf.String())
 
 			if tc.err == "" {
 				a.Empty(l.errors)
@@ -504,6 +495,7 @@ func TestScanNumbers(t *testing.T) {
 		err  string
 	}{
 		{"one", "1", "1", INT_P, ""},
+		{"zero", "0", "0", INT_P, ""},
 		{"max_int", "9223372036854775807", "9223372036854775807", INT_P, ""},
 		{"min_int", "9223372036854775808", "9223372036854775808", INT_P, ""}, // without -
 		{"max_uint", "18446744073709551615", "18446744073709551615", INT_P, ""},
@@ -516,8 +508,14 @@ func TestScanNumbers(t *testing.T) {
 		{
 			"zero_octal",
 			"0273", // Not supported by Postgres
-			"0273", scanner.EOF,
-			"trailing junk after numeric literal at path:1:5",
+			"0", stopTok,
+			"trailing junk after numeric literal at 1:2",
+		},
+		{
+			"empty_octal",
+			"0o", // Not supported by Postgres
+			"0o", stopTok,
+			"octal literal has no digits at 1:3",
 		},
 		{"binary", "0b100101", "0b100101", INT_P, ""},
 		{"underscore_binary", "0b10_0101", "0b10_0101", INT_P, ""},
@@ -544,16 +542,16 @@ func TestScanNumbers(t *testing.T) {
 		{
 			"go_int_example_03",
 			"0600", // Not supported by Postgres
-			"0600",
-			scanner.EOF,
-			"trailing junk after numeric literal at path:1:5",
+			"0",
+			stopTok,
+			"trailing junk after numeric literal at 1:2",
 		},
 		{
 			"go_int_example_04",
 			"0_600", // Not supported by Postgres
-			"0_600",
-			scanner.EOF,
-			"trailing junk after numeric literal at path:1:6",
+			"0",
+			stopTok,
+			"underscore disallowed at start of numeric literal at 1:2",
 		},
 		{"go_int_example_05", "0o600", "0o600", INT_P, ""},
 		{"go_int_example_06", "0o600", "0o600", INT_P, ""},
@@ -563,9 +561,9 @@ func TestScanNumbers(t *testing.T) {
 		{
 			"go_int_example_10",
 			"0x_67_7a_2f_cc_40_c6", // Not supported by Postgres
-			"0x_67_7a_2f_cc_40_c6",
-			scanner.EOF,
-			"underscore disallowed at start of numeric literal at path:1:21",
+			"0x",
+			stopTok,
+			"underscore disallowed at start of numeric literal at 1:3",
 		},
 		{
 			"go_int_example_11",
@@ -582,10 +580,10 @@ func TestScanNumbers(t *testing.T) {
 			"",
 		},
 		{"go_int_example_13", "_42", "_42", IDENT_P, ""},
-		{"go_int_example_14", "42_", "42_", scanner.EOF, "'_' must separate successive digits at path:1:4"},
-		{"go_int_example_15", "42_", "42_", scanner.EOF, "'_' must separate successive digits at path:1:4"},
-		{"go_int_example_16", "4__2", "4__2", scanner.EOF, "'_' must separate successive digits at path:1:5"},
-		{"go_int_example_17", "0_xBadFace", "0_", scanner.EOF, "'_' must separate successive digits at path:1:3"},
+		{"go_int_example_14", "42_", "42_", stopTok, "'_' must separate successive digits at 1:4"},
+		{"go_int_example_15", "42_", "42_", stopTok, "'_' must separate successive digits at 1:4"},
+		{"go_int_example_16", "4__2", "4__2", stopTok, "'_' must separate successive digits at 1:5"},
+		{"go_int_example_17", "0_xBadFace", "0", stopTok, "underscore disallowed at start of numeric literal at 1:2"},
 
 		// https://go.dev/ref/spec#Floating-point_literals
 		{"go_float_example_01", "0.", "0.", NUMERIC_P, ""},
@@ -593,9 +591,9 @@ func TestScanNumbers(t *testing.T) {
 		{
 			"go_float_example_03",
 			"072.40", // Not supported by Postgres
-			"072.40",
-			scanner.EOF,
-			"trailing junk after numeric literal at path:1:7",
+			"0",
+			stopTok,
+			"trailing junk after numeric literal at 1:2",
 		},
 		{"go_float_example_04", "2.71828", "2.71828", NUMERIC_P, ""},
 		{"go_float_example_05", "1.e+0", "1.e+0", NUMERIC_P, ""},
@@ -608,75 +606,82 @@ func TestScanNumbers(t *testing.T) {
 		{
 			"go_float_example_11",
 			"0x1p-2", // Not supported by Postgres
-			"0x1p-2",
-			scanner.EOF,
-			"trailing junk after numeric literal at path:1:7",
+			"0x1",
+			stopTok,
+			"trailing junk after numeric literal at 1:4",
 		},
 		{
 			"go_float_example_12",
-			"0x2.p10", // Not supported by Postgres
-			"0x2.p10",
-			scanner.EOF,
-			"trailing junk after numeric literal at path:1:8",
+			"0x2.p10", // Postgres interpretation: (2)."p10"
+			"0x2",
+			INT_P,
+			"",
 		},
 		{
 			"go_float_example_13",
-			"0x1.Fp+0", // Not supported by Postgres
-			"0x1.Fp+0",
-			scanner.EOF,
-			"trailing junk after numeric literal at path:1:9",
+			"0x1.Fp+0", // Postgres interpretation: ((1)."Fp" + 0)
+			"0x1",
+			INT_P,
+			"",
 		},
 		{
 			"go_float_example_14",
 			"0X.8p-0", // Not supported by Postgres
-			"0X.8p-0",
-			scanner.EOF,
-			"trailing junk after numeric literal at path:1:8",
+			"0X.",
+			stopTok,
+			"invalid radix point in hexadecimal literal at 1:4",
 		},
 		{
 			"go_float_example_15",
 			"0X_1FFFP-16", // Not supported by Postgres
-			"0X_1FFFP-16",
-			scanner.EOF,
-			"underscore disallowed at start of numeric literal at path:1:12",
+			"0X",
+			stopTok,
+			"underscore disallowed at start of numeric literal at 1:3",
 		},
 		{"go_float_example_16", "0x15e-2", "0x15e", INT_P, ""}, // (integer subtraction)
-		{"go_float_example_17", "0x.p1", "0x.p1", scanner.EOF, "hexadecimal literal has no digits at path:1:4"},
-		{"go_float_example_18", "1p-2", "1p-2", scanner.EOF, "'p' exponent requires hexadecimal mantissa at path:1:2"},
+		{"go_float_example_17", "0x.p1", "0x.", stopTok, "invalid radix point in hexadecimal literal at 1:4"},
+		{"go_float_example_18", "1p-2", "1", stopTok, "trailing junk after numeric literal at 1:2"},
 		{
 			"go_float_example_19",
 			"0x1.5e-2",
-			"0x1.5e",
-			scanner.EOF,
-			"hexadecimal mantissa requires a 'p' exponent at path:1:7",
+			"0x1.",
+			stopTok,
+			"invalid radix point in hexadecimal literal at 1:5",
 		},
-		{"go_float_example_20", "1_.5", "1_.5", scanner.EOF, "'_' must separate successive digits at path:1:5"},
-		{"go_float_example_21", "1._5", "1._5", scanner.EOF, "'_' must separate successive digits at path:1:5"},
-		{"go_float_example_22", "1.5_e1", "1.5_e1", scanner.EOF, "'_' must separate successive digits at path:1:7"},
-		{"go_float_example_23", "1.5e_1", "1.5e_1", scanner.EOF, "'_' must separate successive digits at path:1:7"},
-		{"go_float_example_24", "1.5e1_", "1.5e1_", scanner.EOF, "'_' must separate successive digits at path:1:7"},
+		{"go_float_example_20", "1_.5", "1_.5", stopTok, "'_' must separate successive digits at 1:5"},
+		{"go_float_example_21", "1._5", "1._5", stopTok, "'_' must separate successive digits at 1:5"},
+		{"go_float_example_22", "1.5_e1", "1.5_e1", stopTok, "'_' must separate successive digits at 1:7"},
+		{"go_float_example_23", "1.5e_1", "1.5e_1", stopTok, "'_' must separate successive digits at 1:7"},
+		{"go_float_example_24", "1.5e1_", "1.5e1_", stopTok, "'_' must separate successive digits at 1:7"},
 
 		// Errors
 		{
 			"underscore_hex_early",
 			"0x_1EEEFFFF",
-			"0x_1EEEFFFF",
-			scanner.EOF,
-			"underscore disallowed at start of numeric literal at path:1:12",
+			"0x",
+			stopTok,
+			"underscore disallowed at start of numeric literal at 1:3",
 		},
 		{
 			"underscore_octal_early",
 			"0o_273",
-			"0o_273",
-			scanner.EOF,
-			"underscore disallowed at start of numeric literal at path:1:7",
+			"0o",
+			stopTok,
+			"underscore disallowed at start of numeric literal at 1:3",
 		},
 		{
 			"underscore_binary_early",
 			"0b_100101",
-			"0b_100101",
-			scanner.EOF,
-			"underscore disallowed at start of numeric literal at path:1:10",
+			"0b",
+			stopTok,
+			"underscore disallowed at start of numeric literal at 1:3",
+		},
+		{
+			"hex_dot_path_utf8",
+			`0x2."😀"`, // Postgres interpretation: (2)."😀"
+			"0x2",
+			INT_P,
+			"",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -684,6 +689,14 @@ func TestScanNumbers(t *testing.T) {
 
 			sym := &pathSymType{}
 			l := newLexer(tc.num)
+
+			// // To-do tests.
+			// if tc.name == "go_float_example_12" || tc.name == "go_float_example_13" {
+			// 	a.NotEqual(l.Lex(sym), tc.tok)
+			// 	a.NotEqual([]string{tc.err}, l.errors)
+			// 	return
+			// }
+
 			a.Equal(l.Lex(sym), tc.tok)
 			a.Equal(tc.exp, sym.str)
 
@@ -726,25 +739,23 @@ func TestScanVariable(t *testing.T) {
 			"null_byte",
 			`$"go \x00"`,
 			"",
-			scanner.EOF,
-			"invalid hexadecimal character sequence at path:1:10",
+			stopTok,
+			"invalid hexadecimal character sequence at 1:9",
 		},
 		{
 			"invalid_hex",
 			`$"LO\xzz"`,
 			"",
-			scanner.EOF,
-			"invalid hexadecimal character sequence at path:1:8",
+			stopTok,
+			"invalid hexadecimal character sequence at 1:7",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			sym := &pathSymType{}
 			l := newLexer(tc.variable)
-			a.Equal('$', l.scanner.Scan())
-			a.Equal(l.scanVariable(sym), tc.tok)
-			a.Equal(tc.exp, sym.str)
+			a.Equal(l.Lex(&pathSymType{}), tc.tok)
+			a.Equal(tc.exp, l.strBuf.String())
 
 			if tc.err == "" {
 				a.Empty(l.errors)
@@ -762,25 +773,25 @@ func TestScanComment(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		path string
-		tok  int
+		tok  rune
 		err  string
 	}{
-		{"simple", "/* foo */", scanner.Comment, ""},
-		{"stars", "/*foo****/", scanner.Comment, ""},
-		{"escape_star", "/*foo \\**/", scanner.Comment, ""},
-		{"escape_other", "/*foo \\! */", scanner.Comment, ""},
-		{"multi_word", "/* foo bar baz */", scanner.Comment, ""},
-		{"multi_line", "/* foo bar\nbaz */", scanner.Comment, ""},
-		{"multi_line_prefix", "/* foo bar\n * baz */", scanner.Comment, ""},
-		{"EOF", "/* foo ", 0, "unexpected end of comment at path:1:8"},
+		{"simple", "/* foo */", stopTok, ""},
+		{"stars", "/*foo****/", stopTok, ""},
+		{"escape_star", "/*foo \\**/", stopTok, ""},
+		{"escape_other", "/*foo \\! */", stopTok, ""},
+		{"multi_word", "/* foo bar baz */", stopTok, ""},
+		{"multi_line", "/* foo bar\nbaz */", stopTok, ""},
+		{"multi_line_prefix", "/* foo bar\n * baz */", stopTok, ""},
+		{"EOF", "/* foo ", stopTok, "unexpected end of comment at 1:8"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
 			l := newLexer(tc.path)
-			a.Equal('/', l.scanner.Scan())
-			a.Equal(l.scanComment(), tc.tok)
-			a.Equal(len(tc.path), l.scanner.Pos().Offset)
+			a.Equal('/', l.next())
+			a.Equal(l.scanComment(l.next()), tc.tok)
+			a.Equal(len(tc.path), l.pos().Offset)
 
 			if tc.err == "" {
 				a.Empty(l.errors)
@@ -810,8 +821,8 @@ func TestScanOperator(t *testing.T) {
 		{"gt_stop", ">{x}", GREATER_P, ">"},
 		{"le", "<=", LESSEQUAL_P, "<="},
 		{"le_stop", "<=x", LESSEQUAL_P, "<="},
-		{"le_ne", "<>", NOTEQUAL_P, "!="},
-		{"le_ne_stop", "<>x", NOTEQUAL_P, "!="},
+		{"le_ne", "<>", NOTEQUAL_P, "<>"},
+		{"le_ne_stop", "<>x", NOTEQUAL_P, "<>"},
 		{"lt", "<", LESS_P, "<"},
 		{"lt_stop", "<{x}", LESS_P, "<"},
 		{"not", "!", NOT_P, "!"},
@@ -835,11 +846,9 @@ func TestScanOperator(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			l := newLexer(tc.op)
-			tok := l.scanner.Scan()
-			a.Equal(rune(tc.op[0]), tok)
-			sym := &pathSymType{str: string(tok)}
-			a.Equal(l.scanOperator(sym, tok), tc.tok)
-			a.Equal(tc.exp, sym.str)
+			tok := l.Lex(&pathSymType{})
+			a.Equal(tc.tok, tok)
+			a.Equal(tc.exp, l.tokenText())
 			a.Empty(l.errors)
 		})
 	}
@@ -871,9 +880,9 @@ func TestLexer(t *testing.T) {
 		{"quoted_variable", `$"xxx"`, "xxx", VARIABLE_P, ""},
 		{"variable_with_spaces", `$"hi there"`, "hi there", VARIABLE_P, ""},
 		{"variable_with_unicode", `$"Go on 🎉"`, "Go on 🎉", VARIABLE_P, ""},
-		{"comment", "/* foo */", "", scanner.EOF, ""},
+		{"comment", "/* foo */", "", stopTok, ""},
 		{"comment_token", "/* foo */ $", "$", '$', ""},
-		{"comment", "/* foo */", "", scanner.EOF, ""},
+		{"comment", "/* foo */", "", stopTok, ""},
 		{"not_comment", "/ foo", "/", '/', ""},
 		{"op", "==foo", "==", EQUAL_P, ""},
 	} {

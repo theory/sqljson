@@ -30,33 +30,9 @@ package parser
 // decimal zero. In hexadecimal literals, letters a through f and A through F
 // represent values 10 through 15.
 
-// # Issues
-//
-//  - Number parsing varies from Postgres. It relies on text/scanner, which
-// 	  parses Go formats, a superset of what Postgres supports. The
-//    validateInt and validateNumeric functions compensate for this, but when
-// 	  they find issues the errors are reported at the position after the
-//    number, not at the problematic character.
-//  - Some of these issues could be addressed by tweaking the position in the
-//    error message, but text/scanner doesn't support backtracking.
-//  - There is a circular reference between the lexer object and the
-//    scanner.Scanner.
-//  - The handling of UTF-8 surrogate pairs in scanUnicode consumes one too
-//    many bytes if the second escape starts with a slash but is not followed
-//    by a u. Ideally it would reset the scanner to before the backslash, but
-//    the lack of backtracking in scanner.Scanner disallows it.
-//
-// These issues should be addressed by extracting the number parsing from
-// text/scanner and having it do the right thing here, removing the unsupported
-// syntax. This would eliminate the need for text.Scanner, and therefor the
-// circular reference, but we'd need to support the position data and moving
-// through the text. Could be simpler, though, iterating on the bytes in a
-// string or a byte slice.
-
 import (
 	"fmt"
 	"strings"
-	"text/scanner"
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -65,37 +41,523 @@ import (
 	"github.com/theory/sqljson/path/ast"
 )
 
+// position is a value that represents a source position.
+type position struct {
+	Offset int // byte offset, starting at 0
+	Line   int // line number, starting at 1
+	Column int // column number, starting at 1 (character count per line)
+}
+
+// String returns the string representation of the position.
+func (pos position) String() string {
+	return fmt.Sprintf("%d:%d", pos.Line, pos.Column)
+}
+
+const (
+	// whitespace selects white space characters.
+	whitespace = 1<<'\t' | 1<<'\n' | 1<<'\r' | 1<<' '
+
+	// Stop lexing: EOF or error.
+	stopTok = -1
+
+	// no char read yet, not EOF.
+	noChar = -1
+
+	// Literal tokens.
+	quote     = '"'
+	newline   = '\n'
+	backslash = '\\'
+	slash     = '/'
+	dollar    = '$'
+	null      = rune(0)
+
+	// Numeric bases.
+	decimal = 10
+	hex     = 16
+	octal   = 8
+	binary  = 2
+)
+
 // lexer lexes a path.
 type lexer struct {
-	errors  []string
-	scanner *scanner.Scanner
-	result  *ast.AST
+	// Collects errors while lexing.
+	errors []string
+
+	// The parser stores the parsed result here, using setResult().
+	result *ast.AST
+
+	// Buffer to hold normalized string while parsing JavaScript string.
+	strBuf strings.Builder
+
+	// True if a string was parsed into gotString.
+	gotString bool
+
+	// Remaining fields borrowed from text/scanner.
+
+	// Source buffer
+	srcBuf []byte // Source buffer
+	srcPos int    // reading position (srcBuf index)
+	srcEnd int    // source end (srcBuf index)
+
+	// Source position
+	// srcBufOffset int // byte offset of srcBuf[0] in source
+	line        int // line count
+	column      int // character count
+	lastLineLen int // length of last line in characters (for correct column reporting)
+	lastCharLen int // length of last character in bytes
+
+	// Token position
+	tokPos int // token text tail position (srcBuf index); valid if >= 0
+	tokEnd int // token text tail end (srcBuf index)
+
+	// One character look-ahead
+	ch rune // character before current srcPos
+
+	// Start position of most recently scanned token; set by Scan.
+	// Calling Init or Next invalidates the position (Line == 0).
+	// The Filename field is always left untouched by the Scanner.
+	// If an error is reported (via Error) and position is invalid,
+	// the scanner is not inside a token. Call Pos to obtain an error
+	// position in that case, or to obtain the position immediately
+	// after the most recently scanned token.
+	position
 }
 
 // newLexer creates a new lexer configured to lex path.
 func newLexer(path string) *lexer {
-	l := &lexer{errors: []string{}}
-	s := new(scanner.Scanner)
-	s.Init(strings.NewReader(path))
-	s.Filename = "path"
-	s.Mode = scanner.ScanInts | scanner.ScanFloats
-	s.IsIdentRune = isIdentRune
+	return &lexer{
+		// initialize errors
+		errors: []string{},
 
-	// Yes there's a circular reference here.
-	s.Error = l.scanError
-	l.scanner = s
+		// initialize source buffer
+		srcBuf: []byte(path),
+		srcEnd: len(path),
 
-	return l
+		// initialize source position
+		line: 1,
+		// initialize token text buffer(required for first call to next())
+		tokPos: noChar,
+		// initialize one character look-ahead
+		ch: noChar, // no char read yet, not EOF
+	}
 }
 
-// scanError logs error message msg along with the position from s.
-func (l *lexer) scanError(s *scanner.Scanner, msg string) {
-	l.errors = append(l.errors, fmt.Sprintf("%v at %v", msg, s.Pos()))
+func (l *lexer) resetStrBuf() {
+	l.strBuf.Reset()
+	l.gotString = false
 }
 
-// Error logs error message msg at the current scanner position.
+// next reads and returns the next Unicode character. It is designed such
+// that only a minimal amount of work needs to be done in the common ASCII
+// case (one test to check for both ASCII and end-of-buffer, and one test
+// to check for newlines).
+func (l *lexer) next() rune {
+	if l.srcPos == l.srcEnd {
+		if l.lastCharLen > 0 {
+			// previous character was not EOF
+			l.column++
+		}
+		l.lastCharLen = 0
+		return stopTok
+	}
+
+	ch, width := rune(l.srcBuf[l.srcPos]), 1
+	if ch >= utf8.RuneSelf {
+		// uncommon case: not ASCII
+		ch, width = utf8.DecodeRune(l.srcBuf[l.srcPos:l.srcEnd])
+		if ch == utf8.RuneError && width == 1 {
+			// advance for correct error position
+			l.srcPos += width
+			l.lastCharLen = width
+			l.column++
+			l.Error("invalid UTF-8 encoding")
+			return ch
+		}
+	}
+
+	// advance
+	l.srcPos += width
+	l.lastCharLen = width
+	l.column++
+
+	// special situations
+	switch ch {
+	case 0:
+		l.Error("invalid character NULL")
+	case '\n':
+		l.line++
+		l.lastLineLen = l.column
+		l.column = 0
+	}
+
+	return ch
+}
+
+// peek returns the next Unicode character in the source without advancing
+// the scanner. It returns EOF if the scanner's position is at the last
+// character of the source.
+func (l *lexer) peek() rune {
+	if l.ch == noChar {
+		// this code is only run for the very first character
+		l.ch = l.next()
+	}
+	return l.ch
+}
+
+// Error implements the Error function required by the pathLexer interface
+// generated by the parser grammar. It appends msg and the current position to
+// l.errors.
 func (l *lexer) Error(msg string) {
-	l.scanError(l.scanner, msg)
+	l.tokEnd = l.srcPos - l.lastCharLen // make sure token text is terminated
+	l.errors = append(l.errors, fmt.Sprintf("%v at %v", msg, l.pos()))
+}
+
+// errorf provides a fmt-compatible interface sending an error to [Error].
+func (l *lexer) errorf(format string, args ...any) {
+	l.Error(fmt.Sprintf(format, args...))
+}
+
+// pos returns the position of the character immediately after the character
+// or token returned by the last call to Next or Scan. Use l.Position for the
+// start position of the most recently scanned token.
+//
+//nolint:nonamedreturns
+func (l *lexer) pos() (pos position) {
+	pos.Offset = l.srcPos - l.lastCharLen
+	switch {
+	case l.column > 0:
+		// common case: last character was not a '\n'
+		pos.Line = l.line
+		pos.Column = l.column
+	case l.lastLineLen > 0:
+		// last character was a '\n'
+		pos.Line = l.line - 1
+		pos.Column = l.lastLineLen
+	default:
+		// at the beginning of the source
+		pos.Line = 1
+		pos.Column = 1
+	}
+	return
+}
+
+// Lex implements the Lex function required by the pathLexer interface
+// generated by the parser grammar. It lexes the path, returning the next
+// token or Unicode character from the path. The text representation of the
+// token will be stored in lval.str. It reports scanning errors (read
+// and token errors) by calling l.Error.
+//
+//nolint:funlen
+func (l *lexer) Lex(lval *pathSymType) int {
+	ch := l.peek()
+
+	// reset token text position
+	l.tokPos = -1
+	l.Line = 0
+
+redo:
+	// skip white space
+	for whitespace&(1<<uint(ch)) != 0 {
+		ch = l.next()
+	}
+
+	// start collecting token text
+	l.resetStrBuf()
+	l.tokPos = l.srcPos - l.lastCharLen
+
+	// set token position
+	// (this is a slightly optimized version of the code in Pos())
+	l.Offset = l.tokPos
+	if l.column > 0 {
+		// common case: last character was not a '\n'
+		l.Line = l.line
+		l.Column = l.column
+	} else {
+		// last character was a '\n'
+		// (we cannot be at the beginning of the source
+		// since we have called next() at least once)
+		l.Line = l.line - 1
+		l.Column = l.lastLineLen
+	}
+
+	// determine token value
+	tok := ch
+	switch {
+	case isIdentRune(ch, 0):
+		tok, ch = l.scanIdent(ch)
+	case isDecimal(ch):
+		tok, ch = l.scanNumber(ch, false)
+	default:
+		switch ch {
+		case stopTok:
+			break
+		case '"':
+			tok, ch = l.scanString(STRING_P)
+		case '$':
+			tok, ch = l.scanVariable()
+		case '/':
+			ch = l.next()
+			if ch == '*' {
+				l.tokPos = -1 // don't collect token text
+				ch = l.scanComment(ch)
+				goto redo
+			}
+		case '\'':
+			ch = l.next()
+		case '.':
+			ch = l.next()
+			if isDecimal(ch) {
+				tok, ch = l.scanNumber(ch, true)
+			}
+		default:
+			tok, ch = l.scanOperator(ch)
+		}
+	}
+
+	l.tokEnd = l.srcPos - l.lastCharLen
+
+	l.ch = ch
+	lval.str = l.tokenText()
+	return int(tok)
+}
+
+func lower(ch rune) rune     { return ('a' - 'A') | ch } // returns lower-case ch iff ch is ASCII letter
+func isDecimal(ch rune) bool { return '0' <= ch && ch <= '9' }
+func isHex(ch rune) bool     { return '0' <= ch && ch <= '9' || 'a' <= lower(ch) && lower(ch) <= 'f' }
+
+// digits accepts the sequence { digit | '_' } starting with ch0.
+// If base <= 10, digits accepts any decimal digit but records
+// the first invalid digit >= base in *invalid if *invalid == 0.
+// digits returns the first rune that is not part of the sequence
+// anymore, and a bitset describing whether the sequence contained
+// digits (bit 0 is set), or separators '_' (bit 1 is set).
+//
+//nolint:nonamedreturns
+func (l *lexer) digits(ch0 rune, base int, invalid *rune) (ch rune, digSep int) {
+	ch = ch0
+	if base <= decimal {
+		max := rune('0' + base)
+		for isDecimal(ch) || ch == '_' {
+			ds := 1
+			if ch == '_' {
+				ds = 2
+			} else if ch >= max && *invalid == 0 {
+				*invalid = ch
+			}
+			digSep |= ds
+			ch = l.next()
+		}
+	} else {
+		for isHex(ch) || ch == '_' {
+			ds := 1
+			if ch == '_' {
+				ds = 2
+			}
+			digSep |= ds
+			ch = l.next()
+		}
+	}
+	return
+}
+
+//nolint:funlen,gocognit,gocyclo
+func (l *lexer) scanNumber(ch rune, seenDot bool) (rune, rune) {
+	base := decimal    // number base
+	prefix := rune(0)  // one of 0 (decimal), '0' (0-octal), 'x', 'o', or 'b'
+	digSep := 0        // bit 0: digit present, bit 1: '_' present
+	invalid := rune(0) // invalid digit in literal, or 0
+
+	// integer part
+	var tok rune
+	var ds int
+
+	//nolint:nestif
+	if !seenDot {
+		tok = INT_P
+		if ch == '0' {
+			ch = l.next()
+			switch lower(ch) {
+			case 'x':
+				ch = l.next()
+				base, prefix = hex, 'x'
+			case 'o':
+				ch = l.next()
+				base, prefix = octal, 'o'
+			case 'b':
+				ch = l.next()
+				base, prefix = binary, 'b'
+			case '.':
+				base, prefix = octal, '0'
+				digSep = 1 // leading 0
+			default:
+				switch {
+				case ch == '_':
+					l.Error("underscore disallowed at start of numeric literal")
+					return stopTok, stopTok
+				case isDecimal(ch):
+					l.Error("trailing junk after numeric literal")
+					return stopTok, stopTok
+				default:
+					base, prefix = octal, '0'
+					digSep = 1 // leading 0
+				}
+			}
+		}
+
+		if ch == '_' {
+			l.Error("underscore disallowed at start of numeric literal")
+			return stopTok, stopTok
+		}
+
+		srcPos := l.srcPos + 1
+		ch, ds = l.digits(ch, base, &invalid)
+		digSep |= ds
+		if ch == '.' {
+			ch = l.next()
+			seenDot = true
+			if prefix != 0 && prefix != '0' && srcPos != l.srcPos && (isIdentRune(ch, 0) || ch == '"') {
+				// Might be a string or ident following the dot, though only
+				// if digits were found to make a legit prefix number.
+				// Backtrack to the dot.
+				l.srcPos -= l.lastCharLen
+				l.lastCharLen = 1
+				return tok, '.'
+			}
+		}
+	}
+
+	// fractional part
+	if seenDot {
+		tok = NUMERIC_P
+		if prefix != 0 && prefix != '0' {
+			l.Error("invalid radix point in " + litName(prefix))
+			return stopTok, stopTok
+		}
+		ch, ds = l.digits(ch, base, &invalid)
+		digSep |= ds
+	}
+
+	if digSep&1 == 0 {
+		l.Error(litName(prefix) + " has no digits")
+		return stopTok, stopTok
+	}
+
+	// exponent
+	if e := lower(ch); e == 'e' {
+		if prefix != 0 && prefix != '0' {
+			l.errorf("%q exponent requires decimal mantissa", ch)
+			return stopTok, stopTok
+		}
+
+		ch = l.next()
+		tok = NUMERIC_P
+		if ch == '+' || ch == '-' {
+			ch = l.next()
+		}
+		ch, ds = l.digits(ch, decimal, nil)
+		digSep |= ds
+		if ds&1 == 0 {
+			l.Error("exponent has no digits")
+			return stopTok, stopTok
+		}
+	} else if isIdentRune(e, 0) {
+		l.Error("trailing junk after numeric literal")
+		return stopTok, stopTok
+	}
+
+	if tok == INT_P && invalid != 0 {
+		l.errorf("invalid digit %q in %s", invalid, litName(prefix))
+		return stopTok, stopTok
+	}
+
+	if digSep&2 != 0 {
+		l.tokEnd = l.srcPos - l.lastCharLen // make sure token text is terminated
+		if i := invalidSep(l.tokenText()); i >= 0 {
+			l.Error("'_' must separate successive digits")
+			return stopTok, stopTok
+		}
+	}
+
+	if isIdentRune(ch, 0) {
+		l.Error("trailing junk after numeric literal")
+		return stopTok, stopTok
+	}
+
+	return tok, ch
+}
+
+// tokenText returns the string corresponding to the most recently scanned token.
+// Valid after calling Scan and in calls of Scanner.Error.
+func (l *lexer) tokenText() string {
+	if l.tokPos < 0 {
+		// no token text
+		return ""
+	}
+
+	if l.tokEnd < l.tokPos {
+		// if EOF was reached, s.tokEnd is set to -1 (s.srcPos == 0)
+		l.tokEnd = l.tokPos
+	}
+
+	if l.gotString {
+		// A string was parsed, return it.
+		return l.strBuf.String()
+	}
+
+	return string(l.srcBuf[l.tokPos:l.tokEnd])
+}
+
+// invalidSep returns the index of the first invalid separator in x, or -1.
+func invalidSep(x string) int {
+	x1 := ' ' // prefix char, we only care if it's 'x'
+	d := '.'  // digit, one of '_', '0' (a digit), or '.' (anything else)
+	i := 0
+
+	// a prefix counts as a digit
+	if len(x) >= 2 && x[0] == '0' {
+		x1 = lower(rune(x[1]))
+		if x1 == 'x' || x1 == 'o' || x1 == 'b' {
+			d = '0'
+			i = 2
+		}
+	}
+
+	// mantissa and exponent
+	for ; i < len(x); i++ {
+		p := d // previous digit
+		d = rune(x[i])
+		switch {
+		case d == '_':
+			if p != '0' {
+				return i
+			}
+		case isDecimal(d) || x1 == 'x' && isHex(d):
+			d = '0'
+		default:
+			if p == '_' {
+				return i - 1
+			}
+			d = '.'
+		}
+	}
+	if d == '_' {
+		return len(x) - 1
+	}
+
+	return -1
+}
+
+func litName(prefix rune) string {
+	switch prefix {
+	default:
+		return "decimal literal"
+	case 'x':
+		return "hexadecimal literal"
+	case 'o', '0':
+		return "octal literal"
+	case 'b':
+		return "binary literal"
+	}
 }
 
 // setResult creates an ast.AST and assigns it to l.result unless
@@ -111,59 +573,28 @@ func (l *lexer) setResult(strict bool, node ast.Node) {
 	l.result = ast
 }
 
-// Lex lexes the path, returning the next token from the path. The text
-// representation of the token will be stored in lval.str.
-func (l *lexer) Lex(lval *pathSymType) int {
-	tok := l.scanner.Scan()
-	lval.str = l.scanner.TokenText()
-
-	switch {
-	case isIdentRune(tok, 0):
-		return l.scanIdent(lval, tok)
-	case tok == scanner.Int:
-		return l.validateInt(lval)
-	case tok == scanner.Float:
-		return l.validateNumeric(lval)
-	case tok == '"':
-		return l.scanString(lval, STRING_P)
-	case tok == '$':
-		return l.scanVariable(lval)
-	case tok == '/':
-		t2 := l.scanComment()
-		if t2 == scanner.Comment {
-			return l.Lex(lval)
-		}
-
-		return t2
-	default:
-		return l.scanOperator(lval, tok)
-	}
-}
-
 // scanVariable scans a variable name from l.scanner, assigns the resulting
 // string to lval.str, and returns VARIABLE_P.
-func (l *lexer) scanVariable(lval *pathSymType) int {
-	tok := l.scanner.Peek()
-
+func (l *lexer) scanVariable() (rune, rune) {
+	ch := l.next()
 	switch {
-	case tok == '"':
+	case ch == '"':
 		// $"xyz"
-		l.scanner.Next() // Consume the '""
-		return l.scanString(lval, VARIABLE_P)
-	case isVariableRune(tok):
+		return l.scanString(VARIABLE_P)
+	case isVariableRune(ch):
 		// $xyz
-		s := l.scanner
-
-		str := new(strings.Builder)
-		for isVariableRune(s.Peek()) {
-			str.WriteRune(s.Next())
+		l.strBuf.WriteRune(ch)
+		ch = l.next()
+		for ; isVariableRune(ch); ch = l.next() {
+			l.strBuf.WriteRune(ch)
 		}
-		lval.str = str.String()
 
-		return VARIABLE_P
+		l.gotString = true
+
+		return VARIABLE_P, ch
 	default:
 		// Not a variable.
-		return '$'
+		return '$', ch
 	}
 }
 
@@ -172,99 +603,27 @@ func (l *lexer) hasError() bool {
 	return len(l.errors) > 0
 }
 
-// validateInt validates an integer. The rules for SQL jsonpath are slightly
-// different than for Go, namely:
-//
-//   - A leading 0 is an error.
-//   - Except for octal, hex, and binary literals (0o, 0b, 0x).
-//   - But for those literals, underscores are allowed only after the first
-//     digit, not after the letter.
-//   - In other words, '0xa_b' is okay, but not '0x_ab'.
-func (l *lexer) validateInt(lval *pathSymType) int {
-	lval.str = l.scanner.TokenText()
-	if !l.hasError() && lval.str[0] == '0' && len(lval.str) > 1 {
-		// Leading 0 with subsequent characters.
-		if !unicode.IsLetter(rune(lval.str[1])) {
-			// Leading 0 followed by digit disallowed.
-			l.Error("trailing junk after numeric literal")
-		} else if len(lval.str) > 2 && lval.str[2] == '_' {
-			// Underscore after letter (0o_, 0b_, 0x_) disallowed.
-			l.Error("underscore disallowed at start of numeric literal")
-		}
-	}
-
-	if !l.hasError() && isIdentRune(l.scanner.Peek(), 0) {
-		l.Error("trailing junk after numeric literal")
-	}
-
-	if l.hasError() {
-		return scanner.EOF
-	}
-	return INT_P
-}
-
-// validateNumeric validates a numeric value. The rules for SQL jsonpath are
-// slightly different than for Go, namely:
-//
-//   - A leading 0 is an error unless it's followed by a dot (decimal).
-//   - And except for octal, hex, and binary literals (0o, 0b, 0x).
-//   - But for those literals, underscores are allowed only after the first
-//     digit, not after the letter.
-//   - In other words, '0xa_b' is okay, but not '0x_ab'.
-//   - Also, Go-style p exponent in hex representations is not supported by
-//     Postgres.
-func (l *lexer) validateNumeric(lval *pathSymType) int {
-	lval.str = l.scanner.TokenText()
-
-	if !l.hasError() && lval.str[0] == '0' && len(lval.str) > 1 {
-		// Leading 0 with subsequent characters.
-		switch {
-		case !unicode.IsLetter(rune(lval.str[1])):
-			if lval.str[1] != '.' {
-				// Leading 0 followed by digit disallowed.
-				l.scanError(l.scanner, "trailing junk after numeric literal")
-			}
-		case len(lval.str) > 2 && lval.str[2] == '_':
-			// Underscore after letter (0o_, 0b_, 0x_) disallowed.
-			l.scanError(l.scanner, "underscore disallowed at start of numeric literal")
-		case strings.ContainsAny(lval.str, "pP"):
-			// Go-style p exponent not supported by Postgres.
-			l.scanError(l.scanner, "trailing junk after numeric literal")
-		}
-	}
-
-	if !l.hasError() && isIdentRune(l.scanner.Peek(), 0) {
-		l.Error("trailing junk after numeric literal")
-	}
-
-	if l.hasError() {
-		return scanner.EOF
-	}
-	return NUMERIC_P
-}
-
-// scanComment scans and discards a c-style /* */ comment. Returns
-// scanner.Comment for a complete comment and 0 for an error.
-func (l *lexer) scanComment() int {
-	s := l.scanner
-	if s.Peek() != '*' {
+// scanComment scans and discards a c-style /* */ comment. Returns Comment for
+// a complete comment and 0 for an error.
+func (l *lexer) scanComment(ch rune) rune {
+	if ch != '*' {
 		return '/'
 	}
 
-	s.Next() // Consume '*'
-
+	ch = l.next() // read character after "/*"
 	for {
-		switch s.Next() {
-		case '*':
-			if s.Peek() == '/' {
-				s.Next()
-				return scanner.Comment
-			}
-		case scanner.EOF:
-			l.scanError(s, "unexpected end of comment")
-			return 0
+		if ch < null {
+			l.Error("unexpected end of comment")
+			break
+		}
+		ch0 := ch
+		ch = l.next()
+		if ch0 == '*' && ch == '/' {
+			ch = l.next()
+			break
 		}
 	}
+	return ch
 }
 
 // scanOperator scans an operator from l.scanner if there is one, or else
@@ -283,239 +642,194 @@ func (l *lexer) scanComment() int {
 //
 // Which all mean what you'd expect mathematically and in SQL, except for
 // '**', which represents the Postgres-specific '.**' any path selector.
-//
-//nolint:funlen
-func (l *lexer) scanOperator(lval *pathSymType, tok rune) int {
-	s := l.scanner
-	peek := s.Peek()
+func (l *lexer) scanOperator(ch rune) (rune, rune) {
+	next := l.next() // Read the next character
 
-	switch tok {
+	switch ch {
 	case '=':
-		if peek == '=' {
-			s.Next()
-			lval.str = "=="
-			return EQUAL_P
+		if next == '=' {
+			return EQUAL_P, l.next()
 		}
 	case '>':
-		if peek == '=' {
-			s.Next()
-			lval.str = ">="
-			return GREATEREQUAL_P
+		if next == '=' {
+			return GREATEREQUAL_P, l.next()
 		}
-		lval.str = ">"
-		return GREATER_P
+		return GREATER_P, next
 	case '<':
-		switch peek {
+		switch next {
 		case '=':
-			s.Next()
-			lval.str = "<="
-			return LESSEQUAL_P
+			return LESSEQUAL_P, l.next()
 		case '>':
-			s.Next()
-			lval.str = "!="
-			return NOTEQUAL_P
+			return NOTEQUAL_P, l.next()
 		default:
-			lval.str = "<"
-			return LESS_P
+			return LESS_P, next
 		}
 	case '!':
-		if peek == '=' {
-			s.Next()
-			lval.str = "!="
-			return NOTEQUAL_P
+		if next == '=' {
+			return NOTEQUAL_P, l.next()
 		}
-		lval.str = "!"
-		return NOT_P
+		return NOT_P, next
 	case '&':
-		if peek == tok {
-			s.Next()
-			lval.str = "&&"
-			return AND_P
+		if next == ch {
+			return AND_P, l.next()
 		}
 	case '|':
-		if peek == tok {
-			s.Next()
-			lval.str = "||"
-			return OR_P
+		if next == ch {
+			return OR_P, l.next()
 		}
 	case '*':
-		if peek == tok {
-			s.Next()
-			lval.str = "**"
-			return ANY_P
+		if next == ch {
+			return ANY_P, l.next()
 		}
 	default:
-		return int(tok)
+		return ch, next
 	}
 
-	return int(tok)
+	return ch, next
 }
-
-const (
-	quote     = '"'
-	newline   = '\n'
-	backslash = '\\'
-	slash     = '/'
-	dollar    = '$'
-	null      = rune(0)
-)
 
 // scanIdent scans an identifier, the first character of which is ch; remaining
 // characters are scanned. Identifiers are subject to the same escapes as
 // strings.
-func (l *lexer) scanIdent(lval *pathSymType, ch rune) int {
-	str := new(strings.Builder)
-	s := l.scanner
-
+func (l *lexer) scanIdent(ch rune) (rune, rune) {
+	// we know the zero'th rune is OK
 	switch ch {
 	case backslash:
 		// An escape sequence.
-		if !l.scanEscape(str) {
-			return scanner.EOF
-		}
+		ch = l.scanEscape()
 	default:
-		str.WriteRune(ch)
+		l.strBuf.WriteRune(ch)
+		ch = l.next()
 	}
 
 	// Scan the identifier as long as we have legit identifier runes.
-	for i := 1; isIdentRune(s.Peek(), i); i++ {
-		switch ch = s.Next(); ch {
+	for isIdentRune(ch, 1) {
+		switch ch {
 		case backslash:
 			// An escape sequence.
-			if !l.scanEscape(str) {
-				return scanner.EOF
-			}
+			ch = l.scanEscape()
 		default:
-			str.WriteRune(ch)
+			l.strBuf.WriteRune(ch)
+			ch = l.next()
 		}
 	}
 
 	if l.hasError() {
-		return scanner.EOF
+		return stopTok, ch
 	}
 
-	// Done, grab the string and return the appropriate token.
-	lval.str = str.String()
-
-	return identToken(lval.str)
+	l.gotString = true
+	return identToken(l.strBuf.String()), ch
 }
 
-// scanString scans a jsonpath string. The opening double-quotation mark is
-// expected ot have already been scanned, so the function scans until the
-// closing quotation mark. It writes the resulting string to lval.str.
-func (l *lexer) scanString(lval *pathSymType, ret int) int {
-	str := new(strings.Builder)
-	s := l.scanner
-	ch := s.Next() // read character after quote
-
-	// Read the string until we hit the closing quotation marks or an error.
-	for ch != quote && !l.hasError() {
-		if ch == newline || ch <= null {
-			l.scanError(s, "literal not terminated")
-			return scanner.EOF
-		}
-
-		if ch == backslash {
-			// An escape sequence.
-			if !l.scanEscape(str) {
-				return scanner.EOF
+func (l *lexer) scanString(ret rune) (rune, rune) {
+	ch := l.next() // read character after quote
+	for ch != quote {
+		if ch == newline || ch < 0 {
+			if !l.hasError() {
+				l.Error("literal not terminated")
 			}
-		} else {
-			str.WriteRune(ch)
+			l.resetStrBuf()
+			return stopTok, ch
 		}
-
-		ch = s.Next()
+		if ch == backslash {
+			ch = l.scanEscape()
+		} else {
+			l.strBuf.WriteRune(ch)
+			ch = l.next()
+		}
 	}
 
-	// Done, grab the string and return.
-	lval.str = str.String()
-
-	return ret
+	l.gotString = true
+	return ret, l.next()
 }
 
-// scanEscape scans an escape sequence and appends the decoded value to str.
-func (l *lexer) scanEscape(str *strings.Builder) bool {
-	s := l.scanner
-
-	ch := s.Next() // read character after '\'
+func (l *lexer) scanEscape() rune {
+	ch := l.next() // read character after '\'
 	switch ch {
 	case 'b':
-		str.WriteRune('\b')
+		l.strBuf.WriteRune('\b')
+		ch = l.next()
 	case 'f':
-		str.WriteRune('\f')
+		l.strBuf.WriteRune('\f')
+		ch = l.next()
 	case 'n':
-		str.WriteRune('\n')
+		l.strBuf.WriteRune('\n')
+		ch = l.next()
 	case 'r':
-		str.WriteRune('\r')
+		l.strBuf.WriteRune('\r')
+		ch = l.next()
 	case 't':
-		str.WriteRune('\t')
+		l.strBuf.WriteRune('\t')
+		ch = l.next()
 	case 'v':
-		str.WriteRune('\v')
+		l.strBuf.WriteRune('\v')
+		ch = l.next()
 	case 'x':
-		return scanHex(s, str)
+		ch = l.scanHex()
 	case 'u':
-		return l.scanUnicode(s, str)
-	case scanner.EOF:
-		l.scanError(s, "unexpected end after backslash")
-		return false
+		ch = l.scanUnicode()
+	case stopTok:
+		l.Error("unexpected end after backslash")
+		ch = stopTok
 	default:
 		// Everything else is literal.
-		str.WriteRune(ch)
+		l.strBuf.WriteRune(ch)
+		ch = l.next()
 	}
 
-	return true
+	if ch == stopTok {
+		// Reset the string.
+		l.resetStrBuf()
+	}
+
+	return ch
 }
 
-// writeUnicode decodes \uNNNN and \u{NN...} UTF-16 code points into UTF-8 and
-// writes it to lval.str. Returns false on error.
-func (l *lexer) scanUnicode(s *scanner.Scanner, str *strings.Builder) bool {
+// scanUnicode decodes \uNNNN and \u{NN...} UTF-16 code points into UTF-8.
+func (l *lexer) scanUnicode() rune {
 	// Parsing borrowed from Postgres:
 	// https://github.com/postgres/postgres/blob/adcdb2c/src/backend/utils/adt/jsonpath_scan.l#L669-L718
 	// and from encoding/json:
 	// https://cs.opensource.google/go/go/+/refs/tags/go1.22.1:src/encoding/json/decode.go;l=1253-1272
-	rr := decodeUnicode(s)
+	rr := l.decodeUnicode()
 	if rr <= null {
-		return false
+		return rr
 	}
 
 	if utf16.IsSurrogate(rr) {
 		// Should be followed by another escape.
-		if s.Peek() != '\\' {
-			s.Error(s, "Unicode low surrogate must follow a high surrogate")
-			return false
+		if l.next() != '\\' {
+			l.Error("Unicode low surrogate must follow a high surrogate")
+			return stopTok
 		}
 
-		// Remove backslash.
-		s.Next()
-
-		if s.Peek() != 'u' {
-			// Invalid surrogate. Return an error. Ideally should backtrack to
-			// \, but since there is an error it's probably no big deal.
-			s.Error(s, "Unicode low surrogate must follow a high surrogate")
-			return false
+		if l.next() != 'u' {
+			// Invalid surrogate. Backtrack to \ and return an error.
+			l.srcPos -= l.lastCharLen
+			l.lastCharLen = 1
+			l.Error("Unicode low surrogate must follow a high surrogate")
+			return stopTok
 		}
-
-		// Remove 'u'
-		s.Next()
-
-		rr1 := decodeUnicode(s)
+		rr1 := l.decodeUnicode()
 		if rr1 <= null {
-			return false
+			return rr1
 		}
 
 		if dec := utf16.DecodeRune(rr, rr1); dec != unicode.ReplacementChar {
 			// A valid pair; encode it as UTF-8.
-			return writeUnicode(dec, str)
+			l.writeUnicode(dec)
+			return l.next()
 		}
 
 		// Invalid surrogate, return an error
-		s.Error(s, "Unicode low surrogate must follow a high surrogate")
-
-		return false
+		l.Error("Unicode low surrogate must follow a high surrogate")
+		return stopTok
 	}
 
 	// \u escapes are UTF-16; convert to UTF-8
-	return writeUnicode(rr, str)
+	l.writeUnicode(rr)
+	return l.next()
 }
 
 // isIdentRune is a predicate controlling the characters accepted as the ith
@@ -561,18 +875,16 @@ func isVariableRune(ch rune) bool {
 	return xid.Continue(ch)
 }
 
-// writeUnicode UTF-8 encodes r and writes it to str. Required for UTF-16 code
-// points expressed with \u escapes.
-func writeUnicode(r rune, str *strings.Builder) bool {
+// writeUnicode UTF-8 encodes r and writes it to l.strBuf. Required for UTF-16
+// code points expressed with \u escapes.
+func (l *lexer) writeUnicode(r rune) {
 	// Should never need more than 4 max size UTF-8 characters (16 bytes) for a
 	// UTF-16 code point.
 	// https://github.com/postgres/postgres/blob/adcdb2c/src/include/mb/pg_wchar.h#L345
 	const maxUnicodeEquivalentString = utf8.UTFMax * 4
 	b := make([]byte, maxUnicodeEquivalentString)
 	n := utf8.EncodeRune(b, r)
-	str.Write(b[:n])
-
-	return true
+	l.strBuf.Write(b[:n])
 }
 
 // merge merges two runes. Seen inline in both the Postgres and encoding/json.
@@ -582,72 +894,73 @@ func merge(r1, r2 rune) rune {
 	return (r1 << four) | r2
 }
 
-// scanHex scans a '\xNN' hex escape sequence. Returns false for invalid hex
-// characters.
-func scanHex(s *scanner.Scanner, str *strings.Builder) bool {
+func (l *lexer) scanHex() rune {
 	// Parsing borrowed from the Postgres JSON Path scanner:
 	// https://github.com/postgres/postgres/blob/adcdb2c/src/backend/utils/adt/jsonpath_scan.l#L720-L733
-	if c1 := hexChar(s.Next()); c1 >= 0 {
-		if c2 := hexChar(s.Next()); c2 >= 0 {
+	if c1 := hexChar(l.next()); c1 >= 0 {
+		if c2 := hexChar(l.next()); c2 >= 0 {
 			decoded := merge(c1, c2)
 			if decoded > null {
-				str.WriteRune(decoded)
-				return true
+				l.strBuf.WriteRune(decoded)
+				return l.next()
 			}
 		}
 	}
 
-	s.Error(s, "invalid hexadecimal character sequence")
-
-	return false
+	l.Error("invalid hexadecimal character sequence")
+	return stopTok
 }
 
 // decodeUnicode decodes \uNNNN or \u{NN...} from s, returning the rune
 // or null on error.
-func decodeUnicode(s *scanner.Scanner) rune {
+func (l *lexer) decodeUnicode() rune {
 	var rr rune
 
-	if s.Peek() == '{' {
+	//nolint:nestif
+	if ch := l.next(); ch == '{' {
 		// parse '\u{NN...}'
-		s.Next() // skip '{'
-		c := s.Next()
+		c := l.next()
 
 		// Consume up to six hexadecimal characters and combine them into a
 		// single rune.
-		for i := 0; i < 6 && c != '}'; i, c = i+1, s.Next() {
+		for i := 0; i < 6 && c != '}'; i, c = i+1, l.next() {
 			si := hexChar(c)
 			if si < null {
-				s.Error(s, "invalid Unicode escape sequence")
-				return null
+				l.Error("invalid Unicode escape sequence")
+				return stopTok
 			}
 
 			rr = merge(rr, si)
 		}
 
 		if c != '}' {
-			s.Error(s, "invalid Unicode escape sequence")
-			return null
+			l.Error("invalid Unicode escape sequence")
+			return stopTok
 		}
 	} else {
 		// parse '\uNNNN'
-		const sixteen = 16
-
 		// Get the next four bytes.
-		for range 4 {
-			c := hexChar(s.Next())
+		// l.tokPos--
+		rr = hexChar(ch)
+		if rr < null {
+			l.Error("invalid Unicode escape sequence")
+			return stopTok
+		}
+		for range 3 {
+			c := hexChar(l.next())
 			if c < null {
-				s.Error(s, "invalid Unicode escape sequence")
-				return null
+				l.Error("invalid Unicode escape sequence")
+				return stopTok
 			}
 
-			rr = rr*sixteen + c
+			rr = rr*hex + c
 		}
 	}
 
 	if rr == null {
 		// \u0000, null, not supported.
-		s.Error(s, `\u0000 cannot be converted to text`)
-		return null
+		l.Error(`\u0000 cannot be converted to text`)
+		return stopTok
 	}
 
 	return rr
@@ -658,8 +971,6 @@ func decodeUnicode(s *scanner.Scanner) rune {
 // https://github.com/postgres/postgres/blob/adcdb2c/src/backend/utils/adt/jsonpath_scan.l#L575-L596
 // https://cs.opensource.google/go/go/+/refs/tags/go1.22.0:src/encoding/json/decode.go;l=1149-1170
 func hexChar(c rune) rune {
-	const decimal = 10
-
 	switch {
 	case '0' <= c && c <= '9':
 		return c - '0'
@@ -676,7 +987,7 @@ func hexChar(c rune) rune {
 // is not a jsonpath reserved word ident, it returns IDENT_P.
 //
 //nolint:funlen,gocyclo
-func identToken(ident string) int {
+func identToken(ident string) rune {
 	// Start with keywords required to be lowercase.
 	switch ident {
 	case "null":

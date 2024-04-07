@@ -47,15 +47,14 @@ and underscore separators are supported, for example, `1_000_000`, `0x1EEE_FFFF`
 `0o273`, `0b100101`. In SQL/JSON path (and in JavaScript, but not in SQL or Go),
 there must not be an underscore separator directly after the radix prefix.
 
-An SQL/JSON path expression is typically written in Go query as a Go string
-literal, so it must be enclosed in double quotes, and any double quotes within
-the value must be doubled -- or else enclosed in back quotes (see [string
-literals]). Some forms of path expressions require string literals within
-them.
+An SQL/JSON path expression is typically written as a Go string literal, so it
+must be enclosed in back quotes or double quotes --- and with the latter any
+double quotes within the value must be escaped (see [string literals]).
 
-These embedded string literals follow JavaScript/ECMAScript conventions: they
-must be surrounded by double quotes, and backslash escapes may be used within
-them to represent otherwise-hard-to-type characters. In particular, the way to
+Some forms of path expressions require string literals within them. These
+embedded string literals follow JavaScript/ECMAScript conventions: they must
+be surrounded by double quotes, and backslash escapes may be used within them
+to represent otherwise-hard-to-type characters. In particular, the way to
 write a double quote within an embedded string literal is `\"`, and to write a
 backslash itself, you must write `\\`. Other special backslash sequences
 include those recognized in JSON strings: `\b`, `\f`, `\n`, `\r`, `\t`, `\v`
