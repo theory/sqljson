@@ -39,7 +39,7 @@ func TestParser(t *testing.T) {
 		{
 			name: "error",
 			path: "$()",
-			err:  "parser: syntax error at path:1:3",
+			err:  "parser: syntax error at 1:3",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -85,7 +85,7 @@ func TestJSONPathString(t *testing.T) {
 	for _, tc := range []testCase{
 		{
 			name: "empty",
-			err:  `parser: syntax error at path:1:1`,
+			err:  `parser: syntax error at 1:1`,
 		},
 		{
 			name: "root",
@@ -429,7 +429,7 @@ func TestJSONPathMethodString(t *testing.T) {
 		{
 			name: "one_type",
 			path: `1.type()`,
-			err:  `parser: trailing junk after numeric literal at path:1:3`,
+			err:  `parser: trailing junk after numeric literal at 1:3`,
 		},
 		{
 			name: "parentheses_one_type",
@@ -571,7 +571,7 @@ func TestJSONPathRegexString(t *testing.T) {
 		{
 			name: "invalid_pattern",
 			path: `$ ? (@ like_regex "(invalid pattern")`,
-			err:  "parser: error parsing regexp: missing closing ): `(invalid pattern` at path:1:38",
+			err:  "parser: error parsing regexp: missing closing ): `(invalid pattern` at 1:38",
 		},
 		{
 			name: "valid_pattern",
@@ -601,7 +601,7 @@ func TestJSONPathRegexString(t *testing.T) {
 		{
 			name: "flag_xsms",
 			path: `$ ? (@ like_regex "pattern" flag "xsms")`,
-			err:  `parser: XQuery "x" flag (expanded regular expressions) is not implemented at path:1:40`,
+			err:  `parser: XQuery "x" flag (expanded regular expressions) is not implemented at 1:40`,
 		},
 		{
 			name: "flag_q",
@@ -621,7 +621,7 @@ func TestJSONPathRegexString(t *testing.T) {
 		{
 			name: "flag_a",
 			path: `$ ? (@ like_regex "pattern" flag "a")`,
-			err:  `parser: Unrecognized flag character "a" in LIKE_REGEX predicate at path:1:37`,
+			err:  `parser: Unrecognized flag character "a" in LIKE_REGEX predicate at 1:37`,
 		},
 	} {
 		t.Run(tc.name, tc.run)
@@ -975,12 +975,12 @@ func TestJSONPathNumericLiteralsString(t *testing.T) {
 		{
 			name: "zero_zero",
 			path: `00`,
-			err:  `parser: trailing junk after numeric literal at path:1:3`,
+			err:  `parser: trailing junk after numeric literal at 1:2`,
 		},
 		{
 			name: "leading_zero",
 			path: `0755`,
-			err:  `parser: trailing junk after numeric literal at path:1:5`,
+			err:  `parser: trailing junk after numeric literal at 1:2`,
 		},
 		{
 			name: "zero_dot_zero",
@@ -1050,27 +1050,27 @@ func TestJSONPathNumericLiteralsString(t *testing.T) {
 		{
 			name: "1a",
 			path: `1a`,
-			err:  `parser: trailing junk after numeric literal at path:1:2`,
+			err:  `parser: trailing junk after numeric literal at 1:2`,
 		},
 		{
 			name: "1e",
 			path: `1e`,
-			err:  `parser: exponent has no digits at path:1:3`,
+			err:  `parser: exponent has no digits at 1:3`,
 		},
 		{
 			name: "1_dot_e",
 			path: `1.e`,
-			err:  `parser: exponent has no digits at path:1:4`,
+			err:  `parser: exponent has no digits at 1:4`,
 		},
 		{
 			name: "1_dot_2a",
 			path: `1.2a`,
-			err:  `parser: trailing junk after numeric literal at path:1:4`,
+			err:  `parser: trailing junk after numeric literal at 1:4`,
 		},
 		{
 			name: "one_dot_2e",
 			path: `1.2e`,
-			err:  `parser: exponent has no digits at path:1:5`,
+			err:  `parser: exponent has no digits at 1:5`,
 		},
 		{
 			name: "one_dot_2_dot_e",
@@ -1110,7 +1110,7 @@ func TestJSONPathNumericLiteralsString(t *testing.T) {
 		{
 			name: "1_dot_2e3a",
 			path: `1.2e3a`,
-			err:  `parser: trailing junk after numeric literal at path:1:6`,
+			err:  `parser: trailing junk after numeric literal at 1:6`,
 		},
 		{
 			name: "1_dot_2_dot_e3",
@@ -1177,49 +1177,49 @@ func TestJSONPathNonDecimalString(t *testing.T) {
 		{
 			name: "empty_binary",
 			path: `0b`,
-			err:  `parser: binary literal has no digits at path:1:3`,
+			err:  `parser: binary literal has no digits at 1:3`,
 		},
 		{
 			name: "1b",
 			path: `1b`,
-			err:  `parser: trailing junk after numeric literal at path:1:2`,
+			err:  `parser: trailing junk after numeric literal at 1:2`,
 		},
 		{
 			name: "0b0x",
 			path: `0b0x`,
-			err:  `parser: trailing junk after numeric literal at path:1:4`,
+			err:  `parser: trailing junk after numeric literal at 1:4`,
 		},
 
 		{
 			name: "empty_octal",
 			path: `0o`,
-			err:  `parser: octal literal has no digits at path:1:3`,
+			err:  `parser: octal literal has no digits at 1:3`,
 		},
 		{
 			name: "1o",
 			path: `1o`,
-			err:  `parser: trailing junk after numeric literal at path:1:2`,
+			err:  `parser: trailing junk after numeric literal at 1:2`,
 		},
 		{
 			name: "0o0x",
 			path: `0o0x`,
-			err:  `parser: trailing junk after numeric literal at path:1:4`,
+			err:  `parser: trailing junk after numeric literal at 1:4`,
 		},
 
 		{
 			name: "empty_hex",
 			path: `0x`,
-			err:  `parser: hexadecimal literal has no digits at path:1:3`,
+			err:  `parser: hexadecimal literal has no digits at 1:3`,
 		},
 		{
 			name: "1x",
 			path: `1x`,
-			err:  `parser: trailing junk after numeric literal at path:1:2`,
+			err:  `parser: trailing junk after numeric literal at 1:2`,
 		},
 		{
 			name: "0x0y",
 			path: `0x0y`,
-			err:  `parser: trailing junk after numeric literal at path:1:4`,
+			err:  `parser: trailing junk after numeric literal at 1:4`,
 		},
 	} {
 		t.Run(tc.name, tc.run)
@@ -1282,60 +1282,60 @@ func TestJSONPathUnderscoreNumberString(t *testing.T) {
 		{
 			name: "_100",
 			path: `_100`,
-			err:  `parser: syntax error at path:1:5`,
+			err:  `parser: syntax error at 1:5`,
 		},
 		{
 			name: "100_",
 			path: `100_`,
-			err:  `parser: '_' must separate successive digits at path:1:5`,
+			err:  `parser: '_' must separate successive digits at 1:5`,
 		},
 		{
 			name: "100__000",
 			path: `100__000`,
-			err:  `parser: '_' must separate successive digits at path:1:9`,
+			err:  `parser: '_' must separate successive digits at 1:9`,
 		},
 
 		{
 			name: "_1_000dot5",
 			path: `_1_000.5`,
-			err:  `parser: syntax error at path:1:7`,
+			err:  `parser: syntax error at 1:7`,
 		},
 		{
 			name: "1_000_dot_5",
 			path: `1_000_.5`,
-			err:  `parser: '_' must separate successive digits at path:1:9`,
+			err:  `parser: '_' must separate successive digits at 1:9`,
 		},
 		{
 			name: "1_000dot__5",
 			path: `1_000._5`,
-			err:  `parser: '_' must separate successive digits at path:1:9`,
+			err:  `parser: '_' must separate successive digits at 1:9`,
 		},
 		{
 			name: "1_000dot5_",
 			path: `1_000.5_`,
-			err:  `parser: '_' must separate successive digits at path:1:9`,
+			err:  `parser: '_' must separate successive digits at 1:9`,
 		},
 		{
 			name: "1_000dot5e_1",
 			path: `1_000.5e_1`,
-			err:  `parser: '_' must separate successive digits at path:1:11`,
+			err:  `parser: '_' must separate successive digits at 1:11`,
 		},
 
 		// underscore after prefix not allowed in JavaScript (but allowed in SQL)
 		{
 			name: "0b_10_0101",
 			path: `0b_10_0101`,
-			err:  `parser: underscore disallowed at start of numeric literal at path:1:11`,
+			err:  `parser: underscore disallowed at start of numeric literal at 1:3`,
 		},
 		{
 			name: "0o_273",
 			path: `0o_273`,
-			err:  `parser: underscore disallowed at start of numeric literal at path:1:7`,
+			err:  `parser: underscore disallowed at start of numeric literal at 1:3`,
 		},
 		{
 			name: "0x_42F",
 			path: `0x_42F`,
-			err:  `parser: underscore disallowed at start of numeric literal at path:1:7`,
+			err:  `parser: underscore disallowed at start of numeric literal at 1:3`,
 		},
 	} {
 		t.Run(tc.name, tc.run)
@@ -1353,22 +1353,22 @@ func TestJSONPathEncodingString(t *testing.T) {
 		{
 			name: "empty_unicode",
 			path: `"\u"`, // ERROR, incomplete escape
-			err:  `parser: invalid Unicode escape sequence at path:1:5`,
+			err:  `parser: invalid Unicode escape sequence at 1:4`,
 		},
 		{
 			name: "unicode_00",
 			path: `"\u00"`, // ERROR, incomplete escape
-			err:  `parser: invalid Unicode escape sequence at path:1:7`,
+			err:  `parser: invalid Unicode escape sequence at 1:6`,
 		},
 		{
 			name: "unicode_invalid_hex",
 			path: `"\u000g"`, // ERROR, g is not a hex digit
-			err:  `parser: invalid Unicode escape sequence at path:1:8`,
+			err:  `parser: invalid Unicode escape sequence at 1:7`,
 		},
 		{
 			name: "unicode_0000",
 			path: `"\u0000"`, // OK, legal escape [but Postgres doesn't support null bytes in strings]
-			err:  `parser: \u0000 cannot be converted to text at path:1:8`,
+			err:  `parser: \u0000 cannot be converted to text at 1:7`,
 		},
 		{
 			name: "unicode_aBcD",
@@ -1385,22 +1385,22 @@ func TestJSONPathEncodingString(t *testing.T) {
 		{
 			name: "two_highs",
 			path: `"\ud83d\ud83d"`, // 2 high surrogates in a row
-			err:  `parser: Unicode low surrogate must follow a high surrogate at path:1:14`,
+			err:  `parser: Unicode low surrogate must follow a high surrogate at 1:13`,
 		},
 		{
 			name: "wrong_order",
 			path: `"\ude04\ud83d"`, // surrogates in wrong order
-			err:  `parser: Unicode low surrogate must follow a high surrogate at path:1:14`,
+			err:  `parser: Unicode low surrogate must follow a high surrogate at 1:13`,
 		},
 		{
 			name: "orphan_high",
 			path: `"\ud83dX"`, // orphan high surrogate
-			err:  `parser: Unicode low surrogate must follow a high surrogate at path:1:8`,
+			err:  `parser: Unicode low surrogate must follow a high surrogate at 1:8`,
 		},
 		{
 			name: "orphan_low",
 			path: `"\ude04X"`, // orphan low surrogate
-			err:  `parser: Unicode low surrogate must follow a high surrogate at path:1:8`,
+			err:  `parser: Unicode low surrogate must follow a high surrogate at 1:8`,
 		},
 
 		// handling of simple unicode escapes
@@ -1422,7 +1422,7 @@ func TestJSONPathEncodingString(t *testing.T) {
 		{
 			name: "unescaped_null",
 			path: `"null \u0000 escape"`, // not escaped
-			err:  `parser: \u0000 cannot be converted to text at path:1:13`,
+			err:  `parser: \u0000 cannot be converted to text at 1:12`,
 		},
 		{
 			name: "escaped_null",
@@ -1435,22 +1435,22 @@ func TestJSONPathEncodingString(t *testing.T) {
 		{
 			name: "incomplete_escape",
 			path: `$."\u"`, // ERROR, incomplete escape
-			err:  `parser: invalid Unicode escape sequence at path:1:7`,
+			err:  `parser: invalid Unicode escape sequence at 1:6`,
 		},
 		{
 			name: "incomplete_escape_null",
 			path: `$."\u00"`, // ERROR, incomplete escape
-			err:  `parser: invalid Unicode escape sequence at path:1:9`,
+			err:  `parser: invalid Unicode escape sequence at 1:8`,
 		},
 		{
 			name: "invalid_hex_digit",
 			path: `$."\u000g"`, // ERROR, g is not a hex digit
-			err:  `parser: invalid Unicode escape sequence at path:1:10`,
+			err:  `parser: invalid Unicode escape sequence at 1:9`,
 		},
 		{
 			name: "null_byte_in_string",
 			path: `$."\u0000"`, // OK, legal escape  [but Postgres doesn't support null bytes in strings]
-			err:  `parser: \u0000 cannot be converted to text at path:1:10`,
+			err:  `parser: \u0000 cannot be converted to text at 1:9`,
 		},
 		{
 			name: "mixed_case_ok",
@@ -1467,22 +1467,22 @@ func TestJSONPathEncodingString(t *testing.T) {
 		{
 			name: "two_highs_key",
 			path: `$."\ud83d\ud83d"`, // 2 high surrogates in a row
-			err:  `parser: Unicode low surrogate must follow a high surrogate at path:1:16`,
+			err:  `parser: Unicode low surrogate must follow a high surrogate at 1:15`,
 		},
 		{
 			name: "wrong_order_key",
 			path: `$."\ude04\ud83d"`, // surrogates in wrong order
-			err:  `parser: Unicode low surrogate must follow a high surrogate at path:1:16`,
+			err:  `parser: Unicode low surrogate must follow a high surrogate at 1:15`,
 		},
 		{
 			name: "orphan_high_key",
 			path: `$."\ud83dX"`, // orphan high surrogate
-			err:  `parser: Unicode low surrogate must follow a high surrogate at path:1:10`,
+			err:  `parser: Unicode low surrogate must follow a high surrogate at 1:10`,
 		},
 		{
 			name: "orphan_low_key",
 			path: `$."\ude04X"`, // orphan low surrogate
-			err:  `parser: Unicode low surrogate must follow a high surrogate at path:1:10`,
+			err:  `parser: Unicode low surrogate must follow a high surrogate at 1:10`,
 		},
 
 		// handling of simple unicode escapes
@@ -1504,12 +1504,43 @@ func TestJSONPathEncodingString(t *testing.T) {
 		{
 			name: "unescaped_null_key",
 			path: `$."null \u0000 escape"`, // not unescaped
-			err:  `parser: \u0000 cannot be converted to text at path:1:15`,
+			err:  `parser: \u0000 cannot be converted to text at 1:14`,
 		},
 		{
 			name: "escaped_null_key",
 			path: `$."null \\u0000 escape"`, // not an escape
 			exp:  `$."null \\u0000 escape"`,
+		},
+	} {
+		t.Run(tc.name, tc.run)
+	}
+}
+
+func TestNumericEdgeCases(t *testing.T) {
+	t.Parallel()
+
+	//nolint:paralleltest
+	for _, tc := range []testCase{
+		// https://www.postgresql.org/message-id/flat/2F757EB8-AEB9-49E8-A2C6-613E06BA05D4%40justatheory.com
+		{
+			name: "hex_then_path_key",
+			path: `0x2.p10`,
+			exp:  `(2)."p10"`,
+		},
+		{
+			name: "hex_then_path_key_then_math",
+			path: `0x1.Fp+0`,
+			exp:  `((1)."Fp" + 0)`,
+		},
+		{
+			name: "float_then_path_key",
+			path: `3.14.p10`,
+			exp:  `(3.14)."p10"`,
+		},
+		{
+			name: "whitespace_disambiguation",
+			path: `2 .p10`,
+			exp:  `(2)."p10"`,
 		},
 	} {
 		t.Run(tc.name, tc.run)

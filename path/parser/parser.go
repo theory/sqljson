@@ -1,4 +1,6 @@
-// Package parser parses SQL/JSON paths.
+// Package parser parses SQL/JSON paths. It uses the same grammar as Postgres
+// to support the same syntax and capabilities, with a few minor exceptions.
+// The lexer use patterns borrowed PostgreSQL and from text/scanner.
 package parser
 
 import (

@@ -122,7 +122,7 @@ func TestPathErrors(t *testing.T) {
 		{
 			name: "parse_error",
 			path: "(.)",
-			err:  "parser: syntax error at path:1:3",
+			err:  "parser: syntax error at 1:3",
 		},
 		{
 			name: "validation_error",
