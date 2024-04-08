@@ -26,6 +26,7 @@ func TestNewLexer(t *testing.T) {
 	a.Equal(noChar, l.tokPos)
 	a.Equal(rune(noChar), l.ch)
 	a.Equal(1, l.line)
+	a.Equal("", l.tokenText())
 
 	// Make sure path was loaded into the scanner.
 	buf := new(strings.Builder)
@@ -36,6 +37,12 @@ func TestNewLexer(t *testing.T) {
 	}
 
 	a.Equal(path, buf.String())
+	a.Equal("", l.tokenText())
+
+	// tokenText should be correct even when tokEnd < tokPos
+	l.tokEnd = l.tokPos - 1
+	a.Equal("", l.tokenText())
+	a.Equal(l.tokPos, l.tokEnd)
 }
 
 func TestIsIdentRune(t *testing.T) {
@@ -89,16 +96,19 @@ func TestScanError(t *testing.T) {
 
 	l.Error("oops")
 	a.Equal([]string{"oops at 1:1"}, l.errors)
+	a.Equal("", l.tokenText())
 
 	a.Equal(int('$'), l.Lex(&pathSymType{}))
 	l.Error("yikes")
 	a.Equal([]string{"oops at 1:1", "yikes at 1:2"}, l.errors)
+	a.Equal("$", l.tokenText())
 
 	l.Error("hello")
 	a.Equal(
 		[]string{"oops at 1:1", "yikes at 1:2", "hello at 1:2"},
 		l.errors,
 	)
+	a.Equal("$", l.tokenText())
 }
 
 func TestScanIdent(t *testing.T) {
@@ -383,7 +393,7 @@ func TestScanString(t *testing.T) {
 			"Unicode low surrogate must follow a high surrogate at 1:9",
 		},
 		{
-			"null_byte",
+			"hex_null_byte",
 			`"go \x00"`,
 			"",
 			stopTok,
@@ -466,12 +476,26 @@ func TestScanString(t *testing.T) {
 			stopTok,
 			"unexpected end after backslash at 1:6",
 		},
+		{
+			"invalid_utf8",
+			string([]byte{0xD8, 0x34, 0xff, 0xfd}),
+			"",
+			stopTok,
+			"invalid UTF-8 encoding at 1:1",
+		},
+		{
+			"null_byte",
+			string([]byte{0x1f, 0x00}),
+			"",
+			0x1f,
+			"invalid character NULL at 1:2",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
 			l := newLexer(tc.str)
-			a.Equal(l.Lex(&pathSymType{}), tc.tok)
+			a.Equal(tc.tok, l.Lex(&pathSymType{}))
 			a.Equal(tc.exp, l.strBuf.String())
 
 			if tc.err == "" {
@@ -683,6 +707,20 @@ func TestScanNumbers(t *testing.T) {
 			INT_P,
 			"",
 		},
+		{
+			"no_decimal_mantissa",
+			`0o14e4`,
+			"0o14",
+			stopTok,
+			"'e' exponent requires decimal mantissa at 1:5",
+		},
+		{
+			"invalid_octal",
+			`0o9`,
+			"0o9",
+			stopTok,
+			"invalid digit '9' in octal literal at 1:4",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -784,6 +822,7 @@ func TestScanComment(t *testing.T) {
 		{"multi_line", "/* foo bar\nbaz */", stopTok, ""},
 		{"multi_line_prefix", "/* foo bar\n * baz */", stopTok, ""},
 		{"EOF", "/* foo ", stopTok, "unexpected end of comment at 1:8"},
+		{"not_a_comment", "/", '/', ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -952,5 +991,23 @@ func TestSetResult(t *testing.T) {
 				a.Equal(tc.err, tc.lex.errors[0])
 			}
 		})
+	}
+}
+
+func TestLitName(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	for _, tc := range []struct {
+		name   string
+		prefix rune
+	}{
+		{"decimal", 0},
+		{"octal", '0'},
+		{"octal", 'o'},
+		{"hexadecimal", 'x'},
+		{"binary", 'b'},
+	} {
+		a.Equal(tc.name+" literal", litName(tc.prefix))
 	}
 }

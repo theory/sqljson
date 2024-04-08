@@ -171,7 +171,7 @@ func (l *lexer) next() rune {
 			l.lastCharLen = width
 			l.column++
 			l.Error("invalid UTF-8 encoding")
-			return ch
+			return stopTok
 		}
 	}
 
@@ -184,6 +184,7 @@ func (l *lexer) next() rune {
 	switch ch {
 	case 0:
 		l.Error("invalid character NULL")
+		ch = stopTok
 	case '\n':
 		l.line++
 		l.lastLineLen = l.column
@@ -246,8 +247,6 @@ func (l *lexer) pos() (pos position) {
 // token or Unicode character from the path. The text representation of the
 // token will be stored in lval.str. It reports scanning errors (read
 // and token errors) by calling l.Error.
-//
-//nolint:funlen
 func (l *lexer) Lex(lval *pathSymType) int {
 	ch := l.peek()
 
@@ -302,8 +301,6 @@ redo:
 				ch = l.scanComment(ch)
 				goto redo
 			}
-		case '\'':
-			ch = l.next()
 		case '.':
 			ch = l.next()
 			if isDecimal(ch) {
