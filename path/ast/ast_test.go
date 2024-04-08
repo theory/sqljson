@@ -213,129 +213,102 @@ func TestStringNodes(t *testing.T) {
 	}
 }
 
-//nolint:dupl
-func TestNumericNode(t *testing.T) {
+func TestNumberNode(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 
 	for _, tc := range []struct {
-		name string
-		num  string
-		val  float64
-		str  string
-		err  string
+		name    string
+		num     string
+		isInt   bool
+		integer int64
+		float   float64
+		str     string
+		err     string
 	}{
-		{"number", "42.3", 42.3, "42.3", ""},
-		{"zero_dot", "0.", 0.0, "0", ""},
-		{"dot_one", ".1", 0.1, "0.1", ""},
-		{"zero_dot_zero", "0.0", 0.0, "0", ""},
-		{"zero_dot_000", "0.000", 0.0, "0", ""},
-		{"expo", "0.0010e-1", 0.0001, "0.0001", ""},
-		{"pos_expo", "0.0010e+2", 0.1, "0.1", ""},
-		{"dot_001", ".001", 0.001, "0.001", ""},
-		{"dot_expo", "1.e1", 10, "10", ""},
-		{"one_expo_3", "1e3", 1000, "1000", ""},
-		{"1_dot_2e3", "1.2e3", 1200, "1200", ""},
+		{"float_number", "42.3", false, 42, 42.3, "42.3", ""},
+		{"float_zero_dot", "0.", false, 0, 0.0, "0", ""},
+		{"float_dot_one", ".1", false, 0, 0.1, "0.1", ""},
+		{"float_zero_dot_zero", "0.0", false, 0, 0.0, "0", ""},
+		{"float_zero_dot_000", "0.000", false, 0, 0.0, "0", ""},
+		{"float_expo", "0.0010e-1", false, 0, 0.0001, "0.0001", ""},
+		{"float_pos_expo", "0.0010e+2", false, 0, 0.1, "0.1", ""},
+		{"float_dot_001", ".001", false, 0, 0.001, "0.001", ""},
+		{"float_dot_expo", "1.e1", false, 10, 10, "10", ""},
+		{"float_one_expo_3", "1e3", false, 1000, 1000, "1000", ""},
+		{"float_1_dot_2e3", "1.2e3", false, 1200, 1200, "1200", ""},
 		{
-			name: "max_float",
-			num:  fmt.Sprintf("%v", math.MaxFloat64),
-			val:  math.MaxFloat64,
-			str:  fmt.Sprintf("%v", math.MaxFloat64),
+			name:    "max_float",
+			num:     fmt.Sprintf("%v", math.MaxFloat64),
+			isInt:   false,
+			integer: math.MaxInt64,
+			float:   math.MaxFloat64,
+			str:     fmt.Sprintf("%v", math.MaxFloat64),
 		},
 		{
-			name: "min_float",
-			num:  fmt.Sprintf("%v", math.SmallestNonzeroFloat64),
-			val:  math.SmallestNonzeroFloat64,
-			str:  fmt.Sprintf("%v", math.SmallestNonzeroFloat64),
+			name:    "min_float",
+			num:     fmt.Sprintf("%v", math.SmallestNonzeroFloat64),
+			isInt:   false,
+			integer: 0,
+			float:   math.SmallestNonzeroFloat64,
+			str:     fmt.Sprintf("%v", math.SmallestNonzeroFloat64),
 		},
 		{
-			name: "invalid_float",
-			num:  "xyz.4",
-			val:  0,
-			str:  "xyz.4",
-			err:  `strconv.ParseFloat: parsing "xyz.4": invalid syntax`,
+			name:    "invalid_float",
+			num:     "xyz.4",
+			isInt:   false,
+			integer: 0,
+			float:   0,
+			str:     "xyz.4",
+			err:     `strconv.ParseFloat: parsing "xyz.4": invalid syntax`,
+		},
+		{"int_number", "42", true, 42, 42, "42", ""},
+		{"int_underscores", "1_000_000", true, 1_000_000, 1_000_000, "1000000", ""},
+		{"int_binary", "0b100101", true, 37, 37, "37", ""},
+		{"int_octal", "0o273", true, 187, 187, "187", ""},
+		{"int_hex", "0x42F", true, 1071, 1071, "1071", ""},
+		{
+			name:    "max_int",
+			num:     strconv.Itoa(math.MaxInt64),
+			isInt:   true,
+			integer: math.MaxInt64,
+			float:   +9.223372036854776e+18,
+			str:     strconv.Itoa(math.MaxInt64),
+		},
+		{
+			name:    "min_int",
+			num:     strconv.Itoa(math.MinInt32),
+			isInt:   true,
+			integer: math.MinInt32,
+			float:   -2.147483648e+09,
+			str:     strconv.Itoa(math.MinInt32),
+		},
+		{
+			name:    "invalid_int",
+			num:     "123x",
+			isInt:   true,
+			integer: 0,
+			float:   0,
+			str:     "123x",
+			err:     `strconv.ParseInt: parsing "123x": invalid syntax`,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
 			if tc.err != "" {
-				a.PanicsWithError(tc.err, func() { NewNumeric(tc.num) })
+				a.PanicsWithError(tc.err, func() { NewNumeric(tc.num, tc.isInt) })
 				return
 			}
 
-			num := NewNumeric(tc.num)
+			num := NewNumeric(tc.num, tc.isInt)
 			a.Implements((*Node)(nil), num)
 			a.Equal(tc.num, num.Literal())
 			a.Equal(tc.str, num.String())
 			a.Equal(lowestPriority, num.priority())
+			a.Equal(tc.integer, num.Int64())
 			//nolint:testifylint
-			a.Equal(tc.val, num.Float())
-
-			// Test writeTo.
-			buf := new(strings.Builder)
-			num.writeTo(buf, false, false)
-			a.Equal(tc.str, buf.String())
-
-			// Test writeTo withParens true.
-			buf.Reset()
-			num.writeTo(buf, false, true)
-			a.Equal("("+tc.str+")", buf.String())
-		})
-	}
-}
-
-//nolint:dupl
-func TestIntegerNode(t *testing.T) {
-	t.Parallel()
-	a := assert.New(t)
-
-	for _, tc := range []struct {
-		name string
-		num  string
-		val  int64
-		str  string
-		err  string
-	}{
-		{"number", "42", 42, "42", ""},
-		{"underscores", "1_000_000", 1_000_000, "1000000", ""},
-		{"binary", "0b100101", 37, "37", ""},
-		{"octal", "0o273", 187, "187", ""},
-		{"hex", "0x42F", 1071, "1071", ""},
-		{
-			name: "max_int",
-			num:  strconv.Itoa(math.MaxInt64),
-			val:  math.MaxInt64,
-			str:  strconv.Itoa(math.MaxInt64),
-		},
-		{
-			name: "min_int",
-			num:  strconv.Itoa(math.MinInt32),
-			val:  math.MinInt32,
-			str:  strconv.Itoa(math.MinInt32),
-		},
-		{
-			name: "invalid_int",
-			num:  "123x",
-			val:  0,
-			str:  "123x",
-			err:  `strconv.ParseInt: parsing "123x": invalid syntax`,
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			if tc.err != "" {
-				a.PanicsWithError(tc.err, func() { NewInteger(tc.num) })
-				return
-			}
-
-			num := NewInteger(tc.num)
-			a.Implements((*Node)(nil), num)
-			a.Equal(tc.num, num.Literal())
-			a.Equal(tc.str, num.String())
-			a.Equal(lowestPriority, num.priority())
-			a.Equal(tc.val, num.Int())
+			a.Equal(tc.float, num.Float64())
 
 			// Test writeTo.
 			buf := new(strings.Builder)
@@ -364,9 +337,9 @@ func TestBinaryNode(t *testing.T) {
 	}{
 		{
 			name:  "equal",
-			left:  NewInteger("42"),
+			left:  NewNumeric("42", true),
 			op:    BinaryEqual,
-			right: NewInteger("99"),
+			right: NewNumeric("99", true),
 			str:   "42 == 99",
 		},
 		{
@@ -378,86 +351,86 @@ func TestBinaryNode(t *testing.T) {
 		},
 		{
 			name:  "not_equal",
-			left:  NewInteger("42"),
+			left:  NewNumeric("42", true),
 			op:    BinaryNotEqual,
-			right: NewInteger("99"),
+			right: NewNumeric("99", true),
 			str:   "42 != 99",
 		},
 		{
 			name:  "lt",
-			left:  NewInteger("42"),
+			left:  NewNumeric("42", true),
 			op:    BinaryLess,
-			right: NewInteger("99"),
+			right: NewNumeric("99", true),
 			str:   "42 < 99",
 		},
 		{
 			name:  "le",
-			left:  NewInteger("42"),
+			left:  NewNumeric("42", true),
 			op:    BinaryLessOrEqual,
-			right: NewInteger("99"),
+			right: NewNumeric("99", true),
 			str:   "42 <= 99",
 		},
 		{
 			name:  "gt",
-			left:  NewInteger("42"),
+			left:  NewNumeric("42", true),
 			op:    BinaryGreater,
-			right: NewInteger("99"),
+			right: NewNumeric("99", true),
 			str:   "42 > 99",
 		},
 		{
 			name:  "ge",
-			left:  NewInteger("42"),
+			left:  NewNumeric("42", true),
 			op:    BinaryGreaterOrEqual,
-			right: NewInteger("99"),
+			right: NewNumeric("99", true),
 			str:   "42 >= 99",
 		},
 		{
 			name:  "and",
 			left:  NewBinary(BinaryEqual, ConstCurrent, ConstTrue),
 			op:    BinaryAnd,
-			right: NewBinary(BinaryEqual, NewVariable("xxx"), NewInteger("42")),
+			right: NewBinary(BinaryEqual, NewVariable("xxx"), NewNumeric("42", true)),
 			str:   `@ == true && $"xxx" == 42`,
 		},
 		{
 			name:  "or",
 			left:  NewBinary(BinaryEqual, ConstCurrent, ConstTrue),
 			op:    BinaryOr,
-			right: NewBinary(BinaryEqual, NewVariable("xxx"), NewInteger("42")),
+			right: NewBinary(BinaryEqual, NewVariable("xxx"), NewNumeric("42", true)),
 			str:   `@ == true || $"xxx" == 42`,
 		},
 		{
 			name:  "add",
-			left:  NewInteger("42"),
+			left:  NewNumeric("42", true),
 			op:    BinaryAdd,
-			right: NewNumeric("98.6"),
+			right: NewNumeric("98.6", false),
 			str:   `42 + 98.6`,
 		},
 		{
 			name:  "subtract",
-			left:  NewInteger("42"),
+			left:  NewNumeric("42", true),
 			op:    BinarySub,
-			right: NewNumeric("98.6"),
+			right: NewNumeric("98.6", false),
 			str:   `42 - 98.6`,
 		},
 		{
 			name:  "multiply",
-			left:  NewInteger("42"),
+			left:  NewNumeric("42", true),
 			op:    BinaryMul,
-			right: NewNumeric("98.6"),
+			right: NewNumeric("98.6", false),
 			str:   `42 * 98.6`,
 		},
 		{
 			name:  "divide",
-			left:  NewInteger("42"),
+			left:  NewNumeric("42", true),
 			op:    BinaryDiv,
-			right: NewNumeric("98.6"),
+			right: NewNumeric("98.6", false),
 			str:   `42 / 98.6`,
 		},
 		{
 			name:  "modulo",
-			left:  NewInteger("42"),
+			left:  NewNumeric("42", true),
 			op:    BinaryMod,
-			right: NewInteger("12"),
+			right: NewNumeric("12", true),
 			str:   `42 % 12`,
 		},
 		{
@@ -470,35 +443,35 @@ func TestBinaryNode(t *testing.T) {
 		// case jpiStartsWith:
 		{
 			name:  "subscript",
-			left:  NewInteger("42"),
+			left:  NewNumeric("42", true),
 			op:    BinarySubscript,
-			right: NewInteger("99"),
+			right: NewNumeric("99", true),
 			str:   "42 to 99",
 		},
 		{
 			name:  "left_subscript",
-			left:  NewInteger("42"),
+			left:  NewNumeric("42", true),
 			op:    BinarySubscript,
 			right: nil,
 			str:   "42",
 		},
 		{
 			name:  "decimal_l_r",
-			left:  NewInteger("42"),
+			left:  NewNumeric("42", true),
 			op:    BinaryDecimal,
-			right: NewInteger("99"),
+			right: NewNumeric("99", true),
 			str:   ".decimal(42,99)",
 		},
 		{
 			name: "decimal_l",
-			left: NewInteger("42"),
+			left: NewNumeric("42", true),
 			op:   BinaryDecimal,
 			str:  ".decimal(42)",
 		},
 		{
 			name:  "decimal_r",
 			op:    BinaryDecimal,
-			right: NewInteger("99"),
+			right: NewNumeric("99", true),
 			str:   ".decimal(,99)",
 		},
 		{
@@ -569,43 +542,43 @@ func TestUnaryNode(t *testing.T) {
 		{
 			name: "exists",
 			op:   UnaryExists,
-			node: NewInteger("99"),
+			node: NewNumeric("99", true),
 			str:  "exists (99)",
 		},
 		{
 			name: "is_unknown",
 			op:   UnaryIsUnknown,
-			node: NewInteger("99"),
+			node: NewNumeric("99", true),
 			str:  "(99) is unknown",
 		},
 		{
 			name: "not",
 			op:   UnaryNot,
-			node: NewInteger("99"),
+			node: NewNumeric("99", true),
 			str:  "!(99)",
 		},
 		{
 			name: "plus",
 			op:   UnaryPlus,
-			node: NewInteger("99"),
+			node: NewNumeric("99", true),
 			str:  "+99",
 		},
 		{
 			name: "minus",
 			op:   UnaryMinus,
-			node: NewInteger("99"),
+			node: NewNumeric("99", true),
 			str:  "-99",
 		},
 		{
 			name: "filter",
 			op:   UnaryFilter,
-			node: NewInteger("99"),
+			node: NewNumeric("99", true),
 			str:  "?(99)",
 		},
 		{
 			name: "datetime",
 			op:   UnaryDateTime,
-			node: NewInteger("99"),
+			node: NewNumeric("99", true),
 			str:  ".datetime(99)",
 		},
 		{
@@ -616,31 +589,31 @@ func TestUnaryNode(t *testing.T) {
 		{
 			name: "time",
 			op:   UnaryTime,
-			node: NewInteger("99"),
+			node: NewNumeric("99", true),
 			str:  ".time(99)",
 		},
 		{
 			name: "time_tz",
 			op:   UnaryTimeTZ,
-			node: NewInteger("99"),
+			node: NewNumeric("99", true),
 			str:  ".time_tz(99)",
 		},
 		{
 			name: "timestamp",
 			op:   UnaryTimestamp,
-			node: NewInteger("99"),
+			node: NewNumeric("99", true),
 			str:  ".timestamp(99)",
 		},
 		{
 			name: "timestamp_tz",
 			op:   UnaryTimestampTZ,
-			node: NewInteger("99"),
+			node: NewNumeric("99", true),
 			str:  ".timestamp_tz(99)",
 		},
 		{
 			name: "unknown_op",
 			op:   UnaryOperator(-1),
-			node: NewInteger("99"),
+			node: NewNumeric("99", true),
 			str:  "",
 		},
 		{
@@ -700,17 +673,17 @@ func TestAccessorNode(t *testing.T) {
 		},
 		{
 			name:  "numeric",
-			nodes: []Node{NewNumeric("42.2")},
+			nodes: []Node{NewNumeric("42.2", false)},
 			str:   `42.2`,
 		},
 		{
 			name:  "numeric_then_key",
-			nodes: []Node{NewNumeric("42.2"), NewKey("bar")},
+			nodes: []Node{NewNumeric("42.2", false), NewKey("bar")},
 			str:   `(42.2)."bar"`,
 		},
 		{
 			name:  "nested_nodes",
-			nodes: []Node{NewAccessorList([]Node{NewNumeric("42.2")}), NewKey("bar")},
+			nodes: []Node{NewAccessorList([]Node{NewNumeric("42.2", false)}), NewKey("bar")},
 			str:   `(42.2)."bar"`,
 		},
 	} {
@@ -748,28 +721,28 @@ func TestArrayIndexNode(t *testing.T) {
 	}{
 		{
 			name:  "single_subscript",
-			nodes: []Node{NewBinary(BinarySubscript, NewInteger("1"), NewInteger("4"))},
+			nodes: []Node{NewBinary(BinarySubscript, NewNumeric("1", true), NewNumeric("4", true))},
 			str:   `[1 to 4]`,
 		},
 		{
 			name:  "start_only",
-			nodes: []Node{NewBinary(BinarySubscript, NewInteger("4"), nil)},
+			nodes: []Node{NewBinary(BinarySubscript, NewNumeric("4", true), nil)},
 			str:   `[4]`,
 		},
 		{
 			name: "two_subscripts",
 			nodes: []Node{
-				NewBinary(BinarySubscript, NewInteger("1"), NewInteger("4")),
-				NewBinary(BinarySubscript, NewInteger("6"), NewInteger("7")),
+				NewBinary(BinarySubscript, NewNumeric("1", true), NewNumeric("4", true)),
+				NewBinary(BinarySubscript, NewNumeric("6", true), NewNumeric("7", true)),
 			},
 			str: `[1 to 4,6 to 7]`,
 		},
 		{
 			name: "complex_subscripts",
 			nodes: []Node{
-				NewBinary(BinarySubscript, NewInteger("1"), NewInteger("2")),
-				NewBinary(BinarySubscript, NewBinary(BinaryAdd, ConstCurrent, NewInteger("3")), nil),
-				NewBinary(BinarySubscript, NewInteger("6"), nil),
+				NewBinary(BinarySubscript, NewNumeric("1", true), NewNumeric("2", true)),
+				NewBinary(BinarySubscript, NewBinary(BinaryAdd, ConstCurrent, NewNumeric("3", true)), nil),
+				NewBinary(BinarySubscript, NewNumeric("6", true), nil),
 			},
 			str: `[1 to 2,@ + 3,6]`,
 		},
@@ -994,74 +967,74 @@ func TestNewUnaryOrNumber(t *testing.T) {
 		{
 			name: "plus_integer",
 			op:   UnaryPlus,
-			node: NewInteger("42"),
-			exp:  NewInteger("42"),
+			node: NewNumeric("42", true),
+			exp:  NewNumeric("42", true),
 		},
 		{
 			name: "minus_integer",
 			op:   UnaryMinus,
-			node: NewInteger("42"),
-			exp:  NewInteger("-42"),
+			node: NewNumeric("42", true),
+			exp:  NewNumeric("-42", true),
 		},
 		{
 			name: "other_integer",
 			op:   UnaryExists,
-			node: NewInteger("42"),
+			node: NewNumeric("42", true),
 			err:  "Operator must be + or - but is exists",
 		},
 		{
 			name: "plus_accessor_integer",
 			op:   UnaryPlus,
-			node: NewAccessorList([]Node{NewInteger("42")}),
-			exp:  NewInteger("42"),
+			node: NewAccessorList([]Node{NewNumeric("42", true)}),
+			exp:  NewNumeric("42", true),
 		},
 		{
 			name: "minus_accessor_integer",
 			op:   UnaryMinus,
-			node: NewAccessorList([]Node{NewInteger("42")}),
-			exp:  NewInteger("-42"),
+			node: NewAccessorList([]Node{NewNumeric("42", true)}),
+			exp:  NewNumeric("-42", true),
 		},
 		{
 			name: "minus_accessor_multi",
 			op:   UnaryMinus,
-			node: NewAccessorList([]Node{NewInteger("42"), NewInteger("42")}),
-			exp:  NewUnary(UnaryMinus, NewAccessorList([]Node{NewInteger("42"), NewInteger("42")})),
+			node: NewAccessorList([]Node{NewNumeric("42", true), NewNumeric("42", true)}),
+			exp:  NewUnary(UnaryMinus, NewAccessorList([]Node{NewNumeric("42", true), NewNumeric("42", true)})),
 		},
 		{
 			name: "plus_numeric",
 			op:   UnaryPlus,
-			node: NewNumeric("42.0"),
-			exp:  NewNumeric("42.0"),
+			node: NewNumeric("42.0", false),
+			exp:  NewNumeric("42.0", false),
 		},
 		{
 			name: "minus_numeric",
 			op:   UnaryMinus,
-			node: NewNumeric("42.0"),
-			exp:  NewNumeric("-42.0"),
+			node: NewNumeric("42.0", false),
+			exp:  NewNumeric("-42.0", false),
 		},
 		{
 			name: "other_numeric",
 			op:   UnaryNot,
-			node: NewNumeric("42"),
+			node: NewNumeric("42", false),
 			err:  "Operator must be + or - but is !",
 		},
 		{
 			name: "plus_accessor_numeric",
 			op:   UnaryPlus,
-			node: NewAccessorList([]Node{NewNumeric("42.1")}),
-			exp:  NewNumeric("42.1"),
+			node: NewAccessorList([]Node{NewNumeric("42.1", false)}),
+			exp:  NewNumeric("42.1", false),
 		},
 		{
 			name: "minus_accessor_numeric",
 			op:   UnaryMinus,
-			node: NewAccessorList([]Node{NewNumeric("42")}),
-			exp:  NewNumeric("-42"),
+			node: NewAccessorList([]Node{NewNumeric("42", false)}),
+			exp:  NewNumeric("-42", false),
 		},
 		{
 			name: "minus_accessor_multi_numeric",
 			op:   UnaryMinus,
-			node: NewAccessorList([]Node{NewNumeric("42"), ConstCurrent}),
-			exp:  NewUnary(UnaryMinus, NewAccessorList([]Node{NewNumeric("42"), ConstCurrent})),
+			node: NewAccessorList([]Node{NewNumeric("42", false), ConstCurrent}),
+			exp:  NewUnary(UnaryMinus, NewAccessorList([]Node{NewNumeric("42", false), ConstCurrent})),
 		},
 		{
 			name: "plus_other",
@@ -1158,15 +1131,15 @@ func TestValidateNode(t *testing.T) {
 		},
 		{
 			name: "numeric",
-			node: NewNumeric("42"),
+			node: NewNumeric("42", false),
 		},
 		{
 			name: "integer",
-			node: NewInteger("42"),
+			node: NewNumeric("42", true),
 		},
 		{
 			name: "binary",
-			node: NewBinary(BinaryAdd, NewInteger("42"), NewInteger("99")),
+			node: NewBinary(BinaryAdd, NewNumeric("42", true), NewNumeric("99", true)),
 		},
 		{
 			name: "binary_left_fail",
@@ -1284,7 +1257,6 @@ func TestNodes(t *testing.T) {
 		{"VariableNode", &VariableNode{}},
 		{"KeyNode", &KeyNode{}},
 		{"NumericNode", &NumericNode{}},
-		{"IntegerNode", &IntegerNode{}},
 		{"AnyNode", &AnyNode{}},
 		{"BinaryNode", &BinaryNode{}},
 		{"UnaryNode", &UnaryNode{}},

@@ -779,13 +779,13 @@ pathdefault:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:100
 		{
-			pathVAL.value = ast.NewNumeric(pathDollar[1].str)
+			pathVAL.value = ast.NewNumeric(pathDollar[1].str, false)
 		}
 	case 12:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:101
 		{
-			pathVAL.value = ast.NewInteger(pathDollar[1].str)
+			pathVAL.value = ast.NewNumeric(pathDollar[1].str, true)
 		}
 	case 13:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
@@ -1168,19 +1168,19 @@ pathdefault:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:239
 		{
-			pathVAL.value = ast.NewInteger(pathDollar[1].str)
+			pathVAL.value = ast.NewNumeric(pathDollar[1].str, true)
 		}
 	case 74:
 		pathDollar = pathS[pathpt-2 : pathpt+1]
 //line grammar.y:241
 		{
-			pathVAL.value = ast.NewUnaryOrNumber(ast.UnaryPlus, ast.NewInteger(pathDollar[2].str))
+			pathVAL.value = ast.NewUnaryOrNumber(ast.UnaryPlus, ast.NewNumeric(pathDollar[2].str, true))
 		}
 	case 75:
 		pathDollar = pathS[pathpt-2 : pathpt+1]
 //line grammar.y:243
 		{
-			pathVAL.value = ast.NewUnaryOrNumber(ast.UnaryMinus, ast.NewInteger(pathDollar[2].str))
+			pathVAL.value = ast.NewUnaryOrNumber(ast.UnaryMinus, ast.NewNumeric(pathDollar[2].str, true))
 		}
 	case 76:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
@@ -1210,7 +1210,7 @@ pathdefault:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:257
 		{
-			pathVAL.value = ast.NewInteger(pathDollar[1].str)
+			pathVAL.value = ast.NewNumeric(pathDollar[1].str, true)
 		}
 	case 81:
 		pathDollar = pathS[pathpt-1 : pathpt+1]

@@ -15,7 +15,6 @@
 //   - [VariableNode]
 //   - [KeyNode]
 //   - [NumericNode]
-//   - [IntegerNode]
 //   - [AnyNode]
 //   - [BinaryNode]
 //   - [UnaryNode]
@@ -33,7 +32,6 @@
 //		case *ast.VariableNode:
 //		case *ast.KeyNode:
 //		case *ast.NumericNode:
-//		case *ast.IntegerNode:
 //		case *ast.AnyNode:
 //		case *ast.BinaryNode:
 //			processNode(node.Left())
@@ -292,45 +290,28 @@ func (n *KeyNode) writeTo(buf *strings.Builder, inKey, _ bool) {
 	buf.WriteString(n.String())
 }
 
-type numberNode struct {
+// NumericNode represents a numeric value, and distinguishes between an
+// integer and a float.
+type NumericNode struct {
 	literal string
 	parsed  string
+	isInt   bool
 }
 
-// Literal returns the literal text string of the number as passed to the
-// constructor.
-func (n *numberNode) Literal() string {
-	return n.literal
-}
-
-// String returns the normalized string representation of the number.
-func (n *numberNode) String() string {
-	return n.parsed
-}
-
-// writeTo writes String to buf, surrounded by parentheses if withParens is
-// true.
-func (n *numberNode) writeTo(buf *strings.Builder, _, withParens bool) {
-	if withParens {
-		buf.WriteRune('(')
+// NewNumeric returns a new NumberNode representing num. Panics if num cannot
+// be parsed into a 64-bit integer when isInt is true or a JSON-compatible
+// float64 when isInt is false.
+func NewNumeric(num string, isInt bool) *NumericNode {
+	self := &NumericNode{literal: num, isInt: isInt}
+	if isInt {
+		val, err := strconv.ParseInt(num, 0, 64)
+		if err != nil {
+			panic(err)
+		}
+		self.parsed = strconv.FormatInt(val, 10)
+		return self
 	}
-	buf.WriteString(n.String())
-	if withParens {
-		buf.WriteRune(')')
-	}
-}
 
-// priority returns the priority of the numberNode, which is always 6.
-func (*numberNode) priority() uint8 { return lowestPriority }
-
-// NumericNode represents a numeric (non-integer) value.
-type NumericNode struct {
-	*numberNode
-}
-
-// NewNumeric returns a new NumericNode representing num. Panics if num cannot
-// be parsed into JSON-compatible float64.
-func NewNumeric(num string) *NumericNode {
 	f, err := strconv.ParseFloat(num, 64)
 	if err != nil {
 		panic(err)
@@ -352,38 +333,67 @@ func NewNumeric(num string) *NumericNode {
 		panic(err)
 	}
 
-	return &NumericNode{&numberNode{literal: num, parsed: string(str)}}
+	self.parsed = string(str)
+	return self
 }
 
-// Float returns the floating point number corresponding to n.
-func (n *NumericNode) Float() float64 {
+// Literal returns the literal text of the number as passed to the
+// constructor.
+func (n *NumericNode) Literal() string {
+	return n.literal
+}
+
+// String returns the normalized string representation of the number.
+func (n *NumericNode) String() string {
+	return n.parsed
+}
+
+// IsInt returns the normalized string representation of the number.
+func (n *NumericNode) IsInt() bool {
+	return n.isInt
+}
+
+// Float64 returns the floating point number corresponding to n. For maximum
+// accuracy, should only be called when n.IsInt() is false.
+func (n *NumericNode) Float64() float64 {
+	if n.isInt {
+		val, _ := strconv.ParseInt(n.parsed, 0, 64)
+		return float64(val)
+	}
 	num, _ := strconv.ParseFloat(n.parsed, 64)
 	return num
 }
 
-// IntegerNode represents an integral value.
-type IntegerNode struct {
-	*numberNode
-}
-
-// NewInteger returns a new IntegerNode representing num. Panics if
-// integer cannot be parsed into int64.
-func NewInteger(integer string) *IntegerNode {
-	val, err := strconv.ParseInt(integer, 0, 64)
-	if err != nil {
-		panic(err)
+// Int64 returns the integer corresponding to n. For maximum accuracy, should
+// only be called when n.IsInt() is true.
+func (n *NumericNode) Int64() int64 {
+	if !n.isInt {
+		num, _ := strconv.ParseFloat(n.parsed, 64)
+		return int64(num)
 	}
-	return &IntegerNode{&numberNode{
-		literal: integer,
-		parsed:  strconv.FormatInt(val, 10),
-	}}
-}
-
-// Int returns the integer corresponding to n.
-func (n *IntegerNode) Int() int64 {
 	val, _ := strconv.ParseInt(n.parsed, 0, 64)
 	return val
 }
+
+// JSON returns a json.Number representation of n.
+func (n *NumericNode) JSON() json.Number {
+	return json.Number(n.parsed)
+}
+
+// writeTo writes String to buf, surrounded by parentheses if withParens is
+// true.
+func (n *NumericNode) writeTo(buf *strings.Builder, _, withParens bool) {
+	if withParens {
+		buf.WriteRune('(')
+	}
+	buf.WriteString(n.String())
+	if withParens {
+		buf.WriteRune(')')
+	}
+}
+
+// priority returns the priority of the NumberNode, which is always 6.
+func (*NumericNode) priority() uint8 { return lowestPriority }
 
 // BinaryNode represents a binary operation.
 type BinaryNode struct {
@@ -768,7 +778,7 @@ func (a *AST) IsPredicate() bool {
 func validateNode(node Node, depth int, inSubscript bool) error {
 	argDepth := 0
 	switch node := node.(type) {
-	case StringNode, *VariableNode, *KeyNode, *NumericNode, *IntegerNode:
+	case StringNode, *VariableNode, *KeyNode, *NumericNode:
 		// Nothing to do.
 	case *BinaryNode:
 		if err := validateNode(node.left, depth+argDepth, inSubscript); err != nil {
@@ -821,7 +831,7 @@ func validateNode(node Node, depth int, inSubscript bool) error {
 
 // NewUnaryOrNumber returns a new node for op ast.UnaryPlus or ast.UnaryMinus.
 // If node is numeric and not the first item in an AccessorArray, it returns a
-// ast.NumericNode or ast.IntegerNode, as appropriate.
+// ast.NumericNode. Otherwise it returns a UnaryNode.
 func NewUnaryOrNumber(op UnaryOperator, node Node) Node {
 	switch node := node.(type) {
 	case *NumericNode:
@@ -832,19 +842,7 @@ func NewUnaryOrNumber(op UnaryOperator, node Node) Node {
 			return node
 		case UnaryMinus:
 			// Just a negative number, return it with the minus sign.
-			return NewNumeric("-" + node.literal)
-		default:
-			panic(fmt.Sprintf("Operator must be + or - but is %v", op))
-		}
-	case *IntegerNode:
-		//nolint:exhaustive
-		switch op {
-		case UnaryPlus:
-			// Just a positive number, return it.
-			return node
-		case UnaryMinus:
-			// Just a negative number, return it with the minus sign.
-			return NewInteger("-" + node.literal)
+			return NewNumeric("-"+node.literal, node.isInt)
 		default:
 			panic(fmt.Sprintf("Operator must be + or - but is %v", op))
 		}

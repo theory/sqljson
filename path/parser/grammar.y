@@ -97,8 +97,8 @@ scalar_value:
 	| NULL_P						{ $$ = ast.ConstNull }
 	| TRUE_P						{ $$ = ast.ConstTrue }
 	| FALSE_P						{ $$ = ast.ConstFalse }
-	| NUMERIC_P						{ $$ = ast.NewNumeric($1) }
-	| INT_P							{ $$ = ast.NewInteger($1) }
+	| NUMERIC_P						{ $$ = ast.NewNumeric($1, false) }
+	| INT_P							{ $$ = ast.NewNumeric($1, true) }
 	| VARIABLE_P					{ $$ = ast.NewVariable($1) }
 	;
 
@@ -236,11 +236,11 @@ accessor_op:
 
 csv_elem:
 	INT_P
-		{ $$ = ast.NewInteger($1) }
+		{ $$ = ast.NewNumeric($1, true) }
 	| '+' INT_P %prec UMINUS
-		{ $$ = ast.NewUnaryOrNumber(ast.UnaryPlus, ast.NewInteger($2)) }
+		{ $$ = ast.NewUnaryOrNumber(ast.UnaryPlus, ast.NewNumeric($2, true)) }
 	| '-' INT_P %prec UMINUS
-		{ $$ = ast.NewUnaryOrNumber(ast.UnaryMinus, ast.NewInteger($2)) }
+		{ $$ = ast.NewUnaryOrNumber(ast.UnaryMinus, ast.NewNumeric($2, true)) }
 	;
 
 csv_list:
@@ -254,7 +254,7 @@ opt_csv_list:
 	;
 
 datetime_precision:
-	INT_P							{ $$ = ast.NewInteger($1) }
+	INT_P							{ $$ = ast.NewNumeric($1, true) }
 	;
 
 opt_datetime_precision:
