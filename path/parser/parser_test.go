@@ -1177,7 +1177,7 @@ func TestJSONPathNonDecimalString(t *testing.T) {
 		{
 			name: "empty_binary",
 			path: `0b`,
-			err:  `parser: binary literal has no digits at 1:3`,
+			err:  `parser: trailing junk after numeric literal at 1:3`,
 		},
 		{
 			name: "1b",
@@ -1193,7 +1193,7 @@ func TestJSONPathNonDecimalString(t *testing.T) {
 		{
 			name: "empty_octal",
 			path: `0o`,
-			err:  `parser: octal literal has no digits at 1:3`,
+			err:  `parser: trailing junk after numeric literal at 1:3`,
 		},
 		{
 			name: "1o",
@@ -1209,7 +1209,7 @@ func TestJSONPathNonDecimalString(t *testing.T) {
 		{
 			name: "empty_hex",
 			path: `0x`,
-			err:  `parser: hexadecimal literal has no digits at 1:3`,
+			err:  `parser: trailing junk after numeric literal at 1:3`,
 		},
 		{
 			name: "1x",
@@ -1528,11 +1528,6 @@ func TestNumericEdgeCases(t *testing.T) {
 			exp:  `(2)."p10"`,
 		},
 		{
-			name: "hex_then_path_key_then_math",
-			path: `0x1.Fp+0`,
-			exp:  `((1)."Fp" + 0)`,
-		},
-		{
 			name: "float_then_path_key",
 			path: `3.14.p10`,
 			exp:  `(3.14)."p10"`,
@@ -1541,6 +1536,31 @@ func TestNumericEdgeCases(t *testing.T) {
 			name: "whitespace_disambiguation",
 			path: `2 .p10`,
 			exp:  `(2)."p10"`,
+		},
+		{
+			name: "go_float_example_12",
+			path: "0x2.p10",
+			exp:  `(2)."p10"`,
+		},
+		{
+			name: "go_float_example_13",
+			path: "0x1.Fp+0",
+			exp:  `((1)."Fp" + 0)`,
+		},
+		{
+			name: "go_float_example_16",
+			path: "0x15e-2",
+			exp:  "(350 - 2)",
+		},
+		{
+			name: "go_float_example_19",
+			path: "0x1.5e-2",
+			err:  "parser: syntax error at 1:9",
+		},
+		{
+			name: "hex_dot_path_utf8",
+			path: `0x2."😀"`,
+			exp:  `(2)."😀"`,
 		},
 	} {
 		t.Run(tc.name, tc.run)

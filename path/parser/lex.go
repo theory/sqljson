@@ -171,7 +171,7 @@ func (l *lexer) next() rune {
 			l.lastCharLen = width
 			l.column++
 			l.Error("invalid UTF-8 encoding")
-			return ch
+			return stopTok
 		}
 	}
 
@@ -184,6 +184,7 @@ func (l *lexer) next() rune {
 	switch ch {
 	case 0:
 		l.Error("invalid character NULL")
+		ch = stopTok
 	case '\n':
 		l.line++
 		l.lastLineLen = l.column
@@ -246,8 +247,6 @@ func (l *lexer) pos() (pos position) {
 // token or Unicode character from the path. The text representation of the
 // token will be stored in lval.str. It reports scanning errors (read
 // and token errors) by calling l.Error.
-//
-//nolint:funlen
 func (l *lexer) Lex(lval *pathSymType) int {
 	ch := l.peek()
 
@@ -302,8 +301,6 @@ redo:
 				ch = l.scanComment(ch)
 				goto redo
 			}
-		case '\'':
-			ch = l.next()
 		case '.':
 			ch = l.next()
 			if isDecimal(ch) {
@@ -360,7 +357,7 @@ func (l *lexer) digits(ch0 rune, base int, invalid *rune) (ch rune, digSep int) 
 	return
 }
 
-//nolint:funlen,gocognit,gocyclo
+//nolint:funlen,gocognit
 func (l *lexer) scanNumber(ch rune, seenDot bool) (rune, rune) {
 	base := decimal    // number base
 	prefix := rune(0)  // one of 0 (decimal), '0' (0-octal), 'x', 'o', or 'b'
@@ -409,37 +406,31 @@ func (l *lexer) scanNumber(ch rune, seenDot bool) (rune, rune) {
 			return stopTok, stopTok
 		}
 
-		srcPos := l.srcPos + 1
 		ch, ds = l.digits(ch, base, &invalid)
 		digSep |= ds
+		if digSep&1 == 0 {
+			// No digits found, invalid.
+			l.Error("trailing junk after numeric literal")
+			return stopTok, stopTok
+		}
+
 		if ch == '.' {
-			ch = l.next()
-			seenDot = true
-			if prefix != 0 && prefix != '0' && srcPos != l.srcPos && (isIdentRune(ch, 0) || ch == '"') {
-				// Might be a string or ident following the dot, though only
-				// if digits were found to make a legit prefix number.
-				// Backtrack to the dot.
-				l.srcPos -= l.lastCharLen
-				l.lastCharLen = 1
+			// May be numeric, though prefixes are integer-only.
+			if prefix != 0 && prefix != '0' {
+				// Digits found, 0x, 0o, or 0b integer looks valid, halt.
 				return tok, '.'
 			}
+
+			ch = l.next()
+			seenDot = true
 		}
 	}
 
 	// fractional part
 	if seenDot {
 		tok = NUMERIC_P
-		if prefix != 0 && prefix != '0' {
-			l.Error("invalid radix point in " + litName(prefix))
-			return stopTok, stopTok
-		}
 		ch, ds = l.digits(ch, base, &invalid)
 		digSep |= ds
-	}
-
-	if digSep&1 == 0 {
-		l.Error(litName(prefix) + " has no digits")
-		return stopTok, stopTok
 	}
 
 	// exponent

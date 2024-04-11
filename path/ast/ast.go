@@ -738,6 +738,12 @@ func New(lax bool, n Node) (*AST, error) {
 	return &AST{root: n, lax: lax}, nil
 }
 
+// IsLax indicates whether the path query is lax.
+func (a *AST) IsLax() bool { return a.lax }
+
+// IsStrict indicates whether the path query is strict.
+func (a *AST) IsStrict() bool { return !a.lax }
+
 // String returns the SQL/JSON Path-encoded string representation of the path.
 func (a *AST) String() string {
 	buf := new(strings.Builder)

@@ -26,6 +26,7 @@ func TestNewLexer(t *testing.T) {
 	a.Equal(noChar, l.tokPos)
 	a.Equal(rune(noChar), l.ch)
 	a.Equal(1, l.line)
+	a.Equal("", l.tokenText())
 
 	// Make sure path was loaded into the scanner.
 	buf := new(strings.Builder)
@@ -36,6 +37,12 @@ func TestNewLexer(t *testing.T) {
 	}
 
 	a.Equal(path, buf.String())
+	a.Equal("", l.tokenText())
+
+	// tokenText should be correct even when tokEnd < tokPos
+	l.tokEnd = l.tokPos - 1
+	a.Equal("", l.tokenText())
+	a.Equal(l.tokPos, l.tokEnd)
 }
 
 func TestIsIdentRune(t *testing.T) {
@@ -89,16 +96,19 @@ func TestScanError(t *testing.T) {
 
 	l.Error("oops")
 	a.Equal([]string{"oops at 1:1"}, l.errors)
+	a.Equal("", l.tokenText())
 
 	a.Equal(int('$'), l.Lex(&pathSymType{}))
 	l.Error("yikes")
 	a.Equal([]string{"oops at 1:1", "yikes at 1:2"}, l.errors)
+	a.Equal("$", l.tokenText())
 
 	l.Error("hello")
 	a.Equal(
 		[]string{"oops at 1:1", "yikes at 1:2", "hello at 1:2"},
 		l.errors,
 	)
+	a.Equal("$", l.tokenText())
 }
 
 func TestScanIdent(t *testing.T) {
@@ -383,7 +393,7 @@ func TestScanString(t *testing.T) {
 			"Unicode low surrogate must follow a high surrogate at 1:9",
 		},
 		{
-			"null_byte",
+			"hex_null_byte",
 			`"go \x00"`,
 			"",
 			stopTok,
@@ -466,12 +476,26 @@ func TestScanString(t *testing.T) {
 			stopTok,
 			"unexpected end after backslash at 1:6",
 		},
+		{
+			"invalid_utf8",
+			string([]byte{0xD8, 0x34, 0xff, 0xfd}),
+			"",
+			stopTok,
+			"invalid UTF-8 encoding at 1:1",
+		},
+		{
+			"null_byte",
+			string([]byte{0x1f, 0x00}),
+			"",
+			0x1f,
+			"invalid character NULL at 1:2",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
 			l := newLexer(tc.str)
-			a.Equal(l.Lex(&pathSymType{}), tc.tok)
+			a.Equal(tc.tok, l.Lex(&pathSymType{}))
 			a.Equal(tc.exp, l.strBuf.String())
 
 			if tc.err == "" {
@@ -506,16 +530,22 @@ func TestScanNumbers(t *testing.T) {
 		{"underscore_octal", "0o27_3", "0o27_3", INT_P, ""},
 		{"OCTAL", "0O273", "0O273", INT_P, ""},
 		{
-			"zero_octal",
-			"0273", // Not supported by Postgres
+			"zero_prefix",
+			"02", // Postgres: trailing junk after numeric literal at or near "02"
+			"0", stopTok,
+			"trailing junk after numeric literal at 1:2",
+		},
+		{
+			"zero_prefix_more",
+			"0273", // Postgres: syntax error at end of jsonpath input
 			"0", stopTok,
 			"trailing junk after numeric literal at 1:2",
 		},
 		{
 			"empty_octal",
-			"0o", // Not supported by Postgres
+			"0o", // Postgres: trailing junk after numeric literal at or near "0o"
 			"0o", stopTok,
-			"octal literal has no digits at 1:3",
+			"trailing junk after numeric literal at 1:3",
 		},
 		{"binary", "0b100101", "0b100101", INT_P, ""},
 		{"underscore_binary", "0b10_0101", "0b10_0101", INT_P, ""},
@@ -541,56 +571,72 @@ func TestScanNumbers(t *testing.T) {
 		{"go_int_example_02", "4_2", "4_2", INT_P, ""},
 		{
 			"go_int_example_03",
-			"0600", // Not supported by Postgres
+			"0600", // Postgres: syntax error at end of jsonpath input
 			"0",
 			stopTok,
 			"trailing junk after numeric literal at 1:2",
 		},
 		{
 			"go_int_example_04",
-			"0_600", // Not supported by Postgres
+			"0_600", // Postgres: syntax error at end of jsonpath input
 			"0",
 			stopTok,
 			"underscore disallowed at start of numeric literal at 1:2",
 		},
 		{"go_int_example_05", "0o600", "0o600", INT_P, ""},
-		{"go_int_example_06", "0o600", "0o600", INT_P, ""},
-		{"go_int_example_07", "0O600", "0O600", INT_P, ""},
-		{"go_int_example_08", "0xBadFace", "0xBadFace", INT_P, ""},
-		{"go_int_example_09", "0xBad_Face", "0xBad_Face", INT_P, ""},
+		{"go_int_example_06", "0O600", "0O600", INT_P, ""},
+		{"go_int_example_07", "0xBadFace", "0xBadFace", INT_P, ""},
+		{"go_int_example_08", "0xBad_Face", "0xBad_Face", INT_P, ""},
 		{
-			"go_int_example_10",
-			"0x_67_7a_2f_cc_40_c6", // Not supported by Postgres
+			"go_int_example_09",
+			"0x_67_7a_2f_cc_40_c6", // Postgres: syntax error at end of jsonpath input
 			"0x",
 			stopTok,
 			"underscore disallowed at start of numeric literal at 1:3",
 		},
 		{
-			"go_int_example_11",
+			"go_int_example_10",
 			"170141183460469231731687303715884105727",
 			"170141183460469231731687303715884105727",
 			INT_P,
 			"",
 		},
 		{
-			"go_int_example_12",
+			"go_int_example_11",
 			"170_141183_460469_231731_687303_715884_105727",
 			"170_141183_460469_231731_687303_715884_105727",
 			INT_P,
 			"",
 		},
-		{"go_int_example_13", "_42", "_42", IDENT_P, ""},
-		{"go_int_example_14", "42_", "42_", stopTok, "'_' must separate successive digits at 1:4"},
-		{"go_int_example_15", "42_", "42_", stopTok, "'_' must separate successive digits at 1:4"},
-		{"go_int_example_16", "4__2", "4__2", stopTok, "'_' must separate successive digits at 1:5"},
-		{"go_int_example_17", "0_xBadFace", "0", stopTok, "underscore disallowed at start of numeric literal at 1:2"},
+		{"go_int_example_12", "_42", "_42", IDENT_P, ""},
+		{
+			"go_int_example_13",
+			"42_", // Postgres: trailing junk after numeric literal at or near "42_"
+			"42_",
+			stopTok,
+			"'_' must separate successive digits at 1:4",
+		},
+		{
+			"go_int_example_14",
+			"4__2", // Postgres: syntax error at end of jsonpath input
+			"4__2",
+			stopTok,
+			"'_' must separate successive digits at 1:5",
+		},
+		{
+			"go_int_example_15",
+			"0_xBadFace", // Postgres: syntax error at end of jsonpath input
+			"0",
+			stopTok,
+			"underscore disallowed at start of numeric literal at 1:2",
+		},
 
 		// https://go.dev/ref/spec#Floating-point_literals
 		{"go_float_example_01", "0.", "0.", NUMERIC_P, ""},
 		{"go_float_example_02", "72.40", "72.40", NUMERIC_P, ""},
 		{
 			"go_float_example_03",
-			"072.40", // Not supported by Postgres
+			"072.40", // Postgres: syntax error at end of jsonpath input
 			"0",
 			stopTok,
 			"trailing junk after numeric literal at 1:2",
@@ -605,83 +651,145 @@ func TestScanNumbers(t *testing.T) {
 		{"go_float_example_10", "0.15e+0_2", "0.15e+0_2", NUMERIC_P, ""},
 		{
 			"go_float_example_11",
-			"0x1p-2", // Not supported by Postgres
+			"0x1p-2", // Postgres: syntax error at end of jsonpath input
 			"0x1",
 			stopTok,
 			"trailing junk after numeric literal at 1:4",
 		},
 		{
 			"go_float_example_12",
-			"0x2.p10", // Postgres interpretation: (2)."p10"
+			"0x2.p10", // Postgres: (2)."p10"
 			"0x2",
 			INT_P,
 			"",
 		},
 		{
 			"go_float_example_13",
-			"0x1.Fp+0", // Postgres interpretation: ((1)."Fp" + 0)
+			"0x1.Fp+0", // Postgres: ((1)."Fp" + 0)
 			"0x1",
 			INT_P,
 			"",
 		},
 		{
 			"go_float_example_14",
-			"0X.8p-0", // Not supported by Postgres
-			"0X.",
+			"0X.8p-0", // Postgres: trailing junk after numeric literal at or near "01"
+			"0X",
 			stopTok,
-			"invalid radix point in hexadecimal literal at 1:4",
+			"trailing junk after numeric literal at 1:3",
 		},
 		{
 			"go_float_example_15",
-			"0X_1FFFP-16", // Not supported by Postgres
+			"0X_1FFFP-16", // Postgres: syntax error at end of jsonpath input
 			"0X",
 			stopTok,
 			"underscore disallowed at start of numeric literal at 1:3",
 		},
-		{"go_float_example_16", "0x15e-2", "0x15e", INT_P, ""}, // (integer subtraction)
-		{"go_float_example_17", "0x.p1", "0x.", stopTok, "invalid radix point in hexadecimal literal at 1:4"},
-		{"go_float_example_18", "1p-2", "1", stopTok, "trailing junk after numeric literal at 1:2"},
+		{
+			"go_float_example_16",
+			"0x15e-2", // Postgres: (350 - 2)
+			"0x15e",   // Halts at -
+			INT_P,
+			"",
+		},
+		{
+			"go_float_example_17",
+			"0x.p1", // Postgres: trailing junk after numeric literal at or near "0x"
+			"0x",
+			stopTok,
+			"trailing junk after numeric literal at 1:3",
+		},
+		{
+			"go_float_example_18",
+			"1p-2", // Postgres: trailing junk after numeric literal at or near "1p"
+			"1",
+			stopTok,
+			"trailing junk after numeric literal at 1:2",
+		},
 		{
 			"go_float_example_19",
-			"0x1.5e-2",
-			"0x1.",
-			stopTok,
-			"invalid radix point in hexadecimal literal at 1:5",
+			"0x1.5e-2", // Postgres: syntax error at or near ".5e-2" of jsonpath input
+			"0x1",      // Lex halts at '.', 0x1 is valid integer
+			INT_P,
+			"",
 		},
-		{"go_float_example_20", "1_.5", "1_.5", stopTok, "'_' must separate successive digits at 1:5"},
-		{"go_float_example_21", "1._5", "1._5", stopTok, "'_' must separate successive digits at 1:5"},
-		{"go_float_example_22", "1.5_e1", "1.5_e1", stopTok, "'_' must separate successive digits at 1:7"},
-		{"go_float_example_23", "1.5e_1", "1.5e_1", stopTok, "'_' must separate successive digits at 1:7"},
-		{"go_float_example_24", "1.5e1_", "1.5e1_", stopTok, "'_' must separate successive digits at 1:7"},
+		{
+			"go_float_example_20",
+			"1_.5", // Postgres: trailing junk after numeric literal at or near "1_"
+			"1_.5",
+			stopTok,
+			"'_' must separate successive digits at 1:5",
+		},
+		{
+			"go_float_example_21",
+			"1._5", // Postgres: trailing junk after numeric literal at or near "1._"
+			"1._5",
+			stopTok,
+			"'_' must separate successive digits at 1:5",
+		},
+		{
+			"go_float_example_22",
+			"1.5_e1", // Postgres: trailing junk after numeric literal at or near "1.5_"
+			"1.5_e1",
+			stopTok,
+			"'_' must separate successive digits at 1:7",
+		},
+		{
+			"go_float_example_23",
+			"1.5e_1", // Postgres: trailing junk after numeric literal at or near "1.5e"
+			"1.5e_1",
+			stopTok,
+			"'_' must separate successive digits at 1:7",
+		},
+		{
+			"go_float_example_24",
+			"1.5e1_", // Postgres: trailing junk after numeric literal at or near "1.5e1_"
+			"1.5e1_",
+			stopTok,
+			"'_' must separate successive digits at 1:7",
+		},
 
 		// Errors
 		{
 			"underscore_hex_early",
-			"0x_1EEEFFFF",
+			"0x_1EEEFFFF", // Postgres: syntax error at end of jsonpath input
 			"0x",
 			stopTok,
 			"underscore disallowed at start of numeric literal at 1:3",
 		},
 		{
 			"underscore_octal_early",
-			"0o_273",
+			"0o_273", // Postgres: syntax error at end of jsonpath input
 			"0o",
 			stopTok,
 			"underscore disallowed at start of numeric literal at 1:3",
 		},
 		{
 			"underscore_binary_early",
-			"0b_100101",
+			"0b_100101", // Postgres: syntax error at end of jsonpath input
 			"0b",
 			stopTok,
 			"underscore disallowed at start of numeric literal at 1:3",
 		},
 		{
 			"hex_dot_path_utf8",
-			`0x2."😀"`, // Postgres interpretation: (2)."😀"
+			`0x2."😀"`, // Postgres: (2)."😀"
 			"0x2",
 			INT_P,
 			"",
+		},
+		{
+			"no_decimal_mantissa",
+			`0o14e4`, // Postgres: syntax error at end of jsonpath input
+			"0o14",
+			stopTok,
+			"'e' exponent requires decimal mantissa at 1:5",
+		},
+		{
+			"invalid_octal",
+			`0o9`, // Postgres: syntax error at end of jsonpath input
+			"0o9",
+			stopTok,
+			"invalid digit '9' in octal literal at 1:4",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -784,6 +892,7 @@ func TestScanComment(t *testing.T) {
 		{"multi_line", "/* foo bar\nbaz */", stopTok, ""},
 		{"multi_line_prefix", "/* foo bar\n * baz */", stopTok, ""},
 		{"EOF", "/* foo ", stopTok, "unexpected end of comment at 1:8"},
+		{"not_a_comment", "/", '/', ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
@@ -952,5 +1061,23 @@ func TestSetResult(t *testing.T) {
 				a.Equal(tc.err, tc.lex.errors[0])
 			}
 		})
+	}
+}
+
+func TestLitName(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	for _, tc := range []struct {
+		name   string
+		prefix rune
+	}{
+		{"decimal", 0},
+		{"octal", '0'},
+		{"octal", 'o'},
+		{"hexadecimal", 'x'},
+		{"binary", 'b'},
+	} {
+		a.Equal(tc.name+" literal", litName(tc.prefix))
 	}
 }
