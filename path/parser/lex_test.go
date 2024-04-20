@@ -1021,6 +1021,7 @@ func TestSetResult(t *testing.T) {
 		name string
 		lex  *lexer
 		lax  bool
+		pred bool
 		node ast.Node
 		err  string
 	}{
@@ -1028,6 +1029,7 @@ func TestSetResult(t *testing.T) {
 			name: "legit_lax",
 			lex:  &lexer{},
 			lax:  true,
+			pred: true,
 			node: ast.NewConst(ast.ConstNull),
 		},
 		{
@@ -1050,12 +1052,16 @@ func TestSetResult(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			if tc.pred {
+				tc.lex.setPred()
+			}
 			tc.lex.setResult(tc.lax, tc.node)
 			if tc.err == "" {
-				ast, err := ast.New(tc.lax, tc.node)
+				ast, err := ast.New(tc.lax, tc.pred, tc.node)
 				r.NoError(err)
 				a.Equal(ast, tc.lex.result)
 				a.Empty(tc.lex.errors)
+				a.Equal(tc.pred, tc.lex.result.IsPredicate())
 			} else {
 				a.Nil(tc.lex.result)
 				a.Equal(tc.err, tc.lex.errors[0])

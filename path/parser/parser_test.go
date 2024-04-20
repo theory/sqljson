@@ -8,9 +8,9 @@ import (
 	"github.com/theory/sqljson/path/ast"
 )
 
-func mkAST(t *testing.T, strict bool, node ast.Node) *ast.AST {
+func mkAST(t *testing.T, lax, pred bool, node ast.Node) *ast.AST {
 	t.Helper()
-	ast, err := ast.New(strict, node)
+	ast, err := ast.New(lax, pred, node)
 	require.NoError(t, err)
 	return ast
 }
@@ -29,12 +29,17 @@ func TestParser(t *testing.T) {
 		{
 			name: "root",
 			path: "$",
-			ast:  mkAST(t, true, ast.LinkNodes([]ast.Node{ast.NewConst(ast.ConstRoot)})),
+			ast:  mkAST(t, true, false, ast.LinkNodes([]ast.Node{ast.NewConst(ast.ConstRoot)})),
 		},
 		{
 			name: "strict_root",
 			path: "strict $",
-			ast:  mkAST(t, false, ast.LinkNodes([]ast.Node{ast.NewConst(ast.ConstRoot)})),
+			ast:  mkAST(t, false, false, ast.LinkNodes([]ast.Node{ast.NewConst(ast.ConstRoot)})),
+		},
+		{
+			name: "predicate",
+			path: "$ == 1",
+			ast:  mkAST(t, true, true, ast.NewBinary(ast.BinaryEqual, ast.NewConst(ast.ConstRoot), ast.NewInteger("1"))),
 		},
 		{
 			name: "error",

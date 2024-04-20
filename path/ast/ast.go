@@ -895,15 +895,16 @@ func (n *RegexNode) Next() Node {
 type AST struct {
 	root Node
 	lax  bool
+	pred bool
 }
 
 // New creates a new AST with n as its root. If lax is true it's considered a
-// lax path query.
-func New(lax bool, n Node) (*AST, error) {
+// lax path query, and if pred is true it's considered a predicate query.
+func New(lax, pred bool, n Node) (*AST, error) {
 	if err := validateNode(n, 0, false); err != nil {
 		return nil, err
 	}
-	return &AST{root: n, lax: lax}, nil
+	return &AST{root: n, lax: lax, pred: pred}, nil
 }
 
 // IsLax indicates whether the path query is lax.
@@ -930,10 +931,7 @@ func (a *AST) Root() Node {
 // IsPredicate returns true if the AST represents a PostgreSQL-style
 // "predicate check" path.
 func (a *AST) IsPredicate() bool {
-	if n, ok := a.root.(*ConstNode); ok {
-		return n.kind != ConstRoot
-	}
-	return true
+	return a.pred
 }
 
 // validateNode recursively validates nodes. It's based on the Postgres

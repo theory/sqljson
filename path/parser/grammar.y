@@ -83,7 +83,7 @@ result:
 
 expr_or_predicate:
 	expr							{ $$ = $1 }
-	| predicate						{ $$ = $1 }
+	| predicate						{ $$ = $1; pathlex.(*lexer).setPred() }
 	;
 
 mode:

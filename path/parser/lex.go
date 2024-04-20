@@ -83,8 +83,10 @@ type lexer struct {
 	// Collects errors while lexing.
 	errors []string
 
-	// The parser stores the parsed result here, using setResult().
+	// The parser stores the parsed result here, using setResult() and
+	// setPred().
 	result *ast.AST
+	pred   bool
 
 	// Buffer to hold normalized string while parsing JavaScript string.
 	strBuf strings.Builder
@@ -553,15 +555,21 @@ func litName(prefix rune) string {
 
 // setResult creates an ast.AST and assigns it to l.result unless
 // there are parser or ast.New errors.
-func (l *lexer) setResult(strict bool, node ast.Node) {
+func (l *lexer) setResult(lax bool, node ast.Node) {
 	if l.hasError() {
 		return
 	}
-	ast, err := ast.New(strict, node)
+	ast, err := ast.New(lax, l.pred, node)
 	if err != nil {
 		l.errors = append(l.errors, err.Error())
 	}
 	l.result = ast
+}
+
+// setPred indicates that the path being lexed is a predicate path query.
+// Called by the parser grammar.
+func (l *lexer) setPred() {
+	l.pred = true
 }
 
 // scanVariable scans a variable name from l.scanner, assigns the resulting

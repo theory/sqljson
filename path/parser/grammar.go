@@ -732,6 +732,7 @@ pathdefault:
 //line grammar.y:86
 		{
 			pathVAL.value = pathDollar[1].value
+			pathlex.(*lexer).setPred()
 		}
 	case 4:
 		pathDollar = pathS[pathpt-1 : pathpt+1]

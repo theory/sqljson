@@ -1107,24 +1107,23 @@ func TestAST(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		node Node
-		pred bool
 		err  string
 	}{
-		{"string", NewString("foo"), true, ""},
-		{"accessor", LinkNodes([]Node{NewConst(ConstRoot)}), false, ""},
-		{"current", NewConst(ConstCurrent), false, "@ is not allowed in root expressions"},
+		{"string", NewString("foo"), ""},
+		{"accessor", LinkNodes([]Node{NewConst(ConstRoot)}), ""},
+		{"current", NewConst(ConstCurrent), "@ is not allowed in root expressions"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
 			if tc.err != "" {
-				tree, err := New(true, tc.node)
+				tree, err := New(true, false, tc.node)
 				r.EqualError(err, tc.err)
 				a.Nil(tree)
 				return
 			}
 
-			tree, err := New(true, tc.node)
+			tree, err := New(true, false, tc.node)
 			r.NoError(err)
 			a.True(tree.lax)
 			a.True(tree.IsLax())
@@ -1132,9 +1131,9 @@ func TestAST(t *testing.T) {
 			a.Equal(tc.node, tree.root)
 			a.Equal(tree.root.String(), tree.String())
 			a.Equal(tc.node, tree.Root())
-			a.Equal(tc.pred, tree.IsPredicate())
+			a.False(tree.IsPredicate())
 
-			tree, err = New(false, tc.node)
+			tree, err = New(false, true, tc.node)
 			r.NoError(err)
 			a.False(tree.lax)
 			a.False(tree.IsLax())
@@ -1142,7 +1141,7 @@ func TestAST(t *testing.T) {
 			a.Equal(tc.node, tree.root)
 			a.Equal("strict "+tree.root.String(), tree.String())
 			a.Equal(tc.node, tree.Root())
-			a.Equal(tc.pred, tree.IsPredicate())
+			a.True(tree.IsPredicate())
 		})
 	}
 }
