@@ -24,12 +24,12 @@ import (
 %}
 
 %union{
-	str string
-	elems []ast.Node
-	indexs []ast.Node
-	value ast.Node
-	optype ast.BinaryOperator
-	method ast.MethodNode
+	str     string
+	elems   []ast.Node
+	indexs  []ast.Node
+	value   ast.Node
+	optype  ast.BinaryOperator
+	method  *ast.MethodNode
 	boolean bool
 	integer int
 }
@@ -94,9 +94,9 @@ mode:
 
 scalar_value:
 	STRING_P						{ $$ = ast.NewString($1) }
-	| NULL_P						{ $$ = ast.ConstNull }
-	| TRUE_P						{ $$ = ast.ConstTrue }
-	| FALSE_P						{ $$ = ast.ConstFalse }
+	| NULL_P						{ $$ = ast.NewConst(ast.ConstNull) }
+	| TRUE_P						{ $$ = ast.NewConst(ast.ConstTrue) }
+	| FALSE_P						{ $$ = ast.NewConst(ast.ConstFalse) }
 	| NUMERIC_P						{ $$ = ast.NewNumeric($1) }
 	| INT_P							{ $$ = ast.NewInteger($1) }
 	| VARIABLE_P					{ $$ = ast.NewVariable($1) }
@@ -151,9 +151,9 @@ starts_with_initial:
 
 path_primary:
 	scalar_value					{ $$ = $1 }
-	| '$'							{ $$ = ast.ConstRoot }
-	| '@'							{ $$ = ast.ConstCurrent }
-	| LAST_P						{ $$ = ast.ConstLast }
+	| '$'							{ $$ = ast.NewConst(ast.ConstRoot) }
+	| '@'							{ $$ = ast.NewConst(ast.ConstCurrent) }
+	| LAST_P						{ $$ = ast.NewConst(ast.ConstLast) }
 	;
 
 accessor_expr:
@@ -164,7 +164,7 @@ accessor_expr:
 	;
 
 expr:
-	accessor_expr					{ $$ = ast.NewAccessorList($1) }
+	accessor_expr					{ $$ = ast.LinkNodes($1) }
 	| '(' expr ')'					{ $$ = $2 }
 	| '+' expr %prec UMINUS			{ $$ = ast.NewUnaryOrNumber(ast.UnaryPlus, $2) }
 	| '-' expr %prec UMINUS			{ $$ = ast.NewUnaryOrNumber(ast.UnaryMinus, $2) }
@@ -186,7 +186,7 @@ index_list:
 	;
 
 array_accessor:
-	'[' '*' ']'						{ $$ = ast.ConstAnyArray }
+	'[' '*' ']'						{ $$ = ast.NewConst(ast.ConstAnyArray) }
 	| '[' index_list ']'			{ $$ = ast.NewArrayIndex($2) }
 	;
 
@@ -204,7 +204,7 @@ any_path:
 
 accessor_op:
 	'.' key							{ $$ = $2 }
-	| '.' '*'						{ $$ = ast.ConstAnyKey }
+	| '.' '*'						{ $$ = ast.NewConst(ast.ConstAnyKey) }
 	| array_accessor				{ $$ = $1 }
 	| '.' any_path					{ $$ = $2 }
 	| '.' method '(' ')'			{ $$ = $2 }
@@ -314,18 +314,18 @@ key_name:
 	;
 
 method:
-	ABS_P							{ $$ = ast.MethodAbs }
-	| SIZE_P						{ $$ = ast.MethodSize }
-	| TYPE_P						{ $$ = ast.MethodType }
-	| FLOOR_P						{ $$ = ast.MethodFloor }
-	| DOUBLE_P						{ $$ = ast.MethodDouble }
-	| CEILING_P						{ $$ = ast.MethodCeiling }
-	| KEYVALUE_P					{ $$ = ast.MethodKeyValue }
-	| BIGINT_P						{ $$ = ast.MethodBigint }
-	| BOOLEAN_P						{ $$ = ast.MethodBoolean }
-	| DATE_P						{ $$ = ast.MethodDate }
-	| INTEGER_P						{ $$ = ast.MethodInteger }
-	| NUMBER_P						{ $$ = ast.MethodNumber }
-	| STRINGFUNC_P					{ $$ = ast.MethodString }
+	ABS_P							{ $$ = ast.NewMethod(ast.MethodAbs) }
+	| SIZE_P						{ $$ = ast.NewMethod(ast.MethodSize) }
+	| TYPE_P						{ $$ = ast.NewMethod(ast.MethodType) }
+	| FLOOR_P						{ $$ = ast.NewMethod(ast.MethodFloor) }
+	| DOUBLE_P						{ $$ = ast.NewMethod(ast.MethodDouble) }
+	| CEILING_P						{ $$ = ast.NewMethod(ast.MethodCeiling) }
+	| KEYVALUE_P					{ $$ = ast.NewMethod(ast.MethodKeyValue) }
+	| BIGINT_P						{ $$ = ast.NewMethod(ast.MethodBigint) }
+	| BOOLEAN_P						{ $$ = ast.NewMethod(ast.MethodBoolean) }
+	| DATE_P						{ $$ = ast.NewMethod(ast.MethodDate) }
+	| INTEGER_P						{ $$ = ast.NewMethod(ast.MethodInteger) }
+	| NUMBER_P						{ $$ = ast.NewMethod(ast.MethodNumber) }
+	| STRINGFUNC_P					{ $$ = ast.NewMethod(ast.MethodString) }
 	;
 %%

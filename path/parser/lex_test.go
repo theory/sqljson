@@ -1028,23 +1028,23 @@ func TestSetResult(t *testing.T) {
 			name: "legit_lax",
 			lex:  &lexer{},
 			lax:  true,
-			node: ast.ConstNull,
+			node: ast.NewConst(ast.ConstNull),
 		},
 		{
 			name: "no_lax",
 			lex:  &lexer{},
-			node: ast.ConstNull,
+			node: ast.NewConst(ast.ConstNull),
 		},
 		{
 			name: "prev_err",
 			lex:  &lexer{errors: []string{"oops"}},
-			node: ast.ConstNull,
+			node: ast.NewConst(ast.ConstNull),
 			err:  "oops",
 		},
 		{
 			name: "ast_err",
 			lex:  &lexer{},
-			node: ast.ConstLast,
+			node: ast.NewConst(ast.ConstLast),
 			err:  "LAST is allowed only in array subscripts",
 		},
 	} {

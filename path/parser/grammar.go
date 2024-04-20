@@ -36,7 +36,7 @@ type pathSymType struct {
 	indexs  []ast.Node
 	value   ast.Node
 	optype  ast.BinaryOperator
-	method  ast.MethodNode
+	method  *ast.MethodNode
 	boolean bool
 	integer int
 }
@@ -761,19 +761,19 @@ pathdefault:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:97
 		{
-			pathVAL.value = ast.ConstNull
+			pathVAL.value = ast.NewConst(ast.ConstNull)
 		}
 	case 9:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:98
 		{
-			pathVAL.value = ast.ConstTrue
+			pathVAL.value = ast.NewConst(ast.ConstTrue)
 		}
 	case 10:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:99
 		{
-			pathVAL.value = ast.ConstFalse
+			pathVAL.value = ast.NewConst(ast.ConstFalse)
 		}
 	case 11:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
@@ -925,19 +925,19 @@ pathdefault:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:154
 		{
-			pathVAL.value = ast.ConstRoot
+			pathVAL.value = ast.NewConst(ast.ConstRoot)
 		}
 	case 35:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:155
 		{
-			pathVAL.value = ast.ConstCurrent
+			pathVAL.value = ast.NewConst(ast.ConstCurrent)
 		}
 	case 36:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:156
 		{
-			pathVAL.value = ast.ConstLast
+			pathVAL.value = ast.NewConst(ast.ConstLast)
 		}
 	case 37:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
@@ -967,7 +967,7 @@ pathdefault:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:167
 		{
-			pathVAL.value = ast.NewAccessorList(pathDollar[1].elems)
+			pathVAL.value = ast.LinkNodes(pathDollar[1].elems)
 		}
 	case 42:
 		pathDollar = pathS[pathpt-3 : pathpt+1]
@@ -1045,7 +1045,7 @@ pathdefault:
 		pathDollar = pathS[pathpt-3 : pathpt+1]
 //line grammar.y:189
 		{
-			pathVAL.value = ast.ConstAnyArray
+			pathVAL.value = ast.NewConst(ast.ConstAnyArray)
 		}
 	case 55:
 		pathDollar = pathS[pathpt-3 : pathpt+1]
@@ -1093,7 +1093,7 @@ pathdefault:
 		pathDollar = pathS[pathpt-2 : pathpt+1]
 //line grammar.y:207
 		{
-			pathVAL.value = ast.ConstAnyKey
+			pathVAL.value = ast.NewConst(ast.ConstAnyKey)
 		}
 	case 63:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
@@ -1252,79 +1252,79 @@ pathdefault:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:317
 		{
-			pathVAL.method = ast.MethodAbs
+			pathVAL.method = ast.NewMethod(ast.MethodAbs)
 		}
 	case 123:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:318
 		{
-			pathVAL.method = ast.MethodSize
+			pathVAL.method = ast.NewMethod(ast.MethodSize)
 		}
 	case 124:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:319
 		{
-			pathVAL.method = ast.MethodType
+			pathVAL.method = ast.NewMethod(ast.MethodType)
 		}
 	case 125:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:320
 		{
-			pathVAL.method = ast.MethodFloor
+			pathVAL.method = ast.NewMethod(ast.MethodFloor)
 		}
 	case 126:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:321
 		{
-			pathVAL.method = ast.MethodDouble
+			pathVAL.method = ast.NewMethod(ast.MethodDouble)
 		}
 	case 127:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:322
 		{
-			pathVAL.method = ast.MethodCeiling
+			pathVAL.method = ast.NewMethod(ast.MethodCeiling)
 		}
 	case 128:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:323
 		{
-			pathVAL.method = ast.MethodKeyValue
+			pathVAL.method = ast.NewMethod(ast.MethodKeyValue)
 		}
 	case 129:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:324
 		{
-			pathVAL.method = ast.MethodBigint
+			pathVAL.method = ast.NewMethod(ast.MethodBigint)
 		}
 	case 130:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:325
 		{
-			pathVAL.method = ast.MethodBoolean
+			pathVAL.method = ast.NewMethod(ast.MethodBoolean)
 		}
 	case 131:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:326
 		{
-			pathVAL.method = ast.MethodDate
+			pathVAL.method = ast.NewMethod(ast.MethodDate)
 		}
 	case 132:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:327
 		{
-			pathVAL.method = ast.MethodInteger
+			pathVAL.method = ast.NewMethod(ast.MethodInteger)
 		}
 	case 133:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:328
 		{
-			pathVAL.method = ast.MethodNumber
+			pathVAL.method = ast.NewMethod(ast.MethodNumber)
 		}
 	case 134:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:329
 		{
-			pathVAL.method = ast.MethodString
+			pathVAL.method = ast.NewMethod(ast.MethodString)
 		}
 	}
 	goto pathstack /* stack new state and value */

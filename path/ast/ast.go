@@ -20,15 +20,14 @@
 //   - [BinaryNode]
 //   - [UnaryNode]
 //   - [RegexNode]
-//   - [AccessorListNode]
 //   - [ArrayIndexNode]
 //
 // Here's a starter recursive function for processing nodes.
 //
 //	func processNode(node ast.Node) {
 //		switch node := node.(type) {
-//		case ast.ConstNode:
-//		case ast.MethodNode:
+//		case *ast.ConstNode:
+//		case *ast.MethodNode:
 //		case *ast.StringNode:
 //		case *ast.VariableNode:
 //		case *ast.KeyNode:
@@ -42,14 +41,13 @@
 //			processNode(node.Operand())
 //		case *ast.RegexNode:
 //			processNode(node.Operand())
-//		case *ast.AccessorListNode:
-//			for _, n := range node.Accessors() {
-//				processNode(n)
-//			}
 //		case *ast.ArrayIndexNode:
 //			for _, n := range node.Subscripts() {
 //				processNode(n)
 //			}
+//		}
+//		if next := node.Next(); node != nil {
+//			processNode(next)
 //		}
 //	}
 //
@@ -59,7 +57,7 @@ package ast
 // Use golang.org/x/tools/cmd/stringer to generate the String method for enums
 // for their inline comments.
 
-//go:generate stringer -linecomment -output ast_string.go -type ConstNode,BinaryOperator,UnaryOperator,MethodNode
+//go:generate stringer -linecomment -output ast_string.go -type Constant,BinaryOperator,UnaryOperator,MethodName
 
 import (
 	"encoding/json"
@@ -85,38 +83,74 @@ type Node interface {
 	// priority returns the operational priority of the node relative to other
 	// nodes. Priority ranges from 0 for highest to 6 for lowest.
 	priority() uint8
-}
 
-// ConstNode is a constant value parsed from the path.
-type ConstNode int
+	// Next returns the next node when the node is part of a linked list of
+	// nodes.
+	Next() Node
 
-//revive:disable:exported
-const (
-	ConstRoot     ConstNode = iota // $
-	ConstCurrent                   // @
-	ConstLast                      // last
-	ConstAnyArray                  // [*]
-	ConstAnyKey                    // *
-	ConstTrue                      // true
-	ConstFalse                     // false
-	ConstNull                      // null
-)
-
-// writeTo writes the string representation of n to buf. If n is ConstAnyKey and
-// inKey is true, it will be preceded by '.'.
-func (n ConstNode) writeTo(buf *strings.Builder, inKey, _ bool) {
-	if n == ConstAnyKey && inKey {
-		buf.WriteRune('.')
-	}
-	buf.WriteString(n.String())
+	// setNext sets the next node in a linked list of nodes.
+	setNext(next Node)
 }
 
 // lowestPriority is the lowest priority returned by priority, and the default
 // for most nodes.
 const lowestPriority = uint8(6)
 
-// priority returns the priority of the ConstNode, which is always 6.
-func (ConstNode) priority() uint8 { return lowestPriority }
+// Constant is a constant value parsed from the path.
+type Constant int
+
+//revive:disable:exported
+const (
+	ConstRoot     Constant = iota // $
+	ConstCurrent                  // @
+	ConstLast                     // last
+	ConstAnyArray                 // [*]
+	ConstAnyKey                   // *
+	ConstTrue                     // true
+	ConstFalse                    // false
+	ConstNull                     // null
+)
+
+// ConstNode represents a constant node in the path.
+type ConstNode struct {
+	kind Constant
+	next Node
+}
+
+// NewConst creates a new ConstNode defined by kind.
+func NewConst(kind Constant) *ConstNode {
+	return &ConstNode{kind: kind}
+}
+
+// writeTo writes the string representation of n to buf. If n.kind is
+// ConstAnyKey and inKey is true, it will be preceded by '.'.
+func (n *ConstNode) writeTo(buf *strings.Builder, inKey, _ bool) {
+	if n.kind == ConstAnyKey && inKey {
+		buf.WriteRune('.')
+	}
+	buf.WriteString(n.kind.String())
+	if next := n.Next(); next != nil {
+		next.writeTo(buf, true, true)
+	}
+}
+
+// String returns the string representation of n.
+func (n *ConstNode) String() string {
+	return n.kind.String()
+}
+
+// priority returns the priority of the ConstantNode, which is always 6.
+func (*ConstNode) priority() uint8 { return lowestPriority }
+
+// setNext sets the next node when n is in a linked list.
+func (n *ConstNode) setNext(next Node) {
+	n.next = next
+}
+
+// Next returns the next node, if any.
+func (n *ConstNode) Next() Node {
+	return n.next
+}
 
 // BinaryOperator represents a binary operator.
 type BinaryOperator int
@@ -192,12 +226,12 @@ func (op UnaryOperator) priority() uint8 {
 	}
 }
 
-// MethodNode represents a path method.
-type MethodNode int
+// MethodName represents the name of a path method.
+type MethodName int
 
 //revive:disable:exported
 const (
-	MethodAbs      MethodNode = iota // .abs()
+	MethodAbs      MethodName = iota // .abs()
 	MethodSize                       // .size()
 	MethodType                       // .type()
 	MethodFloor                      // .floor()
@@ -212,55 +246,101 @@ const (
 	MethodString                     // .string()
 )
 
+// MethodNode represents a path method.
+type MethodNode struct {
+	name MethodName
+	next Node
+}
+
+// NewMethod returns a new MethodNode with name.
+func NewMethod(name MethodName) *MethodNode {
+	return &MethodNode{name: name}
+}
+
+// String returns the SQL/JSON representation of the method: A dot, the name,
+// then parentheses.
+func (n *MethodNode) String() string {
+	return n.name.String()
+}
+
 // writeTo writes the string representation of n to buf.
-func (n MethodNode) writeTo(buf *strings.Builder, _, _ bool) {
-	buf.WriteString(n.String())
+func (n *MethodNode) writeTo(buf *strings.Builder, _, _ bool) {
+	buf.WriteString(n.name.String())
+	if next := n.Next(); next != nil {
+		next.writeTo(buf, true, true)
+	}
 }
 
 // priority returns the priority of the MethodNode, which is always 6.
-func (MethodNode) priority() uint8 { return lowestPriority }
+func (*MethodNode) priority() uint8 { return lowestPriority }
+
+// setNext sets the next node when n is in a linked list.
+func (n *MethodNode) setNext(next Node) {
+	n.next = next
+}
+
+// Next returns the next node, if any.
+func (n *MethodNode) Next() Node {
+	return n.next
+}
 
 // quotedString represents a quoted string node, including strings, variables,
 // and path keys.
-type quotedString string
+type quotedString struct {
+	str  string
+	next Node
+}
 
 // Text returns the textual representation of the string.
-func (n quotedString) Text() string {
-	return string(n)
+func (n *quotedString) Text() string {
+	return n.str
 }
 
 // String returns the SQL/JSON path-encoded quoted string.
-func (n quotedString) String() string {
-	return strconv.Quote(string(n))
+func (n *quotedString) String() string {
+	return strconv.Quote(n.str)
 }
 
 // writeTo writes String to buf.
-func (n quotedString) writeTo(buf *strings.Builder, _, _ bool) {
+func (n *quotedString) writeTo(buf *strings.Builder, _, _ bool) {
 	buf.WriteString(n.String())
+	if next := n.Next(); next != nil {
+		next.writeTo(buf, true, true)
+	}
 }
 
 // priority returns the priority of the quotedString, which is always 6.
-func (quotedString) priority() uint8 { return lowestPriority }
+func (*quotedString) priority() uint8 { return lowestPriority }
+
+// setNext sets the next node when n is in a linked list.
+func (n *quotedString) setNext(next Node) {
+	n.next = next
+}
+
+// Next returns the next node, if any.
+func (n *quotedString) Next() Node {
+	return n.next
+}
 
 // StringNode represents a string parsed from the path.
 type StringNode struct {
-	quotedString
+	*quotedString
 }
 
 // NewString returns a new StringNode representing str.
 func NewString(str string) *StringNode {
-	return &StringNode{quotedString(str)}
+	return &StringNode{&quotedString{str: str}}
 }
 
 // VariableNode represents a SQL/JSON path variable name.
 type VariableNode struct {
 	// jpiVariable
-	quotedString
+	*quotedString
 }
 
 // NewVariable returns a new VariableNode named name.
 func NewVariable(name string) *VariableNode {
-	return &VariableNode{quotedString(name)}
+	return &VariableNode{&quotedString{str: name}}
 }
 
 // String returns the double-quoted representation of n, preceded by '$'.
@@ -271,17 +351,20 @@ func (n *VariableNode) String() string {
 // writeTo writes String to buf.
 func (n VariableNode) writeTo(buf *strings.Builder, _, _ bool) {
 	buf.WriteString(n.String())
+	if next := n.Next(); next != nil {
+		next.writeTo(buf, true, true)
+	}
 }
 
 // KeyNode represents a SQL/JSON path key expression, e.g., '.foo'.
 type KeyNode struct {
 	// jpiKey
-	quotedString
+	*quotedString
 }
 
 // NewKey returns a new KeyNode with key.
 func NewKey(key string) *KeyNode {
-	return &KeyNode{quotedString(key)}
+	return &KeyNode{&quotedString{str: key}}
 }
 
 // writeTo writes the key to buf, prepended with '.' if inKey is true.
@@ -290,11 +373,15 @@ func (n *KeyNode) writeTo(buf *strings.Builder, inKey, _ bool) {
 		buf.WriteRune('.')
 	}
 	buf.WriteString(n.String())
+	if next := n.Next(); next != nil {
+		next.writeTo(buf, true, true)
+	}
 }
 
 type numberNode struct {
 	literal string
 	parsed  string
+	next    Node
 }
 
 // Literal returns the literal text string of the number as passed to the
@@ -308,20 +395,32 @@ func (n *numberNode) String() string {
 	return n.parsed
 }
 
-// writeTo writes String to buf, surrounded by parentheses if withParens is
-// true.
-func (n *numberNode) writeTo(buf *strings.Builder, _, withParens bool) {
-	if withParens {
+// writeTo writes String to buf, surrounded by parentheses if there is a next
+// node in the list.
+func (n *numberNode) writeTo(buf *strings.Builder, _, _ bool) {
+	next := n.Next()
+	if next != nil {
 		buf.WriteRune('(')
 	}
 	buf.WriteString(n.String())
-	if withParens {
+	if next != nil {
 		buf.WriteRune(')')
+		next.writeTo(buf, true, true)
 	}
 }
 
 // priority returns the priority of the numberNode, which is always 6.
 func (*numberNode) priority() uint8 { return lowestPriority }
+
+// setNext sets the next node when n is in a linked list.
+func (n *numberNode) setNext(next Node) {
+	n.next = next
+}
+
+// Next returns the next node, if any.
+func (n *numberNode) Next() Node {
+	return n.next
+}
 
 // NumericNode represents a numeric (non-integer) value.
 type NumericNode struct {
@@ -390,6 +489,7 @@ type BinaryNode struct {
 	op    BinaryOperator
 	left  Node
 	right Node
+	next  Node
 }
 
 // NewBinary returns a new BinaryNode where op represents the binary operator
@@ -423,9 +523,10 @@ func (n *BinaryNode) writeTo(buf *strings.Builder, _, withParens bool) {
 		}
 		buf.WriteRune(')')
 	case BinarySubscript:
-		buf.WriteString(n.left.String())
+		n.left.writeTo(buf, false, false)
 		if n.right != nil {
-			buf.WriteString(" " + n.op.String() + " " + n.right.String())
+			buf.WriteString(" " + n.op.String() + " ")
+			n.right.writeTo(buf, false, false)
 		}
 	case BinaryAnd, BinaryOr, BinaryEqual, BinaryNotEqual, BinaryLess,
 		BinaryGreater, BinaryLessOrEqual, BinaryGreaterOrEqual,
@@ -444,6 +545,9 @@ func (n *BinaryNode) writeTo(buf *strings.Builder, _, withParens bool) {
 		}
 	default:
 		panic(fmt.Sprintf("Unknown binary operator %v", n.op))
+	}
+	if next := n.Next(); next != nil {
+		next.writeTo(buf, true, true)
 	}
 }
 
@@ -465,10 +569,21 @@ func (n *BinaryNode) Right() Node {
 	return n.right
 }
 
+// setNext sets the next node when n is in a linked list.
+func (n *BinaryNode) setNext(next Node) {
+	n.next = next
+}
+
+// Next returns the next node, if any.
+func (n *BinaryNode) Next() Node {
+	return n.next
+}
+
 // UnaryNode represents a unary operation.
 type UnaryNode struct {
 	op      UnaryOperator
 	operand Node
+	next    Node
 }
 
 // NewUnary returns a new UnaryNode where op represents the unary operator
@@ -494,11 +609,18 @@ func (n UnaryNode) priority() uint8 { return n.op.priority() }
 func (n *UnaryNode) writeTo(buf *strings.Builder, _, withParens bool) {
 	switch n.op {
 	case UnaryExists:
-		buf.WriteString("exists (" + n.operand.String() + ")")
+		buf.WriteString("exists (")
+		n.operand.writeTo(buf, false, false)
+		buf.WriteRune(')')
 	case UnaryNot, UnaryFilter:
-		buf.WriteString(n.op.String() + "(" + n.operand.String() + ")")
+		buf.WriteString(n.op.String())
+		buf.WriteRune('(')
+		n.operand.writeTo(buf, false, false)
+		buf.WriteRune(')')
 	case UnaryIsUnknown:
-		buf.WriteString("(" + n.operand.String() + ") is unknown")
+		buf.WriteRune('(')
+		n.operand.writeTo(buf, false, false)
+		buf.WriteString(") is unknown")
 	case UnaryPlus, UnaryMinus:
 		if withParens {
 			buf.WriteRune('(')
@@ -519,6 +641,9 @@ func (n *UnaryNode) writeTo(buf *strings.Builder, _, withParens bool) {
 	default:
 		// Write nothing.
 	}
+	if next := n.Next(); next != nil {
+		next.writeTo(buf, true, true)
+	}
 }
 
 // Operator returns the UnaryNode's BinaryOperator.
@@ -531,49 +656,51 @@ func (n *UnaryNode) Operand() Node {
 	return n.operand
 }
 
-// AccessorListNode represents the nodes in an accessor path expression.
-type AccessorListNode struct {
-	accessors []Node
+// setNext sets the next node when n is in a linked list.
+func (n *UnaryNode) setNext(next Node) {
+	n.next = next
 }
 
-// NewAccessorList creates a new AccessorNode consisting of nodes. If the first node
-// in nodes is an AccessorNode, it will be returned with the remaining nodes
-// appended to it.
-func NewAccessorList(nodes []Node) *AccessorListNode {
-	if acc, ok := nodes[0].(*AccessorListNode); ok {
-		// Append items to existing list.
-		acc.accessors = append(acc.accessors, nodes[1:]...)
-		return acc
+// Next returns the next node, if any.
+func (n *UnaryNode) Next() Node {
+	return n.next
+}
+
+// LinkNodes assembles nodes into a linked list, where a call to Next on each
+// returns the next node in the list until the last node, where Next returns
+// nil.
+func LinkNodes(nodes []Node) Node {
+	size := len(nodes)
+	if size == 0 {
+		panic("No nodes passed to LinkNodes")
 	}
 
-	return &AccessorListNode{accessors: nodes}
-}
-
-// Accessors returns all of the accessor nodes in n.
-func (n *AccessorListNode) Accessors() []Node { return n.accessors }
-
-// String produces JSON Path accessor path string representation of the nodes in
-// n.
-func (n *AccessorListNode) String() string {
-	buf := new(strings.Builder)
-	n.writeTo(buf, false, false)
-	return buf.String()
-}
-
-// writeTo writes the SQL/JSON path string representation of n to buf.
-func (n *AccessorListNode) writeTo(buf *strings.Builder, _, _ bool) {
-	maxIdx := len(n.accessors) - 1
-	for i, node := range n.accessors {
-		node.writeTo(buf, i > 0, i < maxIdx)
+	head := nodes[0]
+	if size == 1 {
+		// Nothing to append.
+		return head
 	}
-}
 
-// priority returns the priority of the AccessorNode, which is always 6.
-func (*AccessorListNode) priority() uint8 { return lowestPriority }
+	// Find the end of an existing list, if any, so we can append to its end.
+	end := head
+	for next := end.Next(); next != nil; next = end.Next() {
+		end = next
+	}
+
+	// Append the remaining nodes to the list.
+	for _, next := range nodes[1:] {
+		end.setNext(next)
+		end = next
+	}
+
+	// Return the head of the list.
+	return head
+}
 
 // ArrayIndexNode represents the nodes in an array index expression.
 type ArrayIndexNode struct {
 	subscripts []Node
+	next       Node
 }
 
 // NewArrayIndex creates a new ArrayIndexNode consisting of subscripts.
@@ -600,13 +727,26 @@ func (n *ArrayIndexNode) writeTo(buf *strings.Builder, _, _ bool) {
 		if i > 0 {
 			buf.WriteRune(',')
 		}
-		buf.WriteString(node.String())
+		node.writeTo(buf, false, false)
 	}
 	buf.WriteRune(']')
+	if next := n.Next(); next != nil {
+		next.writeTo(buf, true, true)
+	}
 }
 
 // priority returns the priority of the ArrayIndexNode, which is always 6.
 func (*ArrayIndexNode) priority() uint8 { return lowestPriority }
+
+// setNext sets the next node when n is in a linked list.
+func (n *ArrayIndexNode) setNext(next Node) {
+	n.next = next
+}
+
+// Next returns the next node, if any.
+func (n *ArrayIndexNode) Next() Node {
+	return n.next
+}
 
 // AnyNode represents any node in a path accessor with the expression
 // 'first TO last'.
@@ -614,6 +754,7 @@ type AnyNode struct {
 	// jpiAny
 	first uint32
 	last  uint32
+	next  Node
 }
 
 // NewAny returns a new AnyNode with first as its first index and last as its
@@ -658,10 +799,23 @@ func (n *AnyNode) writeTo(buf *strings.Builder, inKey, _ bool) {
 	default:
 		buf.WriteString(fmt.Sprintf("**{%v to %v}", n.first, n.last))
 	}
+	if next := n.Next(); next != nil {
+		next.writeTo(buf, true, true)
+	}
 }
 
 // priority returns the priority of the AnyNode, which is always 6.
 func (*AnyNode) priority() uint8 { return lowestPriority }
+
+// setNext sets the next node when n is in a linked list.
+func (n *AnyNode) setNext(next Node) {
+	n.next = next
+}
+
+// Next returns the next node, if any.
+func (n *AnyNode) Next() Node {
+	return n.next
+}
 
 // RegexNode represents a regular expression.
 type RegexNode struct {
@@ -669,6 +823,7 @@ type RegexNode struct {
 	operand Node
 	pattern string
 	flags   regexFlags
+	next    Node
 }
 
 // NewRegex returns anew RegexNode that compares node to the regular expression
@@ -704,6 +859,9 @@ func (n *RegexNode) writeTo(buf *strings.Builder, _, withParens bool) {
 	if withParens {
 		buf.WriteRune(')')
 	}
+	if next := n.Next(); next != nil {
+		next.writeTo(buf, true, true)
+	}
 }
 
 // priority returns the priority of the RegexNode, which is always 6.
@@ -721,6 +879,16 @@ func (n *RegexNode) Regexp() *regexp.Regexp {
 // Operand returns the RegexNode's operand.
 func (n *RegexNode) Operand() Node {
 	return n.operand
+}
+
+// setNext sets the next node when n is in a linked list.
+func (n *RegexNode) setNext(next Node) {
+	n.next = next
+}
+
+// Next returns the next node, if any.
+func (n *RegexNode) Next() Node {
+	return n.next
 }
 
 // AST represents the complete abstract syntax tree for a parsed SQL/JSON path.
@@ -759,11 +927,13 @@ func (a *AST) Root() Node {
 	return a.root
 }
 
-// IsPredicate returns true if the AST represents a PostgreSQL-style "predicate
-// check" path.
+// IsPredicate returns true if the AST represents a PostgreSQL-style
+// "predicate check" path.
 func (a *AST) IsPredicate() bool {
-	_, ok := a.root.(*AccessorListNode)
-	return !ok
+	if n, ok := a.root.(*ConstNode); ok {
+		return n.kind != ConstRoot
+	}
+	return true
 }
 
 // validateNode recursively validates nodes. It's based on the Postgres
@@ -774,7 +944,9 @@ func (a *AST) IsPredicate() bool {
 func validateNode(node Node, depth int, inSubscript bool) error {
 	argDepth := 0
 	switch node := node.(type) {
-	case StringNode, *VariableNode, *KeyNode, *NumericNode, *IntegerNode:
+	case nil:
+		return nil
+	case *StringNode, *VariableNode, *KeyNode, *NumericNode, *IntegerNode:
 		// Nothing to do.
 	case *BinaryNode:
 		if err := validateNode(node.left, depth+argDepth, inSubscript); err != nil {
@@ -794,9 +966,9 @@ func validateNode(node Node, depth int, inSubscript bool) error {
 		if err := validateNode(node.operand, depth, inSubscript); err != nil {
 			return err
 		}
-	case ConstNode:
+	case *ConstNode:
 		//nolint:exhaustive
-		switch node {
+		switch node.kind {
 		case ConstCurrent:
 			if depth <= 0 {
 				//nolint:goerr113
@@ -814,11 +986,10 @@ func validateNode(node Node, depth int, inSubscript bool) error {
 				return err
 			}
 		}
-	case *AccessorListNode:
-		for _, n := range node.accessors {
-			if err := validateNode(n, depth, inSubscript); err != nil {
-				return err
-			}
+	}
+	if next := node.Next(); next != nil {
+		if err := validateNode(next, depth, inSubscript); err != nil {
+			return err
 		}
 	}
 
@@ -826,38 +997,35 @@ func validateNode(node Node, depth int, inSubscript bool) error {
 }
 
 // NewUnaryOrNumber returns a new node for op ast.UnaryPlus or ast.UnaryMinus.
-// If node is numeric and not the first item in an AccessorArray, it returns a
+// If node is numeric and not the first item in an accessor list, it returns a
 // ast.NumericNode or ast.IntegerNode, as appropriate.
 func NewUnaryOrNumber(op UnaryOperator, node Node) Node {
-	switch node := node.(type) {
-	case *NumericNode:
-		//nolint:exhaustive
-		switch op {
-		case UnaryPlus:
-			// Just a positive number, return it.
-			return node
-		case UnaryMinus:
-			// Just a negative number, return it with the minus sign.
-			return NewNumeric("-" + node.literal)
-		default:
-			panic(fmt.Sprintf("Operator must be + or - but is %v", op))
-		}
-	case *IntegerNode:
-		//nolint:exhaustive
-		switch op {
-		case UnaryPlus:
-			// Just a positive number, return it.
-			return node
-		case UnaryMinus:
-			// Just a negative number, return it with the minus sign.
-			return NewInteger("-" + node.literal)
-		default:
-			panic(fmt.Sprintf("Operator must be + or - but is %v", op))
-		}
-	case *AccessorListNode:
-		// If node is an accessor with a single node, just use that node.
-		if len(node.accessors) == 1 {
-			return NewUnaryOrNumber(op, node.accessors[0])
+	if node.Next() == nil {
+		switch node := node.(type) {
+		case *NumericNode:
+			//nolint:exhaustive
+			switch op {
+			case UnaryPlus:
+				// Just a positive number, return it.
+				return node
+			case UnaryMinus:
+				// Just a negative number, return it with the minus sign.
+				return NewNumeric("-" + node.literal)
+			default:
+				panic(fmt.Sprintf("Operator must be + or - but is %v", op))
+			}
+		case *IntegerNode:
+			//nolint:exhaustive
+			switch op {
+			case UnaryPlus:
+				// Just a positive number, return it.
+				return node
+			case UnaryMinus:
+				// Just a negative number, return it with the minus sign.
+				return NewInteger("-" + node.literal)
+			default:
+				panic(fmt.Sprintf("Operator must be + or - but is %v", op))
+			}
 		}
 	}
 
