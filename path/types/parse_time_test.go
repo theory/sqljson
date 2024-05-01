@@ -246,7 +246,7 @@ func TestParseTime(t *testing.T) {
 	for _, tc := range timestampTestCases(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tim, ok := parseTime(tc.value)
+			tim, ok := ParseTime(tc.value)
 			a.Equal(tc.ok, ok)
 			a.Equal(tc.exp, tim)
 		})

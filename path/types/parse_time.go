@@ -2,7 +2,7 @@ package types
 
 import "time"
 
-// parseTime parses src into [time.Time] by iterating through a list of valid
+// ParseTime parses src into [time.Time] by iterating through a list of valid
 // time and timestamp formats according to SQL/JSON standard: date, time_tz,
 // time, timestamp_tz, and timestamp. Returns false if the string cannot be
 // parsed by any of the formats.
@@ -10,7 +10,7 @@ import "time"
 // We also support ISO 8601 format (with "T") for timestamps, because
 // PostgreSQL to_json() and to_jsonb() functions use this format, as do
 // [Timestamp.MarshalJSON] and [TimestampTZ.MarshalJSON].
-func parseTime(src string) (time.Time, bool) {
+func ParseTime(src string) (time.Time, bool) {
 	// Handle infinity and -infinity? 24:00::00 time?
 	for _, format := range []string{
 		// date
