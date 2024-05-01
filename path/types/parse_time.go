@@ -4,7 +4,8 @@ import "time"
 
 // parseTime parses src into [time.Time] by iterating through a list of valid
 // time and timestamp formats according to SQL/JSON standard: date, time_tz,
-// time, timestamp_tz, and timestamp.
+// time, timestamp_tz, and timestamp. Returns false if the string cannot be
+// parsed by any of the formats.
 //
 // We also support ISO 8601 format (with "T") for timestamps, because
 // PostgreSQL to_json() and to_jsonb() functions use this format, as do

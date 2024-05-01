@@ -10,20 +10,12 @@ type Date struct {
 	time.Time
 }
 
-// ParseDate parses src into a Date. Returns an error if the format of src
-// cannot be determined and parsed.
-func ParseDate(src string) (*Date, error) {
-	ts, ok := parseTime(src)
-	if !ok {
-		return nil, fmt.Errorf(
-			`%w: format is not recognized: "%v"`,
-			ErrSQLType, src,
-		)
-	}
-
+// NewDate coerces src into a Date.
+func NewDate(src time.Time) *Date {
 	// Convert result type to a date
-	ts = time.Date(ts.Year(), ts.Month(), ts.Day(), 0, 0, 0, 0, time.UTC)
-	return &Date{ts}, nil
+	return &Date{
+		time.Date(src.Year(), src.Month(), src.Day(), 0, 0, 0, 0, time.UTC),
+	}
 }
 
 const dateFormat = "2006-01-02"
@@ -35,11 +27,8 @@ func (d *Date) String() string {
 
 // Compare compares the time instant d with u. If d is before u, it returns
 // -1; if d is after u, it returns +1; if they're the same, it returns 0.
-func (d *Date) Compare(u *Date) int {
-	if u == nil {
-		return d.Time.Compare(time.Time{})
-	}
-	return d.Time.Compare(u.Time)
+func (d *Date) Compare(u time.Time) int {
+	return d.Time.Compare(u)
 }
 
 // MarshalJSON implements the json.Marshaler interface. The time is a quoted

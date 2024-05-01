@@ -11,17 +11,9 @@ type TimestampTZ struct {
 	time.Time
 }
 
-// ParseTimestampTZ parses src into a timestamp wit time zone. Returns an
-// error if the format of src cannot be determined and parsed.
-func ParseTimestampTZ(src string) (*TimestampTZ, error) {
-	ts, ok := parseTime(src)
-	if !ok {
-		return nil, fmt.Errorf(
-			`%w: format is not recognized: "%v"`,
-			ErrSQLType, src,
-		)
-	}
-	return &TimestampTZ{ts}, nil
+// NewTimestampTZ creates a timestamp with time zone with src.
+func NewTimestampTZ(src time.Time) *TimestampTZ {
+	return &TimestampTZ{src}
 }
 
 const (
@@ -42,11 +34,8 @@ func (ts TimestampTZ) String() string {
 
 // Compare compares the time instant ts with u. If ts is before u, it returns
 // -1; if ts is after u, it returns +1; if they're the same, it returns 0.
-func (ts TimestampTZ) Compare(u *Timestamp) int {
-	if u == nil {
-		return ts.Time.Compare(time.Time{})
-	}
-	return ts.Time.Compare(u.Time)
+func (ts *TimestampTZ) Compare(u time.Time) int {
+	return ts.Time.Compare(u)
 }
 
 // MarshalJSON implements the json.Marshaler interface. The time is a quoted

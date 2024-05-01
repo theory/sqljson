@@ -9,32 +9,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//nolint:dupl
 func TestDate(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	r := require.New(t)
 
 	for _, tc := range timestampTestCases(t) {
-		// Convert to dates.
-		exp := tc.exp
-		tc.exp = time.Date(
-			exp.Year(), exp.Month(), exp.Day(),
-			0, 0, 0, 0, time.UTC,
-		)
+		if !tc.ok {
+			continue
+		}
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			ts, err := ParseDate(tc.value)
-			if !tc.ok {
-				a.Nil(ts)
-				r.EqualError(err, fmt.Sprintf(
-					`type: format is not recognized: %q`, tc.value,
-				))
-				r.ErrorIs(err, ErrSQLType)
-				return
-			}
-
-			r.NoError(err)
+			// Convert to dates.
+			exp := tc.exp
+			tc.exp = time.Date(
+				exp.Year(), exp.Month(), exp.Day(),
+				0, 0, 0, 0, time.UTC,
+			)
+			ts := NewDate(tc.exp)
 			a.Equal(&Date{Time: tc.exp}, ts)
 			a.Equal(tc.exp.Format(dateFormat), ts.String())
 
@@ -66,9 +58,8 @@ func TestDateCompare(t *testing.T) {
 	a := assert.New(t)
 	apr29 := time.Date(2024, 4, 29, 0, 0, 0, 0, time.UTC)
 	date := &Date{Time: apr29}
-	a.Equal(-1, date.Compare(&Date{Time: time.Date(2024, 4, 30, 0, 0, 0, 0, time.UTC)}))
-	a.Equal(1, date.Compare(&Date{Time: time.Date(2024, 4, 28, 0, 0, 0, 0, time.UTC)}))
-	a.Equal(0, date.Compare(&Date{Time: apr29}))
-	a.Equal(0, date.Compare(&Date{Time: time.Date(2024, 4, 29, 0, 0, 0, 0, time.UTC)}))
-	a.Equal(1, date.Compare(nil))
+	a.Equal(-1, date.Compare(time.Date(2024, 4, 30, 0, 0, 0, 0, time.UTC)))
+	a.Equal(1, date.Compare(time.Date(2024, 4, 28, 0, 0, 0, 0, time.UTC)))
+	a.Equal(0, date.Compare(apr29))
+	a.Equal(0, date.Compare(time.Date(2024, 4, 29, 0, 0, 0, 0, time.UTC)))
 }

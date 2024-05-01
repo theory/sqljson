@@ -15,6 +15,9 @@ func TestTimeTZ(t *testing.T) {
 	r := require.New(t)
 
 	for _, tc := range timestampTestCases(t) {
+		if !tc.ok {
+			continue
+		}
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			// Remove the date from all the test cases.
@@ -24,17 +27,7 @@ func TestTimeTZ(t *testing.T) {
 				tc.exp.Nanosecond(), tc.exp.Location(),
 			)
 
-			ts, err := ParseTimeTZ(tc.value)
-			if !tc.ok {
-				a.Nil(ts)
-				r.EqualError(err, fmt.Sprintf(
-					`type: format is not recognized: %q`, tc.value,
-				))
-				r.ErrorIs(err, ErrSQLType)
-				return
-			}
-
-			r.NoError(err)
+			ts := NewTimeTZ(tc.exp)
 			a.Equal(&TimeTZ{Time: exp}, ts)
 			a.Equal(exp.Format(timeTZSecondFormat), ts.String())
 
@@ -84,9 +77,8 @@ func TestTimeTZCompare(t *testing.T) {
 	a := assert.New(t)
 	now := time.Now().Local()
 	ts := &TimeTZ{Time: now}
-	a.Equal(-1, ts.Compare(&TimeTZ{Time: now.Add(1 * time.Hour)}))
-	a.Equal(1, ts.Compare(&TimeTZ{Time: now.Add(-2 * time.Hour)}))
-	a.Equal(0, ts.Compare(&TimeTZ{Time: now}))
-	a.Equal(0, ts.Compare(&TimeTZ{Time: now.Add(0)}))
-	a.Equal(1, ts.Compare(nil))
+	a.Equal(-1, ts.Compare(now.Add(1*time.Hour)))
+	a.Equal(1, ts.Compare(now.Add(-2*time.Hour)))
+	a.Equal(0, ts.Compare(now))
+	a.Equal(0, ts.Compare(now.Add(0)))
 }

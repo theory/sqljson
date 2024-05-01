@@ -11,26 +11,17 @@ type Timestamp struct {
 	time.Time
 }
 
-// ParseTimestamp parses src into a timestamp without time zone. Returns an
-// error if the format of src cannot be determined and parsed.
-func ParseTimestamp(src string) (*Timestamp, error) {
-	ts, ok := parseTime(src)
-	if !ok {
-		return nil, fmt.Errorf(
-			`%w: format is not recognized: "%v"`,
-			ErrSQLType, src,
-		)
-	}
-
+// NewTimestamp coerces src into a timestamp without time zone.
+func NewTimestamp(src time.Time) *Timestamp {
 	// Convert result type to timestamp without time zone (use UTC)
-	if ts.Location() != time.UTC {
-		ts = time.Date(
-			ts.Year(), ts.Month(), ts.Day(),
-			ts.Hour(), ts.Minute(), ts.Second(), ts.Nanosecond(),
+	if src.Location() != time.UTC {
+		src = time.Date(
+			src.Year(), src.Month(), src.Day(),
+			src.Hour(), src.Minute(), src.Second(), src.Nanosecond(),
 			time.UTC,
 		)
 	}
-	return &Timestamp{ts}, nil
+	return &Timestamp{src}
 }
 
 // timestampFormat represents the canonical string format for Timestamp
@@ -45,11 +36,8 @@ func (ts *Timestamp) String() string {
 
 // Compare compares the time instant ts with u. If ts is before u, it returns
 // -1; if ts is after u, it returns +1; if they're the same, it returns 0.
-func (ts *Timestamp) Compare(u *Timestamp) int {
-	if u == nil {
-		return ts.Time.Compare(time.Time{})
-	}
-	return ts.Time.Compare(u.Time)
+func (ts *Timestamp) Compare(u time.Time) int {
+	return ts.Time.Compare(u)
 }
 
 // MarshalJSON implements the json.Marshaler interface. The time is a quoted
