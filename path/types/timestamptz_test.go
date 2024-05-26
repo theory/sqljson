@@ -15,19 +15,23 @@ func TestTimestampTZ(t *testing.T) {
 	r := require.New(t)
 
 	for _, tc := range timestampTestCases(t) {
-		if !tc.ok {
-			continue
-		}
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			ts := NewTimestampTZ(tc.exp)
-			a.Equal(&TimestampTZ{Time: tc.exp}, ts)
-			a.Equal(tc.exp.Format(timestampTZSecondFormat), ts.String())
+			// Don't test Time and TimeTZ
+			switch tc.ctor(time.Time{}).(type) {
+			case *Time, *TimeTZ:
+				return
+			}
+
+			ts := NewTimestampTZ(tc.time)
+			a.Equal(&TimestampTZ{Time: tc.time}, ts)
+			a.Equal(tc.time, ts.GoTime())
+			a.Equal(tc.time.In(time.Local).Format(timestampTZSecondFormat), ts.String())
 
 			// Check JSON
 			json, err := ts.MarshalJSON()
 			r.NoError(err)
-			a.Equal(fmt.Sprintf("%q", ts.String()), string(json))
+			a.Equal(fmt.Sprintf("%q", ts.Time.Format(timestampTZSecondFormat)), string(json))
 			ts2 := new(TimestampTZ)
 			r.NoError(ts2.UnmarshalJSON(json))
 			a.Equal(ts, ts2)

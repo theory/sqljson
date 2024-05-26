@@ -15,20 +15,24 @@ func TestDate(t *testing.T) {
 	r := require.New(t)
 
 	for _, tc := range timestampTestCases(t) {
-		if !tc.ok {
-			continue
-		}
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			// Don't test Time and TimeTZ
+			switch tc.ctor(time.Time{}).(type) {
+			case *Time, *TimeTZ:
+				return
+			}
+
 			// Convert to dates.
-			exp := tc.exp
-			tc.exp = time.Date(
+			exp := tc.time
+			tc.time = time.Date(
 				exp.Year(), exp.Month(), exp.Day(),
 				0, 0, 0, 0, time.UTC,
 			)
-			ts := NewDate(tc.exp)
-			a.Equal(&Date{Time: tc.exp}, ts)
-			a.Equal(tc.exp.Format(dateFormat), ts.String())
+			ts := NewDate(tc.time)
+			a.Equal(&Date{Time: tc.time}, ts)
+			a.Equal(tc.time, ts.GoTime())
+			a.Equal(tc.time.Format(dateFormat), ts.String())
 
 			// Check JSON
 			json, err := ts.MarshalJSON()

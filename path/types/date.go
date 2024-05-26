@@ -18,6 +18,10 @@ func NewDate(src time.Time) *Date {
 	}
 }
 
+// GoTime returns the underlying time.Time object.
+func (d *Date) GoTime() time.Time { return d.Time }
+
+// dateFormat represents the canonical string format for Date values.
 const dateFormat = "2006-01-02"
 
 // String returns the string representation of d.

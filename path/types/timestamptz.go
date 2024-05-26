@@ -16,6 +16,9 @@ func NewTimestampTZ(src time.Time) *TimestampTZ {
 	return &TimestampTZ{src}
 }
 
+// GoTime returns the underlying time.Time object.
+func (ts *TimestampTZ) GoTime() time.Time { return ts.Time }
+
 const (
 	// timestampTZSecondFormat represents the canonical string format for
 	// TimestampTZ values, and supports parsing 00:00:00 zones.
@@ -26,10 +29,12 @@ const (
 	timestampTZHourFormat = "2006-01-02T15:04:05.999999999Z07"
 )
 
-// String returns the string representation of ts using the format
-// "2006-01-02T15:04:05.999999999Z07:00:00".
+// String returns the string representation of ts in the local time zone using
+// the format "2006-01-02T15:04:05.999999999Z07:00:00".
 func (ts TimestampTZ) String() string {
-	return ts.Time.Format(timestampTZSecondFormat)
+	// XXX Would be nice to more precisely match PostgreSQL's tz offset formatting.
+	//nolint:gosmopolitan // Use of Locale affects only TZ, so allow.
+	return ts.Time.Local().Format(timestampTZSecondFormat)
 }
 
 // Compare compares the time instant ts with u. If ts is before u, it returns

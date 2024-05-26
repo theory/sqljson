@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,20 +16,24 @@ func TestTimeTZ(t *testing.T) {
 	r := require.New(t)
 
 	for _, tc := range timestampTestCases(t) {
-		if !tc.ok {
-			continue
-		}
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			// Only test Time and TimeTZ
+			switch tc.ctor(time.Time{}).(type) {
+			case *Timestamp, *TimestampTZ, *Date:
+				return
+			}
+
 			// Remove the date from all the test cases.
 			exp := time.Date(
 				0, 1, 1,
-				tc.exp.Hour(), tc.exp.Minute(), tc.exp.Second(),
-				tc.exp.Nanosecond(), tc.exp.Location(),
+				tc.time.Hour(), tc.time.Minute(), tc.time.Second(),
+				tc.time.Nanosecond(), tc.time.Location(),
 			)
 
-			ts := NewTimeTZ(tc.exp)
+			ts := NewTimeTZ(tc.time)
 			a.Equal(&TimeTZ{Time: exp}, ts)
+			a.Equal(exp, ts.GoTime())
 			a.Equal(exp.Format(timeTZSecondFormat), ts.String())
 
 			// Check JSON
@@ -75,10 +80,22 @@ func TestTimeTZInvalidJSON(t *testing.T) {
 func TestTimeTZCompare(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
-	now := time.Now().Local()
+	r := require.New(t)
+
+	// Pretend we're in LA.
+	la, err := time.LoadLocation("America/Los_Angeles")
+	r.NoError(err)
+	now := time.Now().In(la)
+
+	// Comparisons should work as expected in same TZ.
 	ts := &TimeTZ{Time: now}
 	a.Equal(-1, ts.Compare(now.Add(1*time.Hour)))
 	a.Equal(1, ts.Compare(now.Add(-2*time.Hour)))
 	a.Equal(0, ts.Compare(now))
 	a.Equal(0, ts.Compare(now.Add(0)))
+
+	// Same time but different offsets are not equal
+	a.Equal(-1, ts.Compare(now.UTC()))
+	utc := &TimeTZ{Time: now.UTC()}
+	a.Equal(1, utc.Compare(now))
 }

@@ -5,21 +5,24 @@ import (
 	"time"
 )
 
-// TimeTZ represents the PostgreSQL TimeTZ type.
+// TimeTZ represents the PostgreSQL time with time zone type.
 type TimeTZ struct {
 	// Time is the underlying time.Time value.
 	time.Time
 }
 
-// NewTimeTZ coerces src into a TimeTZ without time zone.
+// NewTimeTZ coerces src into a TimeTZ.
 func NewTimeTZ(src time.Time) *TimeTZ {
-	// Convert result type to TimeTZ wit time zone.
+	// Preserve the location (and therefor the offset).
 	return &TimeTZ{time.Date(
 		0, 1, 1,
 		src.Hour(), src.Minute(), src.Second(), src.Nanosecond(),
 		src.Location(),
 	)}
 }
+
+// GoTime returns the underlying time.Time object.
+func (t *TimeTZ) GoTime() time.Time { return t.Time }
 
 const (
 	// timeTZSecondFormat represents the canonical string format for
@@ -38,9 +41,29 @@ func (t *TimeTZ) String() string {
 }
 
 // Compare compares the time instant t with u. If d is before u, it returns
-// -1; if t is after u, it returns +1; if they're the same, it returns 0.
+// -1; if t is after u, it returns +1; if they're the same, it returns 0. Note
+// that the TZ offset contributes to this comparison; values with different
+// offsets are never considered to be the same.
 func (t *TimeTZ) Compare(u time.Time) int {
-	return t.Time.Compare(u)
+	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/backend/utils/adt/date.c#L2442-L2467
+
+	// Primary sort is by true (GMT-equivalent) time
+	cmp := t.Time.Compare(u)
+	if cmp != 0 {
+		return cmp
+	}
+
+	// If same GMT time, sort by timezone; we only want to say that two
+	// timetz's are equal if both the time and zone parts are equal.
+	_, off1 := t.Time.Zone()
+	_, off2 := u.Zone()
+	if off1 > off2 {
+		return 1
+	}
+	if off1 < off2 {
+		return -1
+	}
+	return 0
 }
 
 // MarshalJSON implements the json.Marshaler interface. The time is a quoted

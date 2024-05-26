@@ -5,13 +5,13 @@ import (
 	"time"
 )
 
-// Timestamp represents the PostgreSQL timestamp type.
+// Timestamp represents the PostgreSQL timestamp without time zone type.
 type Timestamp struct {
 	// Time is the underlying time.Time value.
 	time.Time
 }
 
-// NewTimestamp coerces src into a timestamp without time zone.
+// NewTimestamp coerces src into a Timestamp.
 func NewTimestamp(src time.Time) *Timestamp {
 	// Convert result type to timestamp without time zone (use UTC)
 	if src.Location() != time.UTC {
@@ -23,6 +23,9 @@ func NewTimestamp(src time.Time) *Timestamp {
 	}
 	return &Timestamp{src}
 }
+
+// GoTime returns the underlying time.Time object.
+func (ts *Timestamp) GoTime() time.Time { return ts.Time }
 
 // timestampFormat represents the canonical string format for Timestamp
 // values.

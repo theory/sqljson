@@ -15,20 +15,24 @@ func TestTimestamp(t *testing.T) {
 	r := require.New(t)
 
 	for _, tc := range timestampTestCases(t) {
-		if !tc.ok {
-			continue
-		}
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			// Don't test Time and TimeTZ
+			switch tc.ctor(time.Time{}).(type) {
+			case *Time, *TimeTZ:
+				return
+			}
+
 			// Remove the time zone from all the test cases (by making it UTC).
 			exp := time.Date(
-				tc.exp.Year(), tc.exp.Month(), tc.exp.Day(),
-				tc.exp.Hour(), tc.exp.Minute(), tc.exp.Second(),
-				tc.exp.Nanosecond(), time.UTC,
+				tc.time.Year(), tc.time.Month(), tc.time.Day(),
+				tc.time.Hour(), tc.time.Minute(), tc.time.Second(),
+				tc.time.Nanosecond(), time.UTC,
 			)
 
-			ts := NewTimestamp(tc.exp)
+			ts := NewTimestamp(tc.time)
 			a.Equal(&Timestamp{Time: exp}, ts)
+			a.Equal(exp, ts.GoTime())
 			a.Equal(exp.Format(timestampFormat), ts.String())
 
 			// Check JSON

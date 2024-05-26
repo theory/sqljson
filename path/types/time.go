@@ -5,13 +5,13 @@ import (
 	"time"
 )
 
-// Time represents the PostgreSQL Time type.
+// Time represents the PostgreSQL time without time zone type.
 type Time struct {
 	// Time is the underlying time.Time value.
 	time.Time
 }
 
-// NewTime coerces src into a Time without time zone.
+// NewTime coerces src into a Time.
 func NewTime(src time.Time) *Time {
 	// Convert result type to Time without time zone (use UTC)
 	return &Time{time.Date(
@@ -20,6 +20,9 @@ func NewTime(src time.Time) *Time {
 		time.UTC,
 	)}
 }
+
+// GoTime returns the underlying time.Time object.
+func (t *Time) GoTime() time.Time { return t.Time }
 
 // timeFormat represents the canonical string format for Time
 // values.

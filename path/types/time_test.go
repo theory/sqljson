@@ -15,20 +15,24 @@ func TestTime(t *testing.T) {
 	r := require.New(t)
 
 	for _, tc := range timestampTestCases(t) {
-		if !tc.ok {
-			continue
-		}
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			// Only test Time and TimeTZ
+			switch tc.ctor(time.Time{}).(type) {
+			case *Timestamp, *TimestampTZ, *Date:
+				return
+			}
+
 			// Remove the time zone and date from all the test cases.
 			exp := time.Date(
 				0, 1, 1,
-				tc.exp.Hour(), tc.exp.Minute(), tc.exp.Second(),
-				tc.exp.Nanosecond(), time.UTC,
+				tc.time.Hour(), tc.time.Minute(), tc.time.Second(),
+				tc.time.Nanosecond(), time.UTC,
 			)
 
-			ts := NewTime(tc.exp)
+			ts := NewTime(tc.time)
 			a.Equal(&Time{Time: exp}, ts)
+			a.Equal(exp, ts.GoTime())
 			a.Equal(exp.Format(timeFormat), ts.String())
 
 			// Check JSON
