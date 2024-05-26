@@ -4,11 +4,13 @@
 package path
 
 import (
+	"context"
 	"database/sql/driver"
 	"errors"
 	"fmt"
 
 	"github.com/theory/sqljson/path/ast"
+	"github.com/theory/sqljson/path/exec"
 	"github.com/theory/sqljson/path/parser"
 )
 
@@ -70,32 +72,29 @@ func (path *Path) IsPredicate() bool {
 	return path.AST.IsPredicate()
 }
 
-// Exists returns the result of path evaluated against json. Returns true if
-// path is a SQL-standard path that return any item or if path is a predicate
-// check expression that returns true. PostgreSQL equivalents for SQL standard
-// paths:
+// Exists checks whether the path returns any item for json. (This is useful
+// only with SQL-standard JSON path expressions (when [IsPredicate] returns
+// false), not predicate check expressions (when [IsPredicate] returns true),
+// which always return a value.)
 //
-//	SELECT '{"a":[1,2,3,4,5]}'::jsonb @? '$.a[*] ? (@ > 2)';
-//	SELECT '{"a":[1,2,3,4,5]}'::jsonb @@ 'exists($.a[*] ? (@ > 2))';
-//	SELECT jsonb_path_exists('{"a":[1,2,3,4,5]}', '$.a[*] ? (@ >= $min && @ <= $max)', '{"min":2, "max":4}')
+// If the [exec.WithVars] Option is specified its fields provide named values
+// to be substituted into the path expression. If the [exec.WithSilent] Option
+// is specified, the function suppresses some errors.
 //
-// PostgreSQL equivalents for predicate-check paths:
+// ∑ If the [exec.WithTZ] Option is specified, it allows comparisons of
+// date/time values that require timezone-aware conversions. The example below
+// requires interpretation of the date-only value 2015-08-02 as a timestamp
+// with time zone, so the result depends on the current time zone
+// configuration (system or TZ environment variable):
 //
-//	SELECT '{"a":[1,2,3,4,5]}'::jsonb @@ '$.a[*] > 2';
-//	SELECT jsonb_path_match('{"a":[1,2,3,4,5]}', 'exists($.a[*] ? (@ >= $min && @ <= $max))', '{"min":2, "max":4}')
+//	Exists(
+//		[]any{"2015-08-01 12:00:00-05"},
+//		`$[*] ? (@.datetime() < "2015-08-02".datetime())`,
+//		WithTZ(),
+//	) → true
 //
-// The json parameter may be one of the following types:
-//
-//   - map[string]any — equivalent to an unmarshaled JSON object
-//   - []any - equivalent to an unmarshaled JSON array
-//   - float or int — equivalent to an unmarshaled JSON number
-//   - string — equivalent to an unmarshaled JSON string
-//   - [json.Number] — a JSON number
-//   - [json.RawMessage] or []byte — a raw JSON message
-//
-// If the vars parameter is not nil, its fields provide named values to be
-// substituted for variables in the JSON path expression. If the silent
-// parameter is true, the function suppresses the following errors:
+// If [exec.WithSilent] is passed, the function suppresses the following
+// errors:
 //
 //   - missing object field or array element
 //   - unexpected JSON item type
@@ -103,36 +102,49 @@ func (path *Path) IsPredicate() bool {
 //
 // This behavior might be helpful when searching JSON document collections of
 // varying structure.
-//
-// NOTE: Currently unimplemented, just returns true.
-func (path *Path) Exists(json any, vars map[string]any, silent bool) (bool, error) {
-	_ = json
-	_ = vars
-	_ = silent
-	return true, nil
+func (path *Path) Exists(ctx context.Context, json any, opt ...exec.Option) (bool, error) {
+	//nolint:wrapcheck // Okay to return unwrapped error
+	return exec.Exists(ctx, path.AST, json, opt...)
 }
 
-// Query returns all JSON items returned by path evaluated against json. For
-// SQL-standard path expressions it returns the unmarshaled JSON values
-// selected from target. For predicate check expressions it returns the result
-// of the predicate check: true, false, or nil. The type of json and the
-// optional vars and silent parameters act the same as for [Exists].
-//
-// NOTE: Currently unimplemented, just returns json.
-func (path *Path) Query(json any, vars map[string]any, silent bool) (any, error) {
-	_ = vars
-	_ = silent
-	return json, nil
+// Match returns the result of predicate check for json. (This is useful only
+// with predicate check expressions, not SQL-standard JSON path expressions
+// (when [IsPredicate] returns false), since it will either fail or return nil
+// if the path result is not a single boolean value.) The optional
+// [exec.WithVars] and [exec.WithSilent], and [exec.WithTZ] Options act the
+// same as for [Exists].
+func (path *Path) Match(ctx context.Context, json any, opt ...exec.Option) (bool, error) {
+	//nolint:wrapcheck // Okay to return unwrapped error
+	return exec.Match(ctx, path.AST, json, opt...)
 }
 
-// MustQuery is like Query, but panics on error. Mostly provided for
-// documentation purposes.
-func (path *Path) MustQuery(json any, vars map[string]any, silent bool) any {
-	res, err := path.Query(json, vars, silent)
+// Query returns all JSON items returned by path for json. For SQL-standard
+// JSON path expressions (when [IsPredicate] returns false) it returns the
+// values selected from json. For predicate check expressions (when
+// [IsPredicate] returns true) it returns the result of the predicate check:
+// true, false, or false + ErrNull (equivalent to Postgres returning NULL).
+// The optional [exec.WithVars] and [exec.WithSilent], and [exec.WithTZ]
+// Options act the same as for [Exists].
+func (path *Path) Query(ctx context.Context, json any, opt ...exec.Option) (any, error) {
+	//nolint:wrapcheck // Okay to return unwrapped error
+	return exec.Query(ctx, path.AST, json, opt...)
+}
+
+// MustQuery is like [Query], but panics on error. Mostly provided for use in
+// documentation examples.
+func (path *Path) MustQuery(ctx context.Context, json any, opt ...exec.Option) any {
+	res, err := exec.Query(ctx, path.AST, json, opt...)
 	if err != nil {
 		panic(err)
 	}
 	return res
+}
+
+// First returns the first JSON item returned by path for json, or nil if
+// there are no results. The parameters are the same as for [Query].
+func (path *Path) First(ctx context.Context, json any, opt ...exec.Option) (any, error) {
+	//nolint:wrapcheck // Okay to return unwrapped error
+	return exec.First(ctx, path.AST, json, opt...)
 }
 
 // Scan implements sql.Scanner so Paths can be read from databases

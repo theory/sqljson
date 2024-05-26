@@ -1,10 +1,12 @@
 package path
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/theory/sqljson/path/exec"
 	"github.com/theory/sqljson/path/parser"
 )
 
@@ -12,51 +14,73 @@ func TestPath(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	r := require.New(t)
-	jMap := map[string]any{"foo": 1}
+	jMap := map[string]any{"foo": int64(1)}
+	ctx := context.Background()
 
-	checkPath := func(op string, path *Path) {
-		t.Helper()
+	type testCase struct {
+		name string
+		path string
+		op   string
+		json any
+		exp  []any
+	}
+
+	checkPath := func(tc testCase, path *Path) {
 		a.NotNil(path)
 		a.NotNil(path.AST)
 		a.Equal(path.AST.String(), path.String())
 		a.Equal(path.AST.IsPredicate(), path.IsPredicate())
-		a.Equal(op, path.PgIndexOperator())
+		a.Equal(tc.op, path.PgIndexOperator())
 
-		ok, err := path.Exists(nil, nil, false)
+		ok, err := path.Exists(ctx, tc.json, exec.WithSilent())
 		r.NoError(err)
 		a.True(ok)
 
-		res, err := path.Query(jMap, nil, false)
+		res, err := path.Query(ctx, tc.json)
 		r.NoError(err)
-		a.Equal(jMap, res)
-		a.NotPanics(func() { res = path.MustQuery(jMap, nil, false) })
-		a.Equal(jMap, res)
+		a.Equal(tc.exp, res)
+		a.NotPanics(func() { res = path.MustQuery(ctx, tc.json) })
+		a.Equal(tc.exp, res)
+
+		res, err = path.First(ctx, tc.json)
+		r.NoError(err)
+		a.Equal(tc.exp[0], res)
+
+		if _, ok := tc.exp[0].(bool); ok {
+			res, err = path.Match(ctx, tc.json)
+			r.NoError(err)
+			a.Equal(true, res)
+		}
 	}
 
-	for _, tc := range []struct {
-		name string
-		path string
-		op   string
-	}{
+	for _, tc := range []testCase{
 		{
 			name: "root",
 			path: "$",
 			op:   "@?",
+			json: jMap,
+			exp:  []any{jMap},
 		},
 		{
 			name: "predicate",
 			path: "$ == 1",
 			op:   "@@",
+			json: int64(1),
+			exp:  []any{true},
 		},
 		{
 			name: "filter",
 			path: "$.a.b ?(@.x >= 42)",
 			op:   "@?",
+			json: map[string]any{"a": map[string]any{"b": map[string]any{"x": int64(42)}}},
+			exp:  []any{map[string]any{"x": int64(42)}},
 		},
 		{
 			name: "exists",
 			path: "exists($.a.b ?(@.x >= 42))",
 			op:   "@@",
+			json: map[string]any{"a": map[string]any{"b": map[string]any{"x": int64(42)}}},
+			exp:  []any{true},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -65,14 +89,14 @@ func TestPath(t *testing.T) {
 			// Test Parse
 			path, err := Parse(tc.path)
 			r.NoError(err)
-			checkPath(tc.op, path)
+			checkPath(tc, path)
 
 			// Test MustParse
 			r.NotPanics(func() { path = MustParse(tc.path) })
-			checkPath(tc.op, path)
+			checkPath(tc, path)
 
 			// Test New
-			checkPath(tc.op, New(path.AST))
+			checkPath(tc, New(path.AST))
 
 			// Test text Marshaling
 			text, err := path.MarshalText()
@@ -80,7 +104,7 @@ func TestPath(t *testing.T) {
 			a.Equal(text, []byte(path.AST.String()))
 			var txtPath Path
 			r.NoError(txtPath.UnmarshalText(text))
-			checkPath(tc.op, &txtPath)
+			checkPath(tc, &txtPath)
 
 			// Test binary marshaling
 			bin, err := path.MarshalBinary()
@@ -88,7 +112,7 @@ func TestPath(t *testing.T) {
 			a.Equal(bin, []byte(path.AST.String()))
 			var binPath Path
 			r.NoError(binPath.UnmarshalBinary(bin))
-			checkPath(tc.op, &binPath)
+			checkPath(tc, &binPath)
 
 			// Test SQL marshaling
 			val, err := path.Value()
@@ -97,19 +121,74 @@ func TestPath(t *testing.T) {
 			a.Equal(path.String(), val)
 			sqlPath := new(Path)
 			r.NoError(sqlPath.Scan(val))
-			checkPath(tc.op, sqlPath)
+			checkPath(tc, sqlPath)
 
 			// Test SQL binary unmarshaling
 			str, ok := val.(string)
 			r.True(ok)
 			sqlPath = new(Path)
 			r.NoError(sqlPath.Scan([]byte(str)))
-			checkPath(tc.op, sqlPath)
+			checkPath(tc, sqlPath)
 		})
 	}
 }
 
-func TestPathErrors(t *testing.T) {
+func TestQueryErrors(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+	r := require.New(t)
+	for _, tc := range []struct {
+		name string
+		path string
+		json any
+		err  string
+	}{
+		{
+			name: "out_of_bounds",
+			path: "strict $[1]",
+			json: []any{true},
+			err:  "exec: jsonpath array subscript is out of bounds",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			path, err := Parse(tc.path)
+			r.NoError(err)
+
+			// Test Query
+			res, err := path.Query(context.Background(), tc.json)
+			r.EqualError(err, tc.err)
+			r.ErrorIs(err, exec.ErrExecution)
+			a.Nil(res)
+
+			// Test First
+			first, err := path.First(context.Background(), tc.json)
+			r.EqualError(err, tc.err)
+			r.ErrorIs(err, exec.ErrExecution)
+			a.Nil(first)
+
+			// Test MustQuery
+			a.PanicsWithError(tc.err, func() {
+				path.MustQuery(context.Background(), tc.json)
+			})
+
+			// Test Match
+			ok, err := path.Match(context.Background(), tc.json)
+			r.EqualError(err, tc.err)
+			r.ErrorIs(err, exec.ErrExecution)
+			a.False(ok)
+
+			// Test Exists
+			ok, err = path.Exists(context.Background(), tc.json)
+			r.EqualError(err, tc.err)
+			r.ErrorIs(err, exec.ErrExecution)
+			a.False(ok)
+		})
+	}
+}
+
+func TestPathParseErrors(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	r := require.New(t)
