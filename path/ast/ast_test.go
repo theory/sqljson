@@ -38,6 +38,8 @@ func TestConstNode(t *testing.T) {
 			a.Equal(tc.str, node.String())
 			a.Equal(lowestPriority, node.priority())
 			a.Nil(node.Next())
+			a.Equal(tc.kind, node.kind)
+			a.Equal(tc.kind, node.Const())
 
 			// Test set_next()
 			node.setNext(NewKey("foo"))
@@ -113,6 +115,7 @@ func TestUnaryOperator(t *testing.T) {
 		{"filter", UnaryFilter, "?", 6},
 		{"datetime", UnaryDateTime, ".datetime", 6},
 		{"time", UnaryTime, ".time", 6},
+		{"date", UnaryDate, ".date", 6},
 		{"time_tz", UnaryTimeTZ, ".time_tz", 6},
 		{"timestamp", UnaryTimestamp, ".timestamp", 6},
 		{"timestamp_tz", UnaryTimestampTZ, ".timestamp_tz", 6},
@@ -141,9 +144,8 @@ func TestMethodNode(t *testing.T) {
 		{"floor", MethodFloor, ".floor()"},
 		{"ceiling", MethodCeiling, ".ceiling()"},
 		{"keyvalue", MethodKeyValue, ".keyvalue()"},
-		{"bigint", MethodBigint, ".bigint()"},
+		{"bigint", MethodBigInt, ".bigint()"},
 		{"boolean", MethodBoolean, ".boolean()"},
-		{"date", MethodDate, ".date()"},
 		{"integer", MethodInteger, ".integer()"},
 		{"number", MethodNumber, ".number()"},
 		{"string", MethodString, ".string()"},
@@ -153,7 +155,9 @@ func TestMethodNode(t *testing.T) {
 			t.Parallel()
 			node := NewMethod(tc.meth)
 			a.Implements((*Node)(nil), node)
-			a.Equal(tc.str, tc.meth.String())
+			a.Equal(tc.meth, node.name)
+			a.Equal(tc.meth, node.Name())
+			a.Equal(tc.str, node.String())
 			a.Equal(lowestPriority, node.priority())
 
 			// Test next.
@@ -656,6 +660,11 @@ func TestUnaryNode(t *testing.T) {
 			str:  ".datetime()",
 		},
 		{
+			name: "date",
+			op:   UnaryDate,
+			str:  ".date()",
+		},
+		{
 			name: "time",
 			op:   UnaryTime,
 			node: NewInteger("99"),
@@ -842,6 +851,10 @@ func TestAnyNode(t *testing.T) {
 			a.Implements((*Node)(nil), node)
 			a.Equal(lowestPriority, node.priority())
 			a.Equal(tc.str, node.String())
+			a.Equal(uint32(tc.first), node.first)
+			a.Equal(uint32(tc.first), node.First())
+			a.Equal(uint32(tc.last), node.Last())
+			a.Equal(uint32(tc.last), node.last)
 
 			// Test next.
 			a.Nil(node.next)
@@ -1099,6 +1112,40 @@ func TestNewUnaryOrNumber(t *testing.T) {
 	}
 }
 
+func TestWriteToNext(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	for _, tc := range []struct {
+		name string
+		node Node
+		exp  string
+	}{
+		{
+			name: "string_string",
+			node: LinkNodes([]Node{NewString("hi"), NewString("there")}),
+			exp:  `"hi""there"`,
+		},
+		{
+			name: "variable_string",
+			node: LinkNodes([]Node{NewVariable("hi"), NewString("there")}),
+			exp:  `$"hi""there"`,
+		},
+		{
+			name: "key_key",
+			node: LinkNodes([]Node{NewKey("hi"), NewKey("there")}),
+			exp:  `"hi"."there"`,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			buf := new(strings.Builder)
+			tc.node.writeTo(buf, false, false)
+			a.Equal(tc.exp, buf.String())
+		})
+	}
+}
+
 func TestAST(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
@@ -1271,6 +1318,19 @@ func TestValidateNode(t *testing.T) {
 		{
 			name: "accessor_filter_current",
 			node: LinkNodes([]Node{NewConst(ConstRoot), NewUnary(UnaryFilter, NewConst(ConstCurrent))}),
+		},
+		{
+			name: "nil",
+			node: nil,
+		},
+		{
+			name: "next_nil",
+			node: LinkNodes([]Node{NewConst(ConstRoot), nil}),
+		},
+		{
+			name: "next_fail",
+			node: LinkNodes([]Node{NewConst(ConstRoot), NewBinary(BinaryAdd, NewConst(ConstRoot), NewConst(ConstCurrent))}),
+			err:  "@ is not allowed in root expressions",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

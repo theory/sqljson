@@ -174,9 +174,6 @@ var pathExca = [...]int16{
 	-1, 1,
 	1, -1,
 	-2, 0,
-	-1, 79,
-	58, 122,
-	-2, 98,
 	-1, 80,
 	58, 123,
 	-2, 99,
@@ -194,10 +191,10 @@ var pathExca = [...]int16{
 	-2, 103,
 	-1, 85,
 	58, 128,
-	-2, 105,
+	-2, 104,
 	-1, 86,
 	58, 129,
-	-2, 111,
+	-2, 106,
 	-1, 87,
 	58, 130,
 	-2, 112,
@@ -206,72 +203,74 @@ var pathExca = [...]int16{
 	-2, 113,
 	-1, 89,
 	58, 132,
-	-2, 115,
+	-2, 116,
 	-1, 90,
 	58, 133,
-	-2, 116,
+	-2, 117,
 	-1, 91,
 	58, 134,
-	-2, 117,
+	-2, 118,
 }
 
 const pathPrivate = 57344
 
-const pathLast = 250
+const pathLast = 251
 
 var pathAct = [...]uint8{
-	158, 145, 65, 111, 152, 6, 136, 178, 132, 7,
-	133, 131, 49, 50, 52, 43, 47, 129, 166, 48,
-	44, 46, 175, 173, 30, 31, 32, 33, 34, 172,
-	56, 140, 171, 59, 60, 61, 62, 63, 42, 41,
-	170, 169, 165, 37, 39, 35, 36, 40, 38, 142,
-	112, 64, 66, 28, 49, 29, 128, 127, 117, 126,
-	125, 115, 124, 123, 116, 94, 95, 96, 97, 98,
+	160, 146, 65, 111, 154, 6, 137, 180, 133, 7,
+	134, 132, 49, 50, 52, 43, 47, 130, 168, 48,
+	44, 46, 177, 175, 30, 31, 32, 33, 34, 174,
+	56, 141, 173, 59, 60, 61, 62, 63, 42, 41,
+	172, 171, 167, 37, 39, 35, 36, 40, 38, 150,
+	112, 64, 66, 28, 49, 29, 143, 129, 117, 128,
+	127, 115, 126, 125, 116, 94, 95, 96, 97, 98,
 	99, 100, 92, 93, 42, 41, 30, 31, 32, 33,
-	34, 161, 15, 114, 174, 122, 78, 101, 102, 103,
-	104, 105, 106, 107, 79, 80, 81, 82, 83, 84,
-	85, 72, 86, 87, 88, 71, 89, 90, 91, 73,
-	74, 75, 76, 108, 55, 68, 121, 139, 130, 57,
-	146, 137, 41, 42, 41, 168, 42, 41, 135, 151,
-	54, 155, 156, 157, 141, 112, 162, 163, 21, 22,
-	23, 3, 4, 15, 167, 20, 24, 25, 26, 134,
-	154, 13, 32, 33, 34, 21, 22, 23, 147, 148,
-	58, 19, 20, 24, 25, 26, 138, 164, 176, 113,
-	159, 77, 21, 22, 23, 2, 177, 70, 19, 20,
-	24, 25, 26, 47, 160, 10, 11, 44, 46, 42,
-	41, 9, 27, 17, 18, 19, 110, 30, 31, 32,
-	33, 34, 10, 11, 109, 143, 119, 12, 51, 120,
-	17, 18, 37, 39, 35, 36, 40, 38, 144, 10,
-	11, 53, 28, 8, 29, 51, 153, 17, 18, 30,
-	31, 32, 33, 34, 149, 150, 5, 118, 67, 69,
-	45, 14, 16, 1, 0, 30, 31, 32, 33, 34,
+	34, 163, 121, 114, 176, 124, 79, 101, 102, 103,
+	104, 105, 106, 107, 80, 81, 82, 83, 84, 85,
+	86, 73, 87, 88, 72, 71, 89, 90, 91, 74,
+	75, 76, 77, 15, 123, 68, 147, 140, 131, 57,
+	122, 138, 32, 33, 34, 136, 41, 108, 42, 41,
+	42, 41, 157, 158, 159, 55, 112, 164, 165, 21,
+	22, 23, 3, 4, 15, 161, 20, 24, 25, 26,
+	119, 170, 13, 120, 148, 149, 21, 22, 23, 162,
+	169, 54, 19, 20, 24, 25, 26, 21, 22, 23,
+	178, 139, 156, 113, 20, 24, 25, 26, 179, 19,
+	47, 42, 41, 153, 44, 46, 10, 11, 135, 166,
+	19, 142, 9, 12, 17, 18, 37, 39, 35, 36,
+	40, 38, 58, 10, 11, 109, 28, 53, 29, 51,
+	78, 17, 18, 2, 10, 11, 70, 27, 110, 144,
+	51, 145, 17, 18, 30, 31, 32, 33, 34, 30,
+	31, 32, 33, 34, 8, 155, 30, 31, 32, 33,
+	34, 151, 152, 5, 118, 67, 69, 45, 14, 16,
+	1,
 }
 
 var pathPact = [...]int16{
-	115, -1000, 133, -1000, -1000, -1000, 193, 173, -47, 133,
-	167, 167, -1000, 72, -1000, 56, -1000, -1000, -1000, -1000,
-	-1000, -1000, -1000, -1000, -1000, -1000, -1000, 167, 89, 148,
-	167, 167, 167, 167, 167, -1000, -1000, -1000, -1000, -1000,
-	-1000, 133, 133, -1000, 61, -1000, 55, 150, 110, 24,
-	-1000, 133, -1000, -1000, 133, 167, 177, 194, 84, 98,
-	98, -1000, -1000, -1000, -1000, 193, 105, -1000, -1000, -1000,
-	27, 5, 4, 2, 1, -1, -2, -1000, -48, -1000,
+	116, -1000, 134, -1000, -1000, -1000, 177, 165, -47, 134,
+	162, 162, -1000, 103, -1000, 77, -1000, -1000, -1000, -1000,
+	-1000, -1000, -1000, -1000, -1000, -1000, -1000, 162, 89, 190,
+	162, 162, 162, 162, 162, -1000, -1000, -1000, -1000, -1000,
+	-1000, 134, 134, -1000, 61, -1000, 69, 151, 114, 24,
+	-1000, 134, -1000, -1000, 134, 162, 172, 138, 50, 68,
+	68, -1000, -1000, -1000, -1000, 177, 109, -1000, -1000, -1000,
+	62, 56, 27, 5, 4, 2, 1, -1, -1000, -48,
 	-1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000,
 	-1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000,
-	-1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000, 133, -53,
-	-54, -1000, 145, 120, -47, 107, 58, -28, -1000, -1000,
-	-1000, 122, -10, 106, 117, 136, 136, 136, 136, 156,
-	22, -1000, 167, -1000, 167, 158, -1000, -1000, -47, -1000,
-	-1000, -1000, -1000, -17, -44, -1000, -1000, 130, 111, -18,
-	-1000, -1000, -19, -1000, -1000, -27, -30, -36, 18, -1000,
-	-1000, -1000, -1000, 177, -1000, -1000, 106, -1000, -1000, -1000,
-	-1000, -1000, -1000, -1000, -1000, 156, -1000, -59, -1000,
+	-1000, -1000, -1000, -1000, -1000, -1000, -1000, -1000, 134, -53,
+	-54, -1000, 184, 117, -47, 112, 58, -28, -1000, -1000,
+	-1000, 179, -3, 102, -10, 171, 158, 158, 158, 158,
+	131, 22, -1000, 162, -1000, 162, 180, -1000, -1000, -47,
+	-1000, -1000, -1000, -1000, -17, -44, -1000, -1000, 146, 137,
+	-1000, -18, -1000, -1000, -19, -1000, -1000, -27, -30, -36,
+	18, -1000, -1000, -1000, -1000, 172, -1000, -1000, 102, -1000,
+	-1000, -1000, -1000, -1000, -1000, -1000, -1000, 131, -1000, -59,
+	-1000,
 }
 
 var pathPgo = [...]uint8{
-	0, 243, 242, 241, 2, 240, 239, 6, 238, 9,
-	207, 3, 237, 236, 235, 234, 1, 226, 4, 223,
-	218, 205, 196, 192, 177, 175, 171, 0,
+	0, 250, 249, 248, 2, 247, 246, 6, 245, 9,
+	193, 3, 244, 243, 242, 241, 1, 235, 4, 234,
+	221, 219, 218, 217, 216, 213, 210, 0,
 }
 
 var pathR1 = [...]int8{
@@ -282,12 +281,12 @@ var pathR1 = [...]int8{
 	19, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 	11, 11, 22, 22, 5, 5, 27, 27, 6, 6,
 	6, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-	7, 7, 7, 16, 16, 16, 20, 20, 21, 21,
-	17, 18, 18, 14, 15, 15, 8, 26, 26, 26,
+	7, 7, 7, 7, 16, 16, 16, 20, 20, 21,
+	21, 17, 18, 18, 14, 15, 15, 8, 26, 26,
 	26, 26, 26, 26, 26, 26, 26, 26, 26, 26,
 	26, 26, 26, 26, 26, 26, 26, 26, 26, 26,
 	26, 26, 26, 26, 26, 26, 26, 26, 26, 26,
-	26, 26, 24, 24, 24, 24, 24, 24, 24, 24,
+	26, 26, 26, 24, 24, 24, 24, 24, 24, 24,
 	24, 24, 24, 24, 24,
 }
 
@@ -298,9 +297,9 @@ var pathR2 = [...]int8{
 	5, 1, 1, 1, 1, 1, 1, 1, 4, 4,
 	2, 1, 3, 2, 2, 3, 3, 3, 3, 3,
 	1, 3, 1, 3, 3, 3, 1, 1, 1, 4,
-	6, 2, 2, 1, 2, 4, 4, 5, 5, 5,
-	5, 5, 5, 1, 2, 2, 1, 3, 1, 0,
-	1, 1, 0, 1, 1, 0, 1, 1, 1, 1,
+	6, 2, 2, 1, 2, 4, 4, 5, 4, 5,
+	5, 5, 5, 5, 1, 2, 2, 1, 3, 1,
+	0, 1, 1, 0, 1, 1, 0, 1, 1, 1,
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 	1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -316,17 +315,18 @@ var pathChk = [...]int16{
 	23, 17, 16, -7, 67, -5, 68, 63, -9, -4,
 	-4, 58, -4, -10, 58, 58, -4, 30, 12, -4,
 	-4, -4, -4, -4, -9, -4, -9, -8, 54, -6,
-	-24, 44, 40, 48, 49, 50, 51, -26, 25, 33,
-	34, 35, 36, 37, 38, 39, 41, 42, 43, 45,
+	-24, 44, 43, 40, 48, 49, 50, 51, -26, 25,
+	33, 34, 35, 36, 37, 38, 39, 41, 42, 45,
 	46, 47, 11, 12, 4, 5, 6, 7, 8, 9,
 	10, 26, 27, 28, 29, 30, 31, 32, 58, 54,
 	-22, -11, -4, 59, 59, -9, -9, -4, -12, 12,
-	15, 32, 58, 58, 58, 58, 58, 58, 58, 65,
-	-9, 64, 62, 64, 4, 8, -7, -7, 59, 59,
-	59, 12, 59, -21, -20, -16, 14, 52, 53, -15,
-	-14, 12, -18, -17, 14, -18, -18, -18, -27, 14,
-	28, 59, -11, -4, 9, 59, 62, 14, 14, 59,
-	59, 59, 59, 59, 66, 4, -16, -27, 66,
+	15, 32, 58, 58, 58, 58, 58, 58, 58, 58,
+	65, -9, 64, 62, 64, 4, 8, -7, -7, 59,
+	59, 59, 12, 59, -21, -20, -16, 14, 52, 53,
+	59, -15, -14, 12, -18, -17, 14, -18, -18, -18,
+	-27, 14, 28, 59, -11, -4, 9, 59, 62, 14,
+	14, 59, 59, 59, 59, 59, 66, 4, -16, -27,
+	66,
 }
 
 var pathDef = [...]int8{
@@ -337,17 +337,18 @@ var pathDef = [...]int8{
 	19, 0, 0, 40, 0, 63, 0, 0, 0, 0,
 	43, 0, 44, 26, 0, 0, 23, 0, 29, 45,
 	46, 47, 48, 49, 24, 0, 25, 61, 62, 64,
-	0, 114, 104, 118, 119, 120, 121, 86, 58, -2,
+	0, 115, 114, 105, 119, 120, 121, 122, 87, 58,
 	-2, -2, -2, -2, -2, -2, -2, -2, -2, -2,
-	-2, -2, 87, 88, 89, 90, 91, 92, 93, 94,
-	95, 96, 97, 106, 107, 108, 109, 110, 0, 0,
+	-2, -2, 88, 89, 90, 91, 92, 93, 94, 95,
+	96, 97, 98, 107, 108, 109, 110, 111, 0, 0,
 	0, 52, 50, 20, 42, 0, 0, 0, 28, 31,
-	32, 0, 0, 79, 85, 82, 82, 82, 82, 0,
-	0, 54, 0, 55, 0, 0, 39, 38, 0, 20,
-	21, 30, 65, 0, 78, 76, 73, 0, 0, 0,
-	84, 83, 0, 81, 80, 0, 0, 0, 0, 56,
-	57, 66, 53, 51, 27, 67, 0, 74, 75, 68,
-	69, 70, 71, 72, 59, 0, 77, 0, 60,
+	32, 0, 0, 80, 0, 86, 83, 83, 83, 83,
+	0, 0, 54, 0, 55, 0, 0, 39, 38, 0,
+	20, 21, 30, 65, 0, 79, 77, 74, 0, 0,
+	68, 0, 85, 84, 0, 82, 81, 0, 0, 0,
+	0, 56, 57, 66, 53, 51, 27, 67, 0, 75,
+	76, 69, 70, 71, 72, 73, 59, 0, 78, 0,
+	60,
 }
 
 var pathTok1 = [...]int8{
@@ -1136,178 +1137,178 @@ pathdefault:
 			}
 		}
 	case 68:
-		pathDollar = pathS[pathpt-5 : pathpt+1]
-//line grammar.y:226
+		pathDollar = pathS[pathpt-4 : pathpt+1]
+//line grammar.y:225
 		{
-			pathVAL.value = ast.NewUnary(ast.UnaryDateTime, pathDollar[4].value)
+			pathVAL.value = ast.NewUnary(ast.UnaryDate, nil)
 		}
 	case 69:
 		pathDollar = pathS[pathpt-5 : pathpt+1]
-//line grammar.y:228
+//line grammar.y:227
 		{
-			pathVAL.value = ast.NewUnary(ast.UnaryTime, pathDollar[4].value)
+			pathVAL.value = ast.NewUnary(ast.UnaryDateTime, pathDollar[4].value)
 		}
 	case 70:
 		pathDollar = pathS[pathpt-5 : pathpt+1]
-//line grammar.y:230
+//line grammar.y:229
 		{
-			pathVAL.value = ast.NewUnary(ast.UnaryTimeTZ, pathDollar[4].value)
+			pathVAL.value = ast.NewUnary(ast.UnaryTime, pathDollar[4].value)
 		}
 	case 71:
 		pathDollar = pathS[pathpt-5 : pathpt+1]
-//line grammar.y:232
+//line grammar.y:231
 		{
-			pathVAL.value = ast.NewUnary(ast.UnaryTimestamp, pathDollar[4].value)
+			pathVAL.value = ast.NewUnary(ast.UnaryTimeTZ, pathDollar[4].value)
 		}
 	case 72:
 		pathDollar = pathS[pathpt-5 : pathpt+1]
-//line grammar.y:234
+//line grammar.y:233
+		{
+			pathVAL.value = ast.NewUnary(ast.UnaryTimestamp, pathDollar[4].value)
+		}
+	case 73:
+		pathDollar = pathS[pathpt-5 : pathpt+1]
+//line grammar.y:235
 		{
 			pathVAL.value = ast.NewUnary(ast.UnaryTimestampTZ, pathDollar[4].value)
 		}
-	case 73:
+	case 74:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
-//line grammar.y:239
+//line grammar.y:240
 		{
 			pathVAL.value = ast.NewInteger(pathDollar[1].str)
-		}
-	case 74:
-		pathDollar = pathS[pathpt-2 : pathpt+1]
-//line grammar.y:241
-		{
-			pathVAL.value = ast.NewUnaryOrNumber(ast.UnaryPlus, ast.NewInteger(pathDollar[2].str))
 		}
 	case 75:
 		pathDollar = pathS[pathpt-2 : pathpt+1]
-//line grammar.y:243
+//line grammar.y:242
+		{
+			pathVAL.value = ast.NewUnaryOrNumber(ast.UnaryPlus, ast.NewInteger(pathDollar[2].str))
+		}
+	case 76:
+		pathDollar = pathS[pathpt-2 : pathpt+1]
+//line grammar.y:244
 		{
 			pathVAL.value = ast.NewUnaryOrNumber(ast.UnaryMinus, ast.NewInteger(pathDollar[2].str))
 		}
-	case 76:
+	case 77:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
-//line grammar.y:247
+//line grammar.y:248
 		{
 			pathVAL.elems = []ast.Node{pathDollar[1].value}
 		}
-	case 77:
+	case 78:
 		pathDollar = pathS[pathpt-3 : pathpt+1]
-//line grammar.y:248
+//line grammar.y:249
 		{
 			pathVAL.elems = append(pathVAL.elems, pathDollar[3].value)
 		}
-	case 78:
+	case 79:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
-//line grammar.y:252
+//line grammar.y:253
 		{
 			pathVAL.elems = pathDollar[1].elems
 		}
-	case 79:
+	case 80:
 		pathDollar = pathS[pathpt-0 : pathpt+1]
-//line grammar.y:253
+//line grammar.y:254
 		{
 			pathVAL.elems = nil
 		}
-	case 80:
+	case 81:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
-//line grammar.y:257
+//line grammar.y:258
 		{
 			pathVAL.value = ast.NewInteger(pathDollar[1].str)
 		}
-	case 81:
+	case 82:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
-//line grammar.y:261
+//line grammar.y:262
 		{
 			pathVAL.value = pathDollar[1].value
 		}
-	case 82:
+	case 83:
 		pathDollar = pathS[pathpt-0 : pathpt+1]
-//line grammar.y:262
+//line grammar.y:263
 		{
 			pathVAL.value = nil
-		}
-	case 83:
-		pathDollar = pathS[pathpt-1 : pathpt+1]
-//line grammar.y:266
-		{
-			pathVAL.value = ast.NewString(pathDollar[1].str)
 		}
 	case 84:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
-//line grammar.y:270
+//line grammar.y:267
+		{
+			pathVAL.value = ast.NewString(pathDollar[1].str)
+		}
+	case 85:
+		pathDollar = pathS[pathpt-1 : pathpt+1]
+//line grammar.y:271
 		{
 			pathVAL.value = pathDollar[1].value
 		}
-	case 85:
+	case 86:
 		pathDollar = pathS[pathpt-0 : pathpt+1]
-//line grammar.y:271
+//line grammar.y:272
 		{
 			pathVAL.value = nil
 		}
-	case 86:
+	case 87:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
-//line grammar.y:275
+//line grammar.y:276
 		{
 			pathVAL.value = ast.NewKey(pathDollar[1].str)
-		}
-	case 122:
-		pathDollar = pathS[pathpt-1 : pathpt+1]
-//line grammar.y:317
-		{
-			pathVAL.method = ast.NewMethod(ast.MethodAbs)
 		}
 	case 123:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:318
 		{
-			pathVAL.method = ast.NewMethod(ast.MethodSize)
+			pathVAL.method = ast.NewMethod(ast.MethodAbs)
 		}
 	case 124:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:319
 		{
-			pathVAL.method = ast.NewMethod(ast.MethodType)
+			pathVAL.method = ast.NewMethod(ast.MethodSize)
 		}
 	case 125:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:320
 		{
-			pathVAL.method = ast.NewMethod(ast.MethodFloor)
+			pathVAL.method = ast.NewMethod(ast.MethodType)
 		}
 	case 126:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:321
 		{
-			pathVAL.method = ast.NewMethod(ast.MethodDouble)
+			pathVAL.method = ast.NewMethod(ast.MethodFloor)
 		}
 	case 127:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:322
 		{
-			pathVAL.method = ast.NewMethod(ast.MethodCeiling)
+			pathVAL.method = ast.NewMethod(ast.MethodDouble)
 		}
 	case 128:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:323
 		{
-			pathVAL.method = ast.NewMethod(ast.MethodKeyValue)
+			pathVAL.method = ast.NewMethod(ast.MethodCeiling)
 		}
 	case 129:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:324
 		{
-			pathVAL.method = ast.NewMethod(ast.MethodBigint)
+			pathVAL.method = ast.NewMethod(ast.MethodKeyValue)
 		}
 	case 130:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:325
 		{
-			pathVAL.method = ast.NewMethod(ast.MethodBoolean)
+			pathVAL.method = ast.NewMethod(ast.MethodBigInt)
 		}
 	case 131:
 		pathDollar = pathS[pathpt-1 : pathpt+1]
 //line grammar.y:326
 		{
-			pathVAL.method = ast.NewMethod(ast.MethodDate)
+			pathVAL.method = ast.NewMethod(ast.MethodBoolean)
 		}
 	case 132:
 		pathDollar = pathS[pathpt-1 : pathpt+1]

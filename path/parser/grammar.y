@@ -222,6 +222,7 @@ accessor_op:
 				panic("invalid input syntax: .decimal() can only have an optional precision[,scale]")
 			}
 		}
+	| '.' DATE_P '(' ')' { $$ = ast.NewUnary(ast.UnaryDate, nil) }
 	| '.' DATETIME_P '(' opt_datetime_template ')'
 		{ $$ = ast.NewUnary(ast.UnaryDateTime, $4) }
 	| '.' TIME_P '(' opt_datetime_precision ')'
@@ -321,9 +322,8 @@ method:
 	| DOUBLE_P						{ $$ = ast.NewMethod(ast.MethodDouble) }
 	| CEILING_P						{ $$ = ast.NewMethod(ast.MethodCeiling) }
 	| KEYVALUE_P					{ $$ = ast.NewMethod(ast.MethodKeyValue) }
-	| BIGINT_P						{ $$ = ast.NewMethod(ast.MethodBigint) }
+	| BIGINT_P						{ $$ = ast.NewMethod(ast.MethodBigInt) }
 	| BOOLEAN_P						{ $$ = ast.NewMethod(ast.MethodBoolean) }
-	| DATE_P						{ $$ = ast.NewMethod(ast.MethodDate) }
 	| INTEGER_P						{ $$ = ast.NewMethod(ast.MethodInteger) }
 	| NUMBER_P						{ $$ = ast.NewMethod(ast.MethodNumber) }
 	| STRINGFUNC_P					{ $$ = ast.NewMethod(ast.MethodString) }

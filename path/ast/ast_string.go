@@ -71,15 +71,16 @@ func _() {
 	_ = x[UnaryMinus-4]
 	_ = x[UnaryFilter-5]
 	_ = x[UnaryDateTime-6]
-	_ = x[UnaryTime-7]
-	_ = x[UnaryTimeTZ-8]
-	_ = x[UnaryTimestamp-9]
-	_ = x[UnaryTimestampTZ-10]
+	_ = x[UnaryDate-7]
+	_ = x[UnaryTime-8]
+	_ = x[UnaryTimeTZ-9]
+	_ = x[UnaryTimestamp-10]
+	_ = x[UnaryTimestampTZ-11]
 }
 
-const _UnaryOperator_name = "exists!is unknown+-?.datetime.time.time_tz.timestamp.timestamp_tz"
+const _UnaryOperator_name = "exists!is unknown+-?.datetime.date.time.time_tz.timestamp.timestamp_tz"
 
-var _UnaryOperator_index = [...]uint8{0, 6, 7, 17, 18, 19, 20, 29, 34, 42, 52, 65}
+var _UnaryOperator_index = [...]uint8{0, 6, 7, 17, 18, 19, 20, 29, 34, 39, 47, 57, 70}
 
 func (i UnaryOperator) String() string {
 	if i < 0 || i >= UnaryOperator(len(_UnaryOperator_index)-1) {
@@ -98,17 +99,16 @@ func _() {
 	_ = x[MethodCeiling-4]
 	_ = x[MethodDouble-5]
 	_ = x[MethodKeyValue-6]
-	_ = x[MethodBigint-7]
+	_ = x[MethodBigInt-7]
 	_ = x[MethodBoolean-8]
-	_ = x[MethodDate-9]
-	_ = x[MethodInteger-10]
-	_ = x[MethodNumber-11]
-	_ = x[MethodString-12]
+	_ = x[MethodInteger-9]
+	_ = x[MethodNumber-10]
+	_ = x[MethodString-11]
 }
 
-const _MethodName_name = ".abs().size().type().floor().ceiling().double().keyvalue().bigint().boolean().date().integer().number().string()"
+const _MethodName_name = ".abs().size().type().floor().ceiling().double().keyvalue().bigint().boolean().integer().number().string()"
 
-var _MethodName_index = [...]uint8{0, 6, 13, 20, 28, 38, 47, 58, 67, 77, 84, 94, 103, 112}
+var _MethodName_index = [...]uint8{0, 6, 13, 20, 28, 38, 47, 58, 67, 77, 87, 96, 105}
 
 func (i MethodName) String() string {
 	if i < 0 || i >= MethodName(len(_MethodName_index)-1) {

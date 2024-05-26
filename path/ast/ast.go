@@ -51,7 +51,7 @@
 //		}
 //	}
 //
-// [jsonpath.c]: https://github.com/postgres/postgres/blob/adcdb2c/src/backend/utils/adt/jsonpath.c
+// [jsonpath.c]: https://github.com/postgres/postgres/blob/REL_17_BETA1/src/backend/utils/adt/jsonpath.c
 package ast
 
 // Use golang.org/x/tools/cmd/stringer to generate the String method for enums
@@ -134,6 +134,11 @@ func (n *ConstNode) writeTo(buf *strings.Builder, inKey, _ bool) {
 	}
 }
 
+// Const returns the Constant defining n.
+func (n *ConstNode) Const() Constant {
+	return n.kind
+}
+
 // String returns the string representation of n.
 func (n *ConstNode) String() string {
 	return n.kind.String()
@@ -208,6 +213,7 @@ const (
 	UnaryMinus                            // -
 	UnaryFilter                           // ?
 	UnaryDateTime                         // .datetime
+	UnaryDate                             // .date
 	UnaryTime                             // .time
 	UnaryTimeTZ                           // .time_tz
 	UnaryTimestamp                        // .timestamp
@@ -238,9 +244,8 @@ const (
 	MethodCeiling                    // .ceiling()
 	MethodDouble                     // .double()
 	MethodKeyValue                   // .keyvalue()
-	MethodBigint                     // .bigint()
+	MethodBigInt                     // .bigint()
 	MethodBoolean                    // .boolean()
-	MethodDate                       // .date()
 	MethodInteger                    // .integer()
 	MethodNumber                     // .number()
 	MethodString                     // .string()
@@ -261,6 +266,11 @@ func NewMethod(name MethodName) *MethodNode {
 // then parentheses.
 func (n *MethodNode) String() string {
 	return n.name.String()
+}
+
+// Name returns the MethodName of the method.
+func (n *MethodNode) Name() MethodName {
+	return n.name
 }
 
 // writeTo writes the string representation of n to buf.
@@ -301,7 +311,7 @@ func (n *quotedString) String() string {
 	return strconv.Quote(n.str)
 }
 
-// writeTo writes String to buf.
+// writeTo writes n.String to buf.
 func (n *quotedString) writeTo(buf *strings.Builder, _, _ bool) {
 	buf.WriteString(n.String())
 	if next := n.Next(); next != nil {
@@ -348,7 +358,7 @@ func (n *VariableNode) String() string {
 	return "$" + n.quotedString.String()
 }
 
-// writeTo writes String to buf.
+// writeTo writes n.String to buf.
 func (n VariableNode) writeTo(buf *strings.Builder, _, _ bool) {
 	buf.WriteString(n.String())
 	if next := n.Next(); next != nil {
@@ -395,8 +405,8 @@ func (n *numberNode) String() string {
 	return n.parsed
 }
 
-// writeTo writes String to buf, surrounded by parentheses if there is a next
-// node in the list.
+// writeTo writes n.String to buf, surrounded by parentheses if there is a
+// next node in the list.
 func (n *numberNode) writeTo(buf *strings.Builder, _, _ bool) {
 	next := n.Next()
 	if next != nil {
@@ -632,7 +642,7 @@ func (n *UnaryNode) writeTo(buf *strings.Builder, _, withParens bool) {
 		if withParens {
 			buf.WriteRune(')')
 		}
-	case UnaryDateTime, UnaryTime, UnaryTimeTZ, UnaryTimestamp, UnaryTimestampTZ:
+	case UnaryDateTime, UnaryDate, UnaryTime, UnaryTimeTZ, UnaryTimestamp, UnaryTimestampTZ:
 		if n.operand == nil {
 			buf.WriteString(n.op.String() + "()")
 		} else {
@@ -776,6 +786,14 @@ func (n *AnyNode) String() string {
 	n.writeTo(buf, false, false)
 	return buf.String()
 }
+
+// First returns the first index. If its value math.MaxUint32 it's considered
+// unbounded.
+func (n *AnyNode) First() uint32 { return n.first }
+
+// Last returns the last index. If its value math.MaxUint32 it's considered
+// unbounded.
+func (n *AnyNode) Last() uint32 { return n.last }
 
 // writeTo writes the SQL/JSON path representation of n to buf.
 // If inKey is true it will be preceded by a '.'.
