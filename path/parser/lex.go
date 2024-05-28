@@ -370,7 +370,6 @@ func (l *lexer) scanNumber(ch rune, seenDot bool) (rune, rune) {
 	var tok rune
 	var ds int
 
-	//nolint:nestif
 	if !seenDot {
 		tok = INT_P
 		if ch == '0' {
@@ -915,7 +914,6 @@ func (l *lexer) scanHex() rune {
 func (l *lexer) decodeUnicode() rune {
 	var rr rune
 
-	//nolint:nestif
 	if ch := l.next(); ch == '{' {
 		// parse '\u{NN...}'
 		c := l.next()

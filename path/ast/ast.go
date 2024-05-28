@@ -182,7 +182,7 @@ const (
 
 // Priority returns the priority of the operator.
 //
-//nolint:gomnd,exhaustive
+//nolint:mnd,exhaustive
 func (op BinaryOperator) priority() uint8 {
 	switch op {
 	case BinaryOr:
@@ -222,7 +222,7 @@ const (
 
 // Priority returns the priority of the operator.
 //
-//nolint:gomnd,exhaustive
+//nolint:mnd,exhaustive
 func (op UnaryOperator) priority() uint8 {
 	switch op {
 	case UnaryPlus, UnaryMinus:

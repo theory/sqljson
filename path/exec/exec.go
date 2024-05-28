@@ -19,7 +19,8 @@ import (
 
 // Things to improve or document as different:
 //   - .datetime(template)
-//   - Replace statusFailed with silence-able error
+//   - Determine proper argument to WithVars()
+//   - Write full docs, including examples and notes on incompatibilities
 //   - Some time_tz comparisons still not quite right
 //   - Allow single-digit tz offsets, e.g., `+1` instead of `+01`
 //   - Allow space between seconds and offset
@@ -35,13 +36,20 @@ import (
 type vars map[string]any
 
 var (
-	// ErrExecution errors are returned in strict mode.
+	// ErrExecution errors denote runtime execution errors.
 	ErrExecution = errors.New("exec")
-	// ErrInvalid errors are always returned.
-	ErrInvalid = fmt.Errorf("%w", ErrExecution)
+
+	// ErrVerbose errors are execution errors that can be suppressed by
+	// [WithSilent].
+	ErrVerbose = fmt.Errorf("%w", ErrExecution)
+
 	// ErrNull errors are returned when Postgres would return NULL from Match
 	// and Exists.
-	ErrNull = fmt.Errorf("%w: NULL", ErrExecution)
+	ErrNull = errors.New("NULL")
+
+	// ErrInvalid errors denote invalid or unexpected execution. Generally
+	// internal-only.
+	ErrInvalid = errors.New("exec invalid")
 )
 
 // predOutcome represents the result of jsonpath predicate evaluation.
@@ -52,6 +60,15 @@ const (
 	predTrue
 	predUnknown
 )
+
+// predFrom converts book to a predOutcome, returning predTrue if ok is true
+// and predFalse if ok is false.
+func predFrom(ok bool) predOutcome {
+	if ok {
+		return predTrue
+	}
+	return predFalse
+}
 
 // resultStatus represents the result of jsonpath expression evaluation.
 type resultStatus uint8
@@ -120,8 +137,8 @@ type Executor struct {
 	ignoreStructuralErrors bool
 
 	// with "false" all suppressible errors are suppressed
-	throwErrors bool
-	useTZ       bool
+	verbose bool
+	useTZ   bool
 }
 
 // Option specifies an execution option.
@@ -138,7 +155,7 @@ func WithTZ() Option { return func(e *Executor) { e.useTZ = true } }
 // behavior emulates the behavior of the PostgreSQL @? and @@ operators, and
 // might be helpful when searching JSON document collections of varying
 // structure.
-func WithSilent() Option { return func(e *Executor) { e.throwErrors = false } }
+func WithSilent() Option { return func(e *Executor) { e.verbose = false } }
 
 func newExec(path *ast.AST, opt ...Option) *Executor {
 	e := &Executor{
@@ -146,7 +163,7 @@ func newExec(path *ast.AST, opt ...Option) *Executor {
 		innermostArraySize:     -1,
 		ignoreStructuralErrors: path.IsLax(),
 		lastGeneratedObjectID:  1, // Reserved for IDs from vars
-		throwErrors:            true,
+		verbose:                true,
 	}
 
 	for _, o := range opt {
@@ -179,7 +196,7 @@ func First(ctx context.Context, path *ast.AST, value any, opt ...Option) (any, e
 		return nil, err
 	}
 	if vals.isEmpty() {
-		//nolint:nilnil
+		//nolint:nilnil // nil is a valid return value, standing in for JSON null.
 		return nil, nil
 	}
 	return vals.list[0], nil
@@ -203,10 +220,10 @@ func First(ctx context.Context, path *ast.AST, value any, opt ...Option) (any, e
 //	) → true
 func Exists(ctx context.Context, path *ast.AST, value any, opt ...Option) (bool, error) {
 	exec := newExec(path, opt...)
-	// if exec.throwErrors && exec.path.IsPredicate() {
+	// if exec.verbose && exec.path.IsPredicate() {
 	// 	return statusFailed, fmt.Errorf(
 	// 		"%w: Exists expects a SQL standard path expression",
-	// 		ErrExecution,
+	// 		ErrVerbose,
 	// 	)
 	// }
 
@@ -227,10 +244,10 @@ func Exists(ctx context.Context, path *ast.AST, value any, opt ...Option) (bool,
 // [WithVars] and [WithSilent] Options act the same as for [Exists].
 func Match(ctx context.Context, path *ast.AST, value any, opt ...Option) (bool, error) {
 	exec := newExec(path, opt...)
-	// if exec.throwErrors && !exec.path.IsPredicate() {
+	// if exec.verbose && !exec.path.IsPredicate() {
 	// 	return false, fmt.Errorf(
 	// 		"%w: Match expects a predicate path expression",
-	// 		ErrExecution,
+	// 		ErrVerbose,
 	// 	)
 	// }
 
@@ -248,10 +265,10 @@ func Match(ctx context.Context, path *ast.AST, value any, opt ...Option) (bool, 
 		}
 	}
 
-	if exec.throwErrors {
+	if exec.verbose {
 		return false, fmt.Errorf(
 			"%w: single boolean result is expected",
-			ErrExecution,
+			ErrVerbose,
 		)
 	}
 
@@ -262,17 +279,17 @@ func (exec *Executor) strictAbsenceOfErrors() bool { return exec.path.IsStrict()
 func (exec *Executor) autoUnwrap() bool            { return exec.path.IsLax() }
 func (exec *Executor) autoWrap() bool              { return exec.path.IsLax() }
 
-func (exec *Executor) execute(ctx context.Context, jVal any) (*valueList, error) {
-	exec.root = jVal
-	exec.current = jVal
+func (exec *Executor) execute(ctx context.Context, value any) (*valueList, error) {
+	exec.root = value
+	exec.current = value
 	vals := newList()
-	_, err := exec.exec(ctx, vals, exec.path.Root(), jVal)
+	_, err := exec.exec(ctx, vals, exec.path.Root(), value)
 	return vals, err
 }
 
 // exists returns true if the path passed to New() returns at least one item
 // for json. This function provides the equivalent of the Postgres @? operator
-// when exec.throwErrors is false.
+// when exec.verbose is false.
 func (exec *Executor) exists(ctx context.Context, json any) (resultStatus, error) {
 	exec.root = json
 	exec.current = json
@@ -283,12 +300,12 @@ func (exec *Executor) exists(ctx context.Context, json any) (resultStatus, error
 	return res, nil
 }
 
-func (exec *Executor) exec(ctx context.Context, vals *valueList, node ast.Node, jVal any) (resultStatus, error) {
+func (exec *Executor) exec(ctx context.Context, vals *valueList, node ast.Node, value any) (resultStatus, error) {
 	if exec.strictAbsenceOfErrors() && vals == nil {
 		// In strict mode we must get a complete list of values to check that
 		// there are no errors at all.
 		vals := newList()
-		res, err := exec.executeItem(ctx, node, jVal, vals)
+		res, err := exec.executeItem(ctx, node, value, vals)
 		if res.failed() {
 			return res, err
 		}
@@ -299,17 +316,17 @@ func (exec *Executor) exec(ctx context.Context, vals *valueList, node ast.Node, 
 		return statusOK, nil
 	}
 
-	return exec.executeItem(ctx, node, jVal, vals)
+	return exec.executeItem(ctx, node, value, vals)
 }
 
 // Execute jsonpath with automatic unwrapping of current item in lax mode.
 func (exec *Executor) executeItem(
 	ctx context.Context,
 	node ast.Node,
-	jVal any,
+	value any,
 	found *valueList,
 ) (resultStatus, error) {
-	return exec.executeItemOptUnwrapTarget(ctx, node, jVal, found, exec.autoUnwrap())
+	return exec.executeItemOptUnwrapTarget(ctx, node, value, found, exec.autoUnwrap())
 }
 
 // Same as executeItem(), but when "unwrap == true" automatically unwraps
@@ -317,13 +334,13 @@ func (exec *Executor) executeItem(
 func (exec *Executor) executeItemOptUnwrapResult(
 	ctx context.Context,
 	node ast.Node,
-	jVal any,
+	value any,
 	unwrap bool,
 	found *valueList,
 ) (resultStatus, error) {
 	if unwrap && exec.autoUnwrap() {
 		seq := newList()
-		res, err := exec.executeItem(ctx, node, jVal, seq)
+		res, err := exec.executeItem(ctx, node, value, seq)
 		if res.failed() {
 			return res, err
 		}
@@ -331,33 +348,36 @@ func (exec *Executor) executeItemOptUnwrapResult(
 		for _, item := range seq.list {
 			switch item.(type) {
 			case []any:
-				_, _ = exec.executeItemUnwrapTargetArray(ctx, nil, item, found)
+				_, err = exec.executeItemUnwrapTargetArray(ctx, nil, item, found)
+				if err != nil {
+					return statusFailed, err
+				}
 			default:
 				found.append(item)
 			}
 		}
 		return statusOK, nil
 	}
-	return exec.executeItem(ctx, node, jVal, found)
+	return exec.executeItem(ctx, node, value, found)
 }
 
-// executeItemOptUnwrapResultNoThrow is the same as
-// executeItemOptUnwrapResult, but with error suppression.
-func (exec *Executor) executeItemOptUnwrapResultNoThrow(
+// executeItemOptUnwrapResultSilent is the same as executeItemOptUnwrapResult,
+// but with error suppression.
+func (exec *Executor) executeItemOptUnwrapResultSilent(
 	ctx context.Context,
 	node ast.Node,
-	jVal any,
+	value any,
 	unwrap bool,
 	found *valueList,
 ) (resultStatus, error) {
-	throwErrors := exec.throwErrors
-	exec.throwErrors = false
-	defer func(e *Executor, te bool) { e.throwErrors = te }(exec, throwErrors)
-	return exec.executeItemOptUnwrapResult(ctx, node, jVal, unwrap, found)
+	verbose := exec.verbose
+	exec.verbose = false
+	defer func(e *Executor, te bool) { e.verbose = te }(exec, verbose)
+	return exec.executeItemOptUnwrapResult(ctx, node, value, unwrap, found)
 }
 
 func executeIntegerMath(lhs, rhs int64, op ast.BinaryOperator) (int64, error) {
-	//nolint:exhaustive
+	//nolint:exhaustive // We process only the binary math operators here.
 	switch op {
 	case ast.BinaryAdd:
 		return lhs + rhs, nil
@@ -367,21 +387,21 @@ func executeIntegerMath(lhs, rhs int64, op ast.BinaryOperator) (int64, error) {
 		return lhs * rhs, nil
 	case ast.BinaryDiv:
 		if rhs == 0 {
-			return 0, fmt.Errorf("%w: division by zero", ErrExecution)
+			return 0, fmt.Errorf("%w: division by zero", ErrVerbose)
 		}
 		return lhs / rhs, nil
 	case ast.BinaryMod:
 		if rhs == 0 {
-			return 0, fmt.Errorf("%w: division by zero", ErrExecution)
+			return 0, fmt.Errorf("%w: division by zero", ErrVerbose)
 		}
 		return lhs % rhs, nil
 	default:
-		return 0, fmt.Errorf("%w: %v is not a binary math operator", ErrExecution, op)
+		return 0, fmt.Errorf("%w: %v is not a binary math operator", ErrInvalid, op)
 	}
 }
 
 func executeFloatMath(lhs, rhs float64, op ast.BinaryOperator) (float64, error) {
-	//nolint:exhaustive
+	//nolint:exhaustive // We process only the binary math operators here.
 	switch op {
 	case ast.BinaryAdd:
 		return lhs + rhs, nil
@@ -391,41 +411,39 @@ func executeFloatMath(lhs, rhs float64, op ast.BinaryOperator) (float64, error) 
 		return lhs * rhs, nil
 	case ast.BinaryDiv:
 		if rhs == 0 {
-			return 0, fmt.Errorf("%w: division by zero", ErrExecution)
+			return 0, fmt.Errorf("%w: division by zero", ErrVerbose)
 		}
 		return lhs / rhs, nil
 	case ast.BinaryMod:
 		if rhs == 0 {
-			return 0, fmt.Errorf("%w: division by zero", ErrExecution)
+			return 0, fmt.Errorf("%w: division by zero", ErrVerbose)
 		}
 		return math.Mod(lhs, rhs), nil
 	default:
-		return 0, fmt.Errorf("%w: %v is not a binary math operator", ErrExecution, op)
+		return 0, fmt.Errorf("%w: %v is not a binary math operator", ErrInvalid, op)
 	}
 }
 
 func mathOperandErr(op ast.BinaryOperator, pos string) error {
 	return fmt.Errorf(
 		"%w: %v operand of jsonpath operator %v is not a single numeric value",
-		ErrExecution, pos, op,
+		ErrVerbose, pos, op,
 	)
 }
 
 // execUnaryMathExpr executes a unary arithmetic expression for each numeric
 // item in its operand's sequence. Array operand is automatically unwrapped
 // in lax mode.
-//
-//nolint:funlen,gocognit
 func (exec *Executor) execUnaryMathExpr(
 	ctx context.Context,
 	node *ast.UnaryNode,
-	jVal any,
+	value any,
 	intCallback intCallback,
 	floatCallback floatCallback,
 	found *valueList,
 ) (resultStatus, error) {
 	seq := newList()
-	res, err := exec.executeItemOptUnwrapResult(ctx, node.Operand(), jVal, true, seq)
+	res, err := exec.executeItemOptUnwrapResult(ctx, node.Operand(), value, true, seq)
 	if res == statusFailed {
 		return res, err
 	}
@@ -436,6 +454,7 @@ func (exec *Executor) execUnaryMathExpr(
 
 	for _, v := range seq.list {
 		val = v
+		ok := true
 		switch v := v.(type) {
 		case int64:
 			if found == nil && next == nil {
@@ -451,23 +470,16 @@ func (exec *Executor) execUnaryMathExpr(
 			if found == nil && next == nil {
 				return statusOK, nil
 			}
-			if integer, err := v.Int64(); err == nil {
-				val = intCallback(integer)
-			} else if float, err := v.Float64(); err == nil {
-				val = floatCallback(float)
-			} else {
-				return exec.returnError(fmt.Errorf(
-					"%w: operand of unary jsonpath operator %v is not a numeric value",
-					ErrExecution, node.Operator(),
-				))
-			}
+			val, ok = castJSONNumber(v, intCallback, floatCallback)
 		default:
-			if found != nil || next != nil {
-				return exec.returnError(fmt.Errorf(
-					"%w: operand of unary jsonpath operator %v is not a numeric value",
-					ErrExecution, node.Operator(),
-				))
-			}
+			ok = found == nil && next == nil
+		}
+
+		if !ok {
+			return exec.returnVerboseError(fmt.Errorf(
+				"%w: operand of unary jsonpath operator %v is not a numeric value",
+				ErrVerbose, node.Operator(),
+			))
 		}
 
 		nextRes, err := exec.executeNextItem(ctx, node, next, val, found)
@@ -485,10 +497,20 @@ func (exec *Executor) execUnaryMathExpr(
 	return res, nil
 }
 
+func castJSONNumber(v json.Number, intCallback intCallback, floatCallback floatCallback) (any, bool) {
+	if integer, err := v.Int64(); err == nil {
+		return intCallback(integer), true
+	} else if float, err := v.Float64(); err == nil {
+		return floatCallback(float), true
+	}
+
+	return nil, false
+}
+
 func (exec *Executor) execBinaryMathExpr(
 	ctx context.Context,
 	node *ast.BinaryNode,
-	jVal any,
+	value any,
 	op ast.BinaryOperator,
 	found *valueList,
 ) (resultStatus, error) {
@@ -496,28 +518,28 @@ func (exec *Executor) execBinaryMathExpr(
 	// XXX: The standard says only operands of multiplicative expressions are
 	// unwrapped. We extend it to other binary arithmetic expressions too.
 	lSeq := newList()
-	res, err := exec.executeItemOptUnwrapResult(ctx, node.Left(), jVal, true, lSeq)
+	res, err := exec.executeItemOptUnwrapResult(ctx, node.Left(), value, true, lSeq)
 	if res == statusFailed {
 		return res, err
 	}
 
 	if len(lSeq.list) != 1 {
-		return exec.returnError(mathOperandErr(op, "left"))
+		return exec.returnVerboseError(mathOperandErr(op, "left"))
 	}
 
 	rSeq := newList()
-	res, err = exec.executeItemOptUnwrapResult(ctx, node.Right(), jVal, true, rSeq)
+	res, err = exec.executeItemOptUnwrapResult(ctx, node.Right(), value, true, rSeq)
 	if res == statusFailed {
 		return res, err
 	}
 
 	if len(rSeq.list) != 1 {
-		return exec.returnError(mathOperandErr(op, "right"))
+		return exec.returnVerboseError(mathOperandErr(op, "right"))
 	}
 
 	val, err := execMathOp(lSeq.list[0], rSeq.list[0], op)
 	if err != nil {
-		return exec.returnError(err)
+		return exec.returnVerboseError(err)
 	}
 
 	next := node.Next()
@@ -582,22 +604,814 @@ func (exec *Executor) setTempBaseObject(obj any, id int) func() {
 	return func() { exec.baseObject = bo }
 }
 
-func (exec *Executor) returnError(err error) (resultStatus, error) {
-	if exec.throwErrors {
+func (exec *Executor) returnVerboseError(err error) (resultStatus, error) {
+	if exec.verbose {
 		return statusFailed, err
 	}
 	return statusFailed, nil
 }
 
+func (exec *Executor) returnError(err error) (resultStatus, error) {
+	if exec.verbose || !errors.Is(err, ErrVerbose) {
+		return statusFailed, err
+	}
+	return statusFailed, nil
+}
+
+func (exec *Executor) execConstNode(
+	ctx context.Context,
+	node *ast.ConstNode,
+	value any,
+	found *valueList,
+	unwrap bool,
+) (resultStatus, error) {
+	switch node.Const() {
+	case ast.ConstNull, ast.ConstTrue, ast.ConstFalse:
+		return exec.execLiteralConst(ctx, node, found)
+	case ast.ConstRoot:
+		defer exec.setTempBaseObject(exec.root, 0)()
+		return exec.executeNextItem(ctx, node, nil, exec.root, found)
+	case ast.ConstCurrent:
+		return exec.executeNextItem(ctx, node, nil, exec.current, found)
+	case ast.ConstAnyKey:
+		return exec.execAnyKey(ctx, node, value, found, unwrap)
+	case ast.ConstAnyArray:
+		return exec.execAnyArray(ctx, node, value, found)
+	case ast.ConstLast:
+		return exec.execLastConst(ctx, node, found)
+	}
+
+	return statusNotFound, nil
+}
+
+// execLiteralConst handles the execution of a null or boolean node.
+func (exec *Executor) execLiteralConst(
+	ctx context.Context,
+	node *ast.ConstNode,
+	found *valueList,
+) (resultStatus, error) {
+	elem := node.Next()
+	if elem == nil && found == nil {
+		return statusOK, nil
+	}
+
+	var v any
+	if node.Const() == ast.ConstNull {
+		v = nil
+	} else {
+		v = node.Const() == ast.ConstTrue
+	}
+
+	return exec.executeNextItem(ctx, node, elem, v, found)
+}
+
+// execAnyKey handles execution of an ast.ConstAnyKey node. If value is an
+// object, its values are passed to executeAnyItem(). If unwrap is true and
+// value is an array, its values are unwrapped via
+// [executeItemUnwrapTargetArray]. Otherwise it returns an error unless
+// exec.ignoreStructuralErrors returns true.
+func (exec *Executor) execAnyKey(
+	ctx context.Context,
+	node *ast.ConstNode,
+	value any,
+	found *valueList,
+	unwrap bool,
+) (resultStatus, error) {
+	switch value := value.(type) {
+	case map[string]any:
+		return exec.executeAnyItem(
+			ctx, node.Next(), maps.Values(value), found,
+			1, 1, 1, false, exec.autoUnwrap(),
+		)
+	case []any:
+		if unwrap {
+			return exec.executeItemUnwrapTargetArray(ctx, node, value, found)
+		}
+	}
+
+	if !exec.ignoreStructuralErrors {
+		return exec.returnVerboseError(fmt.Errorf(
+			"%w: jsonpath wildcard member accessor can only be applied to an object",
+			ErrVerbose,
+		))
+	}
+
+	return statusNotFound, nil
+}
+
+func (exec *Executor) execAnyArray(
+	ctx context.Context,
+	node *ast.ConstNode,
+	value any,
+	found *valueList,
+) (resultStatus, error) {
+	if value, ok := value.([]any); ok {
+		return exec.executeAnyItem(ctx, node.Next(), value, found, 1, 1, 1, false, exec.autoUnwrap())
+	}
+
+	if exec.autoWrap() {
+		return exec.executeNextItem(ctx, node, nil, value, found)
+	}
+
+	if !exec.ignoreStructuralErrors {
+		return exec.returnVerboseError(fmt.Errorf(
+			"%w: jsonpath wildcard array accessor can only be applied to an array",
+			ErrVerbose,
+		))
+	}
+
+	return statusNotFound, nil
+}
+
+// execLastConst handles execution of the LAST node. Returns an error if
+// execution is not currently part of an array subscript.
+func (exec *Executor) execLastConst(
+	ctx context.Context,
+	node *ast.ConstNode,
+	found *valueList,
+) (resultStatus, error) {
+	if exec.innermostArraySize < 0 {
+		return statusFailed, fmt.Errorf(
+			"%w: evaluating jsonpath LAST outside of array subscript",
+			ErrExecution,
+		)
+	}
+
+	next := node.Next()
+	if next == nil && found == nil {
+		return statusOK, nil
+	}
+
+	last := int64(exec.innermostArraySize - 1)
+	return exec.executeNextItem(ctx, node, next, last, found)
+}
+
+// execLiteral handles the execution of a literal string, integer, or float
+// value.
+func (exec *Executor) execLiteral(
+	ctx context.Context,
+	node ast.Node,
+	value any,
+	found *valueList,
+) (resultStatus, error) {
+	next := node.Next()
+	if next == nil && found == nil {
+		return statusOK, nil
+	}
+	return exec.executeNextItem(ctx, node, next, value, found)
+}
+
+func (exec *Executor) execVariable(
+	ctx context.Context,
+	node *ast.VariableNode,
+	found *valueList,
+) (resultStatus, error) {
+	if val, ok := exec.vars[node.Text()]; ok {
+		// keyvalue ID 1 reserved for variables.
+		defer exec.setTempBaseObject(exec.vars, 1)()
+		return exec.executeNextItem(ctx, node, node.Next(), val, found)
+	}
+
+	// Return error for missing variable.
+	return statusFailed, fmt.Errorf(
+		"%w: could not find jsonpath variable %q",
+		ErrExecution, node.Text(),
+	)
+}
+
+func (exec *Executor) execKeyNode(
+	ctx context.Context,
+	node *ast.KeyNode,
+	value any,
+	found *valueList,
+	unwrap bool,
+) (resultStatus, error) {
+	key := node.Text()
+	switch value := value.(type) {
+	case map[string]any:
+		val, ok := value[key]
+		if ok {
+			return exec.executeNextItem(ctx, node, nil, val, found)
+		}
+
+		if !exec.ignoreStructuralErrors {
+			if !exec.verbose {
+				return statusFailed, nil
+			}
+
+			return statusFailed, fmt.Errorf(
+				`%w: JSON object does not contain key "%s"`,
+				ErrVerbose, key,
+			)
+		}
+	case []any:
+		if unwrap {
+			return exec.executeAnyItem(ctx, node, value, found, 1, 1, 1, false, false)
+		}
+	}
+	if !exec.ignoreStructuralErrors {
+		return exec.returnVerboseError(fmt.Errorf(
+			"%w: jsonpath member accessor can only be applied to an object",
+			ErrVerbose,
+		))
+	}
+
+	return statusNotFound, nil
+}
+
+func (exec *Executor) execBinaryNode(
+	ctx context.Context,
+	node *ast.BinaryNode,
+	value any,
+	found *valueList,
+	unwrap bool,
+) (resultStatus, error) {
+	switch node.Operator() {
+	case ast.BinaryAnd, ast.BinaryOr, ast.BinaryEqual, ast.BinaryNotEqual,
+		ast.BinaryLess, ast.BinaryLessOrEqual, ast.BinaryGreater,
+		ast.BinaryGreaterOrEqual, ast.BinaryStartsWith:
+		// Binary boolean types.
+		res, err := exec.executeBoolItem(ctx, node, value, true)
+		return exec.appendBoolResult(ctx, node, found, res, err)
+	case ast.BinaryAdd, ast.BinarySub, ast.BinaryMul, ast.BinaryDiv, ast.BinaryMod:
+		return exec.execBinaryMathExpr(ctx, node, value, node.Operator(), found)
+	case ast.BinaryDecimal:
+		return exec.executeNumberMethod(ctx, node, value, found, unwrap)
+	case ast.BinarySubscript:
+		// This should not happen because the Parser disallows it.
+		return statusFailed, fmt.Errorf(
+			"%w: evaluating jsonpath subscript expression outside of array subscript",
+			ErrExecution,
+		)
+	}
+
+	return statusNotFound, nil
+}
+
+func (exec *Executor) execUnaryNode(
+	ctx context.Context,
+	node *ast.UnaryNode,
+	value any,
+	found *valueList,
+	unwrap bool,
+) (resultStatus, error) {
+	switch node.Operator() {
+	case ast.UnaryNot, ast.UnaryIsUnknown, ast.UnaryExists:
+		// Binary boolean types.
+		res, err := exec.executeBoolItem(ctx, node, value, true)
+		return exec.appendBoolResult(ctx, node, found, res, err)
+	case ast.UnaryFilter:
+		if unwrap {
+			if _, ok := value.([]any); ok {
+				return exec.executeItemUnwrapTargetArray(ctx, node, value, found)
+			}
+		}
+
+		st, err := exec.executeNestedBoolItem(ctx, node.Operand(), value)
+		if st != predTrue {
+			return statusNotFound, err
+		}
+		return exec.executeNextItem(ctx, node, nil, value, found)
+	case ast.UnaryPlus:
+		return exec.execUnaryMathExpr(ctx, node, value, intSelf, floatSelf, found)
+	case ast.UnaryMinus:
+		return exec.execUnaryMathExpr(ctx, node, value, intUMinus, floatUMinus, found)
+	case ast.UnaryDateTime, ast.UnaryDate, ast.UnaryTime, ast.UnaryTimeTZ,
+		ast.UnaryTimestamp, ast.UnaryTimestampTZ:
+		if unwrap {
+			if array, ok := value.([]any); ok {
+				return exec.executeAnyItem(ctx, node, array, found, 1, 1, 1, false, false)
+			}
+		}
+		return exec.executeDateTimeMethod(ctx, node, value, found)
+	}
+
+	return statusNotFound, nil
+}
+
+func (exec *Executor) execRegexNode(
+	ctx context.Context,
+	node *ast.RegexNode,
+	value any,
+	found *valueList,
+) (resultStatus, error) {
+	// Binary boolean type.
+	res, err := exec.executeBoolItem(ctx, node, value, true)
+	return exec.appendBoolResult(ctx, node, found, res, err)
+}
+
+func (exec *Executor) execMethodType(
+	ctx context.Context,
+	node *ast.MethodNode,
+	value any,
+	found *valueList,
+) (resultStatus, error) {
+	var typeName string
+	switch value.(type) {
+	case map[string]any:
+		typeName = "object"
+	case []any:
+		typeName = "array"
+	case string:
+		typeName = "string"
+	case int64, float64, json.Number:
+		typeName = "number"
+	case bool:
+		typeName = "boolean"
+	case *types.Date:
+		typeName = "date"
+	case *types.Time:
+		typeName = "time without time zone"
+	case *types.TimeTZ:
+		typeName = "time with time zone"
+	case *types.Timestamp:
+		typeName = "timestamp without time zone"
+	case *types.TimestampTZ:
+		typeName = "timestamp with time zone"
+	case nil:
+		typeName = "null"
+	}
+
+	return exec.executeNextItem(ctx, node, nil, typeName, found)
+}
+
+func (exec *Executor) execMethodSize(
+	ctx context.Context,
+	node *ast.MethodNode,
+	value any,
+	found *valueList,
+) (resultStatus, error) {
+	size := 1
+	switch value := value.(type) {
+	case []any:
+		size = len(value)
+	default:
+		if !exec.autoWrap() {
+			if !exec.ignoreStructuralErrors {
+				return exec.returnVerboseError(fmt.Errorf(
+					"%w: jsonpath item method %v can only be applied to an array",
+					ErrVerbose, node.Name(),
+				))
+			}
+		}
+	}
+	return exec.executeNextItem(ctx, node, nil, int64(size), found)
+}
+
+func (exec *Executor) execMethodDouble(
+	ctx context.Context,
+	node *ast.MethodNode,
+	value any,
+	found *valueList,
+	unwrap bool,
+) (resultStatus, error) {
+	var double float64
+	name := node.Name()
+
+	switch val := value.(type) {
+	case []any:
+		if unwrap {
+			return exec.executeItemUnwrapTargetArray(ctx, node, value, found)
+		}
+		return exec.returnVerboseError(fmt.Errorf(
+			"%w: jsonpath item method %v can only be applied to a string or numeric value",
+			ErrVerbose, name,
+		))
+	case int64:
+		double = float64(val)
+	case float64:
+		double = val
+	case json.Number:
+		var err error
+		double, err = val.Float64()
+		if err != nil {
+			return statusFailed, fmt.Errorf(
+				`%w: argument "%v" of jsonpath item method %v is invalid for type double precision`,
+				ErrExecution, val, name,
+			)
+		}
+	case string:
+		var err error
+		double, err = strconv.ParseFloat(val, 64)
+		if err != nil {
+			return statusFailed, fmt.Errorf(
+				`%w: argument "%v" of jsonpath item method %v is invalid for type double precision`,
+				ErrExecution, val, name,
+			)
+		}
+	default:
+		return exec.returnVerboseError(fmt.Errorf(
+			"%w: jsonpath item method %v can only be applied to a string or numeric value",
+			ErrVerbose, name,
+		))
+	}
+
+	if math.IsInf(double, 0) || math.IsNaN(double) {
+		return exec.returnVerboseError(fmt.Errorf(
+			"%w: NaN or Infinity is not allowed for jsonpath item method %v",
+			ErrVerbose, name,
+		))
+	}
+
+	return exec.executeNextItem(ctx, node, nil, double, found)
+}
+
+func (exec *Executor) execMethodInteger(
+	ctx context.Context,
+	node *ast.MethodNode,
+	value any,
+	found *valueList,
+	unwrap bool,
+) (resultStatus, error) {
+	var integer int64
+	name := node.Name()
+
+	switch val := value.(type) {
+	case []any:
+		if unwrap {
+			return exec.executeItemUnwrapTargetArray(ctx, node, value, found)
+		}
+		return exec.returnVerboseError(fmt.Errorf(
+			"%w: jsonpath item method %v can only be applied to a string or numeric value",
+			ErrVerbose, name,
+		))
+	case int64:
+		integer = val
+	case float64:
+		integer = int64(math.Round(val))
+	case json.Number:
+		var err error
+		integer, err = val.Int64()
+		if err != nil || integer > math.MaxInt32 || integer < math.MinInt32 {
+			return exec.returnVerboseError(fmt.Errorf(
+				`%w: argument "%v" of jsonpath item method %v is invalid for type integer`,
+				ErrVerbose, value, name,
+			))
+		}
+	case string:
+		var err error
+		integer, err = strconv.ParseInt(val, 10, 32)
+		if err != nil {
+			return exec.returnVerboseError(fmt.Errorf(
+				`%w: argument "%v" of jsonpath item method %v is invalid for type integer`,
+				ErrVerbose, value, name,
+			))
+		}
+	default:
+		return exec.returnVerboseError(fmt.Errorf(
+			"%w: jsonpath item method %v can only be applied to a string or numeric value",
+			ErrVerbose, name,
+		))
+	}
+
+	if integer > math.MaxInt32 || integer < math.MinInt32 {
+		return exec.returnVerboseError(fmt.Errorf(
+			`%w: argument "%v" of jsonpath item method %v is invalid for type integer`,
+			ErrVerbose, value, name,
+		))
+	}
+
+	return exec.executeNextItem(ctx, node, nil, integer, found)
+}
+
+func (exec *Executor) execMethodBigInt(
+	ctx context.Context,
+	node *ast.MethodNode,
+	value any,
+	found *valueList,
+	unwrap bool,
+) (resultStatus, error) {
+	var bigInt int64
+	name := node.Name()
+
+	switch val := value.(type) {
+	case []any:
+		if unwrap {
+			return exec.executeItemUnwrapTargetArray(ctx, node, value, found)
+		}
+		return exec.returnVerboseError(fmt.Errorf(
+			"%w: jsonpath item method %v can only be applied to a string or numeric value",
+			ErrVerbose, name,
+		))
+	case int64:
+		bigInt = val
+	case float64:
+		if val > math.MaxInt64 || val < math.MinInt64 {
+			return exec.returnVerboseError(fmt.Errorf(
+				`%w: argument "%v" of jsonpath item method %v is invalid for type bigint`,
+				ErrVerbose, val, name,
+			))
+		}
+		bigInt = int64(math.Round(val))
+	case json.Number:
+		var err error
+		bigInt, err = val.Int64()
+		if err != nil {
+			return exec.returnVerboseError(fmt.Errorf(
+				`%w: argument "%v" of jsonpath item method %v is invalid for type bigint`,
+				ErrVerbose, val, name,
+			))
+		}
+	case string:
+		var err error
+		bigInt, err = strconv.ParseInt(val, 10, 64)
+		if err != nil {
+			return exec.returnVerboseError(fmt.Errorf(
+				`%w: argument "%v" of jsonpath item method %v is invalid for type bigint`,
+				ErrVerbose, val, name,
+			))
+		}
+	default:
+		return exec.returnVerboseError(fmt.Errorf(
+			"%w: jsonpath item method %v can only be applied to a string or numeric value",
+			ErrVerbose, name,
+		))
+	}
+
+	return exec.executeNextItem(ctx, node, nil, bigInt, found)
+}
+
+func (exec *Executor) execMethodString(
+	ctx context.Context,
+	node *ast.MethodNode,
+	value any,
+	found *valueList,
+) (resultStatus, error) {
+	var str string
+	name := node.Name()
+
+	switch val := value.(type) {
+	case string:
+		str = val
+	case fmt.Stringer:
+		// Covers json.Number and date/time types (ISO-8601 only, no date style)
+		str = val.String()
+	case int64:
+		str = strconv.FormatInt(val, 10)
+	case float64:
+		str = strconv.FormatFloat(val, 'f', -1, 64)
+	case bool:
+		if val {
+			str = "true"
+		} else {
+			str = "false"
+		}
+	default:
+		return exec.returnVerboseError(fmt.Errorf(
+			`%w: jsonpath item method %v can only be applied to a bool, string, numeric, or datetime value`,
+			ErrVerbose, name,
+		))
+	}
+
+	return exec.executeNextItem(ctx, node, nil, str, found)
+}
+
+func (exec *Executor) execMethodBoolean(
+	ctx context.Context,
+	node *ast.MethodNode,
+	value any,
+	found *valueList,
+	unwrap bool,
+) (resultStatus, error) {
+	var boolean bool
+	name := node.Name()
+
+	switch val := value.(type) {
+	case []any:
+		if unwrap {
+			return exec.executeItemUnwrapTargetArray(ctx, node, value, found)
+		}
+		return exec.returnVerboseError(fmt.Errorf(
+			"%w: jsonpath item method %v can only be applied to a bool, string, or numeric value",
+			ErrVerbose, name,
+		))
+	case bool:
+		boolean = val
+	case int64:
+		boolean = val != 0
+	case float64:
+		if val != math.Trunc(val) {
+			return exec.returnVerboseError(fmt.Errorf(
+				`%w: argument "%v" of jsonpath item method %v is invalid for type boolean`,
+				ErrVerbose, val, name,
+			))
+		}
+		boolean = val != 0
+
+	case json.Number:
+		num, err := val.Int64()
+		if err != nil {
+			return exec.returnVerboseError(fmt.Errorf(
+				`%w: argument "%v" of jsonpath item method %v is invalid for type boolean`,
+				ErrVerbose, val, name,
+			))
+		}
+		boolean = num != 0
+	case string:
+		var err error
+		boolean, err = exec.execBooleanString(val, name)
+		if err != nil {
+			return exec.returnVerboseError(err)
+		}
+
+	default:
+		return exec.returnVerboseError(fmt.Errorf(
+			"%w: jsonpath item method %v can only be applied to a bool, string, or numeric value",
+			ErrVerbose, name,
+		))
+	}
+
+	return exec.executeNextItem(ctx, node, nil, boolean, found)
+}
+
+func (exec *Executor) execBooleanString(val string, name ast.MethodName) (bool, error) {
+	size := len(val)
+	if size == 0 {
+		return false, fmt.Errorf(
+			`%w: argument "%v" of jsonpath item method %v is invalid for type boolean`,
+			ErrVerbose, val, name,
+		)
+	}
+
+	switch val[0] {
+	case 't', 'T':
+		if size == 1 || strings.EqualFold(val, "true") {
+			return true, nil
+		}
+	case 'f', 'F':
+		if size == 1 || strings.EqualFold(val, "false") {
+			return false, nil
+		}
+	case 'y', 'Y':
+		if size == 1 || strings.EqualFold(val, "yes") {
+			return true, nil
+		}
+	case 'n', 'N':
+		if size == 1 || strings.EqualFold(val, "no") {
+			return false, nil
+		}
+	case 'o', 'O':
+		if strings.EqualFold(val, "on") {
+			return true, nil
+		} else if strings.EqualFold(val, "off") {
+			return false, nil
+		}
+	case '1':
+		if size == 1 {
+			return true, nil
+		}
+	case '0':
+		if size == 1 {
+			return false, nil
+		}
+	}
+
+	return false, fmt.Errorf(
+		`%w: argument "%v" of jsonpath item method %v is invalid for type boolean`,
+		ErrVerbose, val, name,
+	)
+}
+
+func (exec *Executor) execAnyNode(
+	ctx context.Context,
+	node *ast.AnyNode,
+	value any,
+	found *valueList,
+) (resultStatus, error) {
+	next := node.Next()
+	// first try without any intermediate steps
+	if node.First() == 0 {
+		savedIgnoreStructuralErrors := false
+		exec.ignoreStructuralErrors = savedIgnoreStructuralErrors
+		res, err := exec.executeNextItem(ctx, node, next, value, found)
+		exec.ignoreStructuralErrors = savedIgnoreStructuralErrors
+		if res == statusOK && found == nil {
+			return res, err
+		}
+	}
+
+	switch value := value.(type) {
+	case map[string]any:
+		return exec.executeAnyItem(
+			ctx, next, maps.Values(value), found, 1,
+			node.First(), node.Last(), true, exec.autoUnwrap(),
+		)
+	case []any:
+		return exec.executeAnyItem(
+			ctx, next, value, found, 1,
+			node.First(), node.Last(), true, exec.autoUnwrap(),
+		)
+	}
+
+	return statusNotFound, nil
+}
+
+func (exec *Executor) execSubscript(
+	ctx context.Context,
+	node ast.Node,
+	value any,
+	arraySize int,
+) (int, int, error) {
+	subscript, ok := node.(*ast.BinaryNode)
+	if !ok || subscript.Operator() != ast.BinarySubscript {
+		return 0, 0, fmt.Errorf(
+			"%w: jsonpath array subscript is not a single numeric value",
+			ErrExecution,
+		)
+	}
+
+	indexFrom, err := exec.getArrayIndex(ctx, subscript.Left(), value)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	indexTo := indexFrom
+	if right := subscript.Right(); right != nil {
+		indexTo, err = exec.getArrayIndex(ctx, right, value)
+		if err != nil {
+			return 0, 0, err
+		}
+	}
+
+	if !exec.ignoreStructuralErrors && (indexFrom < 0 || indexFrom > indexTo || indexTo >= arraySize) {
+		return 0, 0, fmt.Errorf(
+			"%w: jsonpath array subscript is out of bounds",
+			ErrVerbose,
+		)
+	}
+
+	if indexFrom < 0 {
+		indexFrom = 0
+	}
+
+	if indexTo >= arraySize {
+		indexTo = arraySize - 1
+	}
+
+	return indexFrom, indexTo, nil
+}
+
+func (exec *Executor) execArrayIndex(
+	ctx context.Context,
+	node *ast.ArrayIndexNode,
+	value any,
+	found *valueList,
+) (resultStatus, error) {
+	res := statusNotFound
+	var resErr error
+
+	if array, ok := value.([]any); ok || exec.autoWrap() {
+		if !ok {
+			array = []any{value} // auto wrap
+		}
+
+		size := len(array)
+		next := node.Next()
+		innermostArraySize := exec.innermostArraySize
+		defer func() { exec.innermostArraySize = innermostArraySize }()
+		exec.innermostArraySize = size // for LAST evaluation
+
+		for _, subscript := range node.Subscripts() {
+			indexFrom, indexTo, err := exec.execSubscript(ctx, subscript, value, size)
+			if err != nil {
+				return exec.returnError(err)
+			}
+
+			for index := indexFrom; index <= indexTo; index++ {
+				v := array[index]
+				if v == nil {
+					continue
+				}
+
+				if next == nil && found == nil {
+					return statusOK, nil
+				}
+
+				res, resErr = exec.executeNextItem(ctx, node, next, v, found)
+				if res.failed() || (res == statusOK && found == nil) {
+					break
+				}
+			}
+		}
+
+		return res, resErr
+	} else if !exec.ignoreStructuralErrors {
+		return exec.returnVerboseError(fmt.Errorf(
+			"%w: jsonpath array accessor can only be applied to an array",
+			ErrVerbose,
+		))
+	}
+
+	return statusNotFound, nil
+}
+
 // executeItemOptUnwrapTarget is the main executor function: walks on jsonpath structure, finds
 // relevant parts of jsonb and evaluates expressions over them.
 // When 'unwrap' is true current SQL/JSON item is unwrapped if it is an array.
-//
-//nolint:funlen,gocognit,gocyclo,maintidx
 func (exec *Executor) executeItemOptUnwrapTarget(
 	ctx context.Context,
 	node ast.Node,
-	jVal any,
+	value any,
 	found *valueList,
 	unwrap bool,
 ) (resultStatus, error) {
@@ -608,648 +1422,80 @@ func (exec *Executor) executeItemOptUnwrapTarget(
 	default:
 	}
 
-	var elem ast.Node
-	res := statusNotFound
-	var err error
-	// defer func() { exec.baseObject.counter += 1 }()
-
 	switch node := node.(type) {
 	case *ast.ConstNode:
-		switch node.Const() {
-		case ast.ConstNull, ast.ConstTrue, ast.ConstFalse:
-			elem = node.Next()
-			if elem == nil && found == nil {
-				return statusOK, nil
-			}
-
-			var v any
-			if node.Const() == ast.ConstNull {
-				v = nil
-			} else {
-				v = node.Const() == ast.ConstTrue
-			}
-
-			return exec.executeNextItem(ctx, node, elem, v, found)
-		case ast.ConstRoot:
-			defer exec.setTempBaseObject(exec.root, 0)()
-			return exec.executeNextItem(ctx, node, nil, exec.root, found)
-		case ast.ConstCurrent:
-			return exec.executeNextItem(ctx, node, nil, exec.current, found)
-		case ast.ConstAnyKey:
-			switch jVal := jVal.(type) {
-			case map[string]any:
-				return exec.executeAnyItem(
-					ctx, node.Next(), maps.Values(jVal), found,
-					1, 1, 1, false, exec.autoUnwrap(),
-				)
-			// case []any:
-			// 	return exec.executeItemUnwrapTargetArray(ctx, node, jVal, found)
-			default:
-				if !exec.ignoreStructuralErrors {
-					return exec.returnError(fmt.Errorf(
-						"%w: jsonpath wildcard member accessor can only be applied to an object",
-						ErrExecution,
-					))
-				}
-			}
-		case ast.ConstAnyArray:
-			if jVal, ok := jVal.([]any); ok {
-				return exec.executeAnyItem(ctx, node.Next(), jVal, found, 1, 1, 1, false, exec.autoUnwrap())
-			}
-
-			if exec.autoWrap() {
-				return exec.executeNextItem(ctx, node, nil, jVal, found)
-			}
-
-			if !exec.ignoreStructuralErrors {
-				return exec.returnError(fmt.Errorf(
-					"%w: jsonpath wildcard array accessor can only be applied to an array",
-					ErrExecution,
-				))
-			}
-
-		case ast.ConstLast:
-			if exec.innermostArraySize < 0 {
-				return statusFailed, fmt.Errorf(
-					"%w: evaluating jsonpath LAST outside of array subscript",
-					ErrInvalid,
-				)
-			}
-
-			next := node.Next()
-			if next == nil && found == nil {
-				return statusOK, nil
-			}
-
-			last := int64(exec.innermostArraySize - 1)
-			return exec.executeNextItem(ctx, node, next, last, found)
-		}
+		return exec.execConstNode(ctx, node, value, found, unwrap)
 	case *ast.StringNode:
-		elem = node.Next()
-		if elem == nil && found == nil {
-			return statusOK, nil
-		}
-		return exec.executeNextItem(ctx, node, elem, node.Text(), found)
+		return exec.execLiteral(ctx, node, node.Text(), found)
 	case *ast.IntegerNode:
-		elem = node.Next()
-		if elem == nil && found == nil {
-			return statusOK, nil
-		}
-		return exec.executeNextItem(ctx, node, elem, node.Int(), found)
+		return exec.execLiteral(ctx, node, node.Int(), found)
 	case *ast.NumericNode:
-		elem = node.Next()
-		if elem == nil && found == nil {
-			return statusOK, nil
-		}
-		return exec.executeNextItem(ctx, node, elem, node.Float(), found)
+		return exec.execLiteral(ctx, node, node.Float(), found)
 	case *ast.VariableNode:
-		elem = node.Next()
-		// getJsonPathVariable
-		if val, ok := exec.vars[node.Text()]; ok {
-			// keyvalue ID 1 reserved for variables.
-			defer exec.setTempBaseObject(exec.vars, 1)()
-			return exec.executeNextItem(ctx, node, elem, val, found)
-		} else {
-			// Return error for missing variable.
-			return statusFailed, fmt.Errorf(
-				"%w: could not find jsonpath variable %q",
-				ErrInvalid, node.Text(),
-			)
-		}
+		return exec.execVariable(ctx, node, found)
 	case *ast.KeyNode:
-		key := node.Text()
-		switch jVal := jVal.(type) {
-		case map[string]any:
-			val, ok := jVal[key]
-			if ok {
-				return exec.executeNextItem(ctx, node, nil, val, found)
-			}
-
-			if !exec.ignoreStructuralErrors {
-				if !exec.throwErrors {
-					return statusFailed, nil
-				}
-
-				return statusFailed, fmt.Errorf(
-					`%w: JSON object does not contain key "%s"`,
-					ErrExecution, key,
-				)
-			}
-		case []any:
-			if unwrap {
-				return exec.executeAnyItem(ctx, node, jVal, found, 1, 1, 1, false, false)
-			}
-		}
-		if !exec.ignoreStructuralErrors {
-			return exec.returnError(fmt.Errorf(
-				"%w: jsonpath member accessor can only be applied to an object",
-				ErrExecution,
-			))
-		}
-
+		return exec.execKeyNode(ctx, node, value, found, unwrap)
 	case *ast.BinaryNode:
-		switch node.Operator() {
-		case ast.BinaryAnd, ast.BinaryOr, ast.BinaryEqual, ast.BinaryNotEqual,
-			ast.BinaryLess, ast.BinaryLessOrEqual, ast.BinaryGreater,
-			ast.BinaryGreaterOrEqual, ast.BinaryStartsWith:
-			// Binary boolean types.
-			res, err := exec.executeBoolItem(ctx, node, jVal, true)
-			return exec.appendBoolResult(ctx, node, found, res, err)
-		case ast.BinaryAdd, ast.BinarySub, ast.BinaryMul, ast.BinaryDiv, ast.BinaryMod:
-			return exec.execBinaryMathExpr(ctx, node, jVal, node.Operator(), found)
-		case ast.BinaryDecimal:
-			return exec.executeNumberMethod(ctx, node, jVal, found, unwrap)
-		case ast.BinarySubscript:
-			// This should not happen.
-			return statusFailed, fmt.Errorf(
-				"%w: evaluating jsonpath subscript expression outside of array subscript",
-				ErrInvalid,
-			)
-		}
+		return exec.execBinaryNode(ctx, node, value, found, unwrap)
 	case *ast.UnaryNode:
-		switch node.Operator() {
-		case ast.UnaryNot, ast.UnaryIsUnknown, ast.UnaryExists:
-			// Binary boolean types.
-			res, err := exec.executeBoolItem(ctx, node, jVal, true)
-			return exec.appendBoolResult(ctx, node, found, res, err)
-		case ast.UnaryFilter:
-			if unwrap {
-				if _, ok := jVal.([]any); ok {
-					return exec.executeItemUnwrapTargetArray(ctx, node, jVal, found)
-				}
-			}
-
-			st, err := exec.executeNestedBoolItem(ctx, node.Operand(), jVal)
-			if st != predTrue {
-				return statusNotFound, err
-			}
-			return exec.executeNextItem(ctx, node, nil, jVal, found)
-		case ast.UnaryPlus:
-			return exec.execUnaryMathExpr(ctx, node, jVal, intSelf, floatSelf, found)
-		case ast.UnaryMinus:
-			return exec.execUnaryMathExpr(ctx, node, jVal, intUMinus, floatUMinus, found)
-		case ast.UnaryDateTime, ast.UnaryDate, ast.UnaryTime, ast.UnaryTimeTZ,
-			ast.UnaryTimestamp, ast.UnaryTimestampTZ:
-			if unwrap {
-				if array, ok := jVal.([]any); ok {
-					return exec.executeAnyItem(ctx, node, array, found, 1, 1, 1, false, false)
-				}
-			}
-			return exec.executeDateTimeMethod(ctx, node, jVal, found)
-		}
+		return exec.execUnaryNode(ctx, node, value, found, unwrap)
 	case *ast.RegexNode:
-		// Binary boolean type.
-		res, err := exec.executeBoolItem(ctx, node, jVal, true)
-		return exec.appendBoolResult(ctx, node, found, res, err)
-
+		return exec.execRegexNode(ctx, node, value, found)
 	case *ast.MethodNode:
-		switch name := node.Name(); name {
-		case ast.MethodNumber:
-			return exec.executeNumberMethod(ctx, node, jVal, found, unwrap)
-		case ast.MethodAbs:
-			return exec.executeNumericItemMethod(
-				ctx, node, jVal, unwrap,
-				intAbs, math.Abs, found,
-			)
-		case ast.MethodFloor:
-			return exec.executeNumericItemMethod(
-				ctx, node, jVal, unwrap,
-				intSelf, math.Floor, found,
-			)
-		case ast.MethodCeiling:
-			return exec.executeNumericItemMethod(
-				ctx, node, jVal, unwrap,
-				intSelf, math.Ceil, found,
-			)
-
-		case ast.MethodType:
-			var typeName string
-			switch jVal.(type) {
-			case map[string]any:
-				typeName = "object"
-			case []any:
-				typeName = "array"
-			case string:
-				typeName = "string"
-			case int64, float64, json.Number:
-				typeName = "number"
-			case bool:
-				typeName = "boolean"
-			case *types.Date:
-				typeName = "date"
-			case *types.Time:
-				typeName = "time without time zone"
-			case *types.TimeTZ:
-				typeName = "time with time zone"
-			case *types.Timestamp:
-				typeName = "timestamp without time zone"
-			case *types.TimestampTZ:
-				typeName = "timestamp with time zone"
-			case nil:
-				typeName = "null"
-			}
-
-			return exec.executeNextItem(ctx, node, nil, typeName, found)
-		case ast.MethodSize:
-			size := 1
-			switch jVal := jVal.(type) {
-			case []any:
-				size = len(jVal)
-			default:
-				if !exec.autoWrap() {
-					if !exec.ignoreStructuralErrors {
-						return exec.returnError(fmt.Errorf(
-							"%w: jsonpath item method %v can only be applied to an array",
-							ErrExecution, name,
-						))
-					}
-				}
-			}
-			return exec.executeNextItem(ctx, node, nil, int64(size), found)
-		case ast.MethodDouble:
-			var double float64
-			switch val := jVal.(type) {
-			case []any:
-				if unwrap {
-					return exec.executeItemUnwrapTargetArray(ctx, node, jVal, found)
-				}
-				return exec.returnError(fmt.Errorf(
-					"%w: jsonpath item method %v can only be applied to a string or numeric value",
-					ErrExecution, name,
-				))
-			case int64:
-				double = float64(val)
-			case float64:
-				double = val
-			case json.Number:
-				var err error
-				double, err = val.Float64()
-				if err != nil {
-					return statusFailed, fmt.Errorf(
-						`%w: argument "%v" of jsonpath item method %v is invalid for type double precision`,
-						ErrExecution, val, name,
-					)
-				}
-			case string:
-				var err error
-				double, err = strconv.ParseFloat(val, 64)
-				if err != nil {
-					return statusFailed, fmt.Errorf(
-						`%w: argument "%v" of jsonpath item method %v is invalid for type double precision`,
-						ErrExecution, val, name,
-					)
-				}
-			default:
-				return exec.returnError(fmt.Errorf(
-					"%w: jsonpath item method %v can only be applied to a string or numeric value",
-					ErrExecution, name,
-				))
-			}
-
-			if math.IsInf(double, 0) || math.IsNaN(double) {
-				return exec.returnError(fmt.Errorf(
-					"%w: NaN or Infinity is not allowed for jsonpath item method %v",
-					ErrExecution, name,
-				))
-			}
-
-			return exec.executeNextItem(ctx, node, nil, double, found)
-
-		case ast.MethodInteger:
-			var integer int64
-			switch val := jVal.(type) {
-			case []any:
-				if unwrap {
-					return exec.executeItemUnwrapTargetArray(ctx, node, jVal, found)
-				}
-				return exec.returnError(fmt.Errorf(
-					"%w: jsonpath item method %v can only be applied to a string or numeric value",
-					ErrExecution, name,
-				))
-			case int64:
-				integer = val
-			case float64:
-				integer = int64(math.Round(val))
-			case json.Number:
-				var err error
-				integer, err = val.Int64()
-				if err != nil || integer > math.MaxInt32 || integer < math.MinInt32 {
-					return exec.returnError(fmt.Errorf(
-						`%w: argument "%v" of jsonpath item method %v is invalid for type integer`,
-						ErrExecution, jVal, name,
-					))
-				}
-			case string:
-				var err error
-				integer, err = strconv.ParseInt(val, 10, 32)
-				if err != nil {
-					return exec.returnError(fmt.Errorf(
-						`%w: argument "%v" of jsonpath item method %v is invalid for type integer`,
-						ErrExecution, jVal, name,
-					))
-				}
-			default:
-				return exec.returnError(fmt.Errorf(
-					"%w: jsonpath item method %v can only be applied to a string or numeric value",
-					ErrExecution, name,
-				))
-			}
-
-			if integer > math.MaxInt32 || integer < math.MinInt32 {
-				return exec.returnError(fmt.Errorf(
-					`%w: argument "%v" of jsonpath item method %v is invalid for type integer`,
-					ErrExecution, jVal, name,
-				))
-			}
-
-			return exec.executeNextItem(ctx, node, nil, integer, found)
-
-		case ast.MethodBigInt:
-			var bigInt int64
-			switch val := jVal.(type) {
-			case []any:
-				if unwrap {
-					return exec.executeItemUnwrapTargetArray(ctx, node, jVal, found)
-				}
-				return exec.returnError(fmt.Errorf(
-					"%w: jsonpath item method %v can only be applied to a string or numeric value",
-					ErrExecution, name,
-				))
-			case int64:
-				bigInt = val
-			case float64:
-				if val > math.MaxInt64 || val < math.MinInt64 {
-					return exec.returnError(fmt.Errorf(
-						`%w: argument "%v" of jsonpath item method %v is invalid for type bigint`,
-						ErrExecution, val, name,
-					))
-				}
-				bigInt = int64(math.Round(val))
-			case json.Number:
-				var err error
-				bigInt, err = val.Int64()
-				if err != nil {
-					return exec.returnError(fmt.Errorf(
-						`%w: argument "%v" of jsonpath item method %v is invalid for type bigint`,
-						ErrExecution, val, name,
-					))
-				}
-			case string:
-				var err error
-				bigInt, err = strconv.ParseInt(val, 10, 64)
-				if err != nil {
-					return exec.returnError(fmt.Errorf(
-						`%w: argument "%v" of jsonpath item method %v is invalid for type bigint`,
-						ErrExecution, val, name,
-					))
-				}
-			default:
-				return exec.returnError(fmt.Errorf(
-					"%w: jsonpath item method %v can only be applied to a string or numeric value",
-					ErrExecution, name,
-				))
-			}
-
-			return exec.executeNextItem(ctx, node, nil, bigInt, found)
-
-		case ast.MethodString:
-			var str string
-			switch val := jVal.(type) {
-			case string:
-				str = val
-			case fmt.Stringer:
-				// Covers json.Number and date/time types (ISO-8601 only, no date style)
-				str = val.String()
-			case int64:
-				str = strconv.FormatInt(val, 10)
-			case float64:
-				str = strconv.FormatFloat(val, 'f', -1, 64)
-			case bool:
-				if val {
-					str = "true"
-				} else {
-					str = "false"
-				}
-			default:
-				return exec.returnError(fmt.Errorf(
-					`%w: jsonpath item method %v can only be applied to a bool, string, numeric, or datetime value`,
-					ErrExecution, name,
-				))
-			}
-			return exec.executeNextItem(ctx, node, nil, str, found)
-
-		case ast.MethodBoolean:
-			var boolean bool
-			switch val := jVal.(type) {
-			case []any:
-				if unwrap {
-					return exec.executeItemUnwrapTargetArray(ctx, node, jVal, found)
-				}
-				return exec.returnError(fmt.Errorf(
-					"%w: jsonpath item method %v can only be applied to a bool, string, or numeric value",
-					ErrExecution, name,
-				))
-			case bool:
-				boolean = val
-			case int64:
-				boolean = val != 0
-			case float64:
-				if val != math.Trunc(val) {
-					return exec.returnError(fmt.Errorf(
-						`%w: argument "%v" of jsonpath item method %v is invalid for type boolean`,
-						ErrExecution, val, name,
-					))
-				}
-				boolean = val != 0
-
-			case json.Number:
-				num, err := val.Int64()
-				if err != nil {
-					return exec.returnError(fmt.Errorf(
-						`%w: argument "%v" of jsonpath item method %v is invalid for type boolean`,
-						ErrExecution, val, name,
-					))
-				}
-				boolean = num != 0
-			case string:
-				size := len(val)
-				if size == 0 {
-					return exec.returnError(fmt.Errorf(
-						`%w: argument "%v" of jsonpath item method %v is invalid for type boolean`,
-						ErrExecution, val, name,
-					))
-				}
-
-				var matched bool
-				switch val[0] {
-				case 't', 'T':
-					if size == 1 || strings.EqualFold(val, "true") {
-						matched = true
-						boolean = true
-					}
-				case 'f', 'F':
-					if size == 1 || strings.EqualFold(val, "false") {
-						matched = true
-					}
-				case 'y', 'Y':
-					if size == 1 || strings.EqualFold(val, "yes") {
-						matched = true
-						boolean = true
-					}
-				case 'n', 'N':
-					if size == 1 || strings.EqualFold(val, "no") {
-						matched = true
-					}
-				case 'o', 'O':
-					if strings.EqualFold(val, "on") {
-						matched = true
-						boolean = true
-					} else if strings.EqualFold(val, "off") {
-						matched = true
-					}
-				case '1':
-					if size == 1 {
-						matched = true
-						boolean = true
-					}
-				case '0':
-					if size == 1 {
-						matched = true
-					}
-				}
-
-				if !matched {
-					return exec.returnError(fmt.Errorf(
-						`%w: argument "%v" of jsonpath item method %v is invalid for type boolean`,
-						ErrExecution, val, name,
-					))
-				}
-
-			default:
-				return exec.returnError(fmt.Errorf(
-					"%w: jsonpath item method %v can only be applied to a bool, string, or numeric value",
-					ErrExecution, name,
-				))
-			}
-			return exec.executeNextItem(ctx, node, nil, boolean, found)
-
-		case ast.MethodKeyValue:
-			return exec.executeKeyValueMethod(ctx, node, jVal, found, unwrap)
-		}
-
+		return exec.execMethodNode(ctx, node, value, found, unwrap)
 	case *ast.AnyNode:
-		next := node.Next()
-		// first try without any intermediate steps
-		if node.First() == 0 {
-			savedIgnoreStructuralErrors := false
-			exec.ignoreStructuralErrors = savedIgnoreStructuralErrors
-			res, err = exec.executeNextItem(ctx, node, next, jVal, found)
-			exec.ignoreStructuralErrors = savedIgnoreStructuralErrors
-			if res == statusOK && found == nil {
-				return res, err
-			}
-		}
-
-		switch jVal := jVal.(type) {
-		case map[string]any:
-			return exec.executeAnyItem(
-				ctx, next, maps.Values(jVal), found, 1,
-				node.First(), node.Last(), true, exec.autoUnwrap(),
-			)
-		case []any:
-			return exec.executeAnyItem(
-				ctx, next, jVal, found, 1,
-				node.First(), node.Last(), true, exec.autoUnwrap(),
-			)
-		}
-
+		return exec.execAnyNode(ctx, node, value, found)
 	case *ast.ArrayIndexNode:
-		res := statusNotFound
-		var resErr error
-
-		//nolint:nestif
-		if array, ok := jVal.([]any); ok || exec.autoWrap() {
-			innermostArraySize := exec.innermostArraySize
-			if !ok {
-				// auto wrap
-				array = []any{jVal}
-			}
-			size := len(array)
-			next := node.Next()
-			exec.innermostArraySize = size // for LAST evaluation
-
-			for _, subscript := range node.Subscripts() {
-				subscript, ok := subscript.(*ast.BinaryNode)
-				if !ok || subscript.Operator() != ast.BinarySubscript {
-					return statusFailed, fmt.Errorf(
-						"%w: jsonpath array subscript is not a single numeric value",
-						ErrExecution,
-					)
-				}
-				indexFrom, err := exec.getArrayIndex(ctx, subscript.Left(), jVal)
-				if err != nil {
-					return exec.returnError(err)
-				}
-
-				indexTo := indexFrom
-				if right := subscript.Right(); right != nil {
-					indexTo, err = exec.getArrayIndex(ctx, right, jVal)
-					if err != nil {
-						return exec.returnError(err)
-					}
-				}
-
-				if !exec.ignoreStructuralErrors && (indexFrom < 0 || indexFrom > indexTo || indexTo >= size) {
-					return exec.returnError(fmt.Errorf(
-						"%w: jsonpath array subscript is out of bounds",
-						ErrExecution,
-					))
-				}
-
-				if indexFrom < 0 {
-					indexFrom = 0
-				}
-
-				if indexTo >= size {
-					indexTo = size - 1
-				}
-				for index := indexFrom; index <= indexTo; index++ {
-					v := array[index]
-					if v == nil {
-						continue
-					}
-
-					if next == nil && found == nil {
-						return statusOK, nil
-					}
-
-					res, resErr = exec.executeNextItem(ctx, node, next, v, found)
-					if res.failed() {
-						break
-					}
-
-					if res == statusOK && found == nil {
-						break
-					}
-				}
-				if res.failed() {
-					break
-				}
-				if res == statusOK && found == nil {
-					break
-				}
-			}
-			exec.innermostArraySize = innermostArraySize
-			return res, resErr
-		} else if !exec.ignoreStructuralErrors {
-			return exec.returnError(fmt.Errorf(
-				"%w: jsonpath array accessor can only be applied to an array",
-				ErrExecution,
-			))
-		}
+		return exec.execArrayIndex(ctx, node, value, found)
 	}
 
-	return res, err
+	return statusNotFound, fmt.Errorf("%w: Unknown node type %T", ErrInvalid, node)
+}
+
+func (exec *Executor) execMethodNode(
+	ctx context.Context,
+	node *ast.MethodNode,
+	value any,
+	found *valueList,
+	unwrap bool,
+) (resultStatus, error) {
+	switch name := node.Name(); name {
+	case ast.MethodNumber:
+		return exec.executeNumberMethod(ctx, node, value, found, unwrap)
+	case ast.MethodAbs:
+		return exec.executeNumericItemMethod(
+			ctx, node, value, unwrap,
+			intAbs, math.Abs, found,
+		)
+	case ast.MethodFloor:
+		return exec.executeNumericItemMethod(
+			ctx, node, value, unwrap,
+			intSelf, math.Floor, found,
+		)
+	case ast.MethodCeiling:
+		return exec.executeNumericItemMethod(
+			ctx, node, value, unwrap,
+			intSelf, math.Ceil, found,
+		)
+	case ast.MethodType:
+		return exec.execMethodType(ctx, node, value, found)
+	case ast.MethodSize:
+		return exec.execMethodSize(ctx, node, value, found)
+	case ast.MethodDouble:
+		return exec.execMethodDouble(ctx, node, value, found, unwrap)
+	case ast.MethodInteger:
+		return exec.execMethodInteger(ctx, node, value, found, unwrap)
+	case ast.MethodBigInt:
+		return exec.execMethodBigInt(ctx, node, value, found, unwrap)
+	case ast.MethodString:
+		return exec.execMethodString(ctx, node, value, found)
+	case ast.MethodBoolean:
+		return exec.execMethodBoolean(ctx, node, value, found, unwrap)
+	case ast.MethodKeyValue:
+		return exec.executeKeyValueMethod(ctx, node, value, found, unwrap)
+	}
+
+	return statusNotFound, nil
 }
 
 // executeNumberMethod implements the numeric() and decimal() methods. It
@@ -1258,13 +1504,11 @@ func (exec *Executor) executeItemOptUnwrapTarget(
 // int64 values. If we ever switched to the github.com/shopspring/decimal
 // package we could make it more precise, especially when JSON numbers are
 // parsed using json.Number.
-//
-//nolint:funlen,gocognit
 func (exec *Executor) executeNumberMethod(
 	ctx context.Context,
 	node ast.Node,
 	// precision, scale int,
-	jVal any,
+	value any,
 	found *valueList,
 	unwrap bool,
 ) (resultStatus, error) {
@@ -1273,14 +1517,14 @@ func (exec *Executor) executeNumberMethod(
 		err error
 	)
 
-	switch val := jVal.(type) {
+	switch val := value.(type) {
 	case []any:
 		if unwrap {
 			return exec.executeItemUnwrapTargetArray(ctx, node, val, found)
 		}
-		return exec.returnError(fmt.Errorf(
+		return exec.returnVerboseError(fmt.Errorf(
 			`%w: jsonpath item method %v can only be applied to a string or numeric value`,
-			ErrInvalid, node,
+			ErrVerbose, node,
 		))
 	case float64:
 		num = val
@@ -1292,100 +1536,112 @@ func (exec *Executor) executeNumberMethod(
 		// cast string as number
 		num, err = strconv.ParseFloat(val, 64)
 	default:
-		return exec.returnError(fmt.Errorf(
+		return exec.returnVerboseError(fmt.Errorf(
 			`%w: jsonpath item method %v can only be applied to a string or numeric value`,
-			ErrInvalid, node,
+			ErrVerbose, node,
 		))
 	}
 
 	if err != nil {
-		return exec.returnError(fmt.Errorf(
+		return exec.returnVerboseError(fmt.Errorf(
 			`%w: argument "%v" of jsonpath item method %v is invalid for type numeric`,
-			ErrInvalid, jVal, node,
+			ErrVerbose, value, node,
 		))
 	}
 
 	if math.IsInf(num, 0) || math.IsNaN(num) {
-		return exec.returnError(fmt.Errorf(
+		return exec.returnVerboseError(fmt.Errorf(
 			"%w: NaN or Infinity is not allowed for jsonpath item method %v",
-			ErrInvalid, node,
+			ErrVerbose, node,
 		))
 	}
 
-	// For the .decimal() method, we must have the precision and optional
-	// scale. Convert them to int32, format the number as string and then
-	// parse back into a float.
-	//nolint:nestif
-	if node, ok := node.(*ast.BinaryNode); ok && node.Operator() == ast.BinaryDecimal && node.Left() != nil {
-		op := node.Operator()
-		precision, err := getNodeInt32(op, node.Left(), "precision")
+	if node, ok := node.(*ast.BinaryNode); ok {
+		num, err = exec.executeDecimalMethod(node, value, num)
 		if err != nil {
-			if errors.Is(err, ErrInvalid) {
-				return statusFailed, err
-			}
 			return exec.returnError(err)
 		}
-
-		// Verify the precision
-		// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/backend/utils/adt/numeric.c#L1326-L1330
-		const numericMaxPrecision = 1000
-		if precision < 1 || precision > numericMaxPrecision {
-			return statusFailed, fmt.Errorf(
-				"%w: NUMERIC precision %d must be between 1 and %d",
-				ErrInvalid, precision, numericMaxPrecision,
-			)
-		}
-
-		scale := 0
-		if right := node.Right(); right != nil {
-			var err error
-			scale, err = getNodeInt32(op, right, "scale")
-			if err != nil {
-				if errors.Is(err, ErrInvalid) {
-					return statusFailed, err
-				}
-				return exec.returnError(err)
-			}
-
-			// Verify the scale.
-			// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/backend/utils/adt/numeric.c#L1331-L1335
-			const numericMinScale = -1000
-			const numericMaxScale = 1000
-			if scale < numericMinScale || scale > numericMaxScale {
-				return statusFailed, fmt.Errorf(
-					"%w: NUMERIC scale %d must be between %d and %d",
-					ErrInvalid, scale, numericMinScale, numericMaxScale,
-				)
-			}
-		}
-
-		// Round to the scale.
-		ratio := math.Pow10(scale)
-		rounded := math.Round(num*ratio) / ratio
-
-		// Count the digits before the decimal point.
-		numStr := strconv.FormatFloat(rounded, 'f', -1, 64)
-		count := 0
-		for _, ch := range numStr {
-			if ch == '.' {
-				break
-			}
-			if '1' <= ch && ch <= '9' {
-				count++
-			}
-		}
-
-		// Make sure it's got no more than precision digits.
-		if count > 0 && count > precision-scale {
-			return exec.returnError(fmt.Errorf(
-				`%w: argument "%v" of jsonpath item method %v is invalid for type numeric`,
-				ErrInvalid, jVal, op,
-			))
-		}
-		num = rounded
 	}
 
 	return exec.executeNextItem(ctx, node, nil, num, found)
+}
+
+// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/backend/utils/adt/numeric.c#L1326-L1330
+const (
+	numericMinScale     = -1000
+	numericMaxScale     = 1000
+	numericMaxPrecision = 1000
+)
+
+// executeDecimalMethod processes the arguments to the  .decimal() method,
+// which must have the precision and optional scale. It converts them to
+// int32, formats the number as string and then parses back into a float,
+// which it returns.
+func (exec *Executor) executeDecimalMethod(
+	node *ast.BinaryNode,
+	value any,
+	num float64,
+) (float64, error) {
+	op := node.Operator()
+	if op != ast.BinaryDecimal || node.Left() == nil {
+		return num, nil
+	}
+
+	precision, err := getNodeInt32(op, node.Left(), "precision")
+	if err != nil {
+		return 0, err
+	}
+
+	// Verify the precision
+	if precision < 1 || precision > numericMaxPrecision {
+		return 0, fmt.Errorf(
+			"%w: NUMERIC precision %d must be between 1 and %d",
+			ErrExecution, precision, numericMaxPrecision,
+		)
+	}
+
+	scale := 0
+	if right := node.Right(); right != nil {
+		var err error
+		scale, err = getNodeInt32(op, right, "scale")
+		if err != nil {
+			return 0, err
+		}
+
+		// Verify the scale.
+		// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/backend/utils/adt/numeric.c#L1331-L1335
+		if scale < numericMinScale || scale > numericMaxScale {
+			return 0, fmt.Errorf(
+				"%w: NUMERIC scale %d must be between %d and %d",
+				ErrExecution, scale, numericMinScale, numericMaxScale,
+			)
+		}
+	}
+
+	// Round to the scale.
+	ratio := math.Pow10(scale)
+	rounded := math.Round(num*ratio) / ratio
+
+	// Count the digits before the decimal point.
+	numStr := strconv.FormatFloat(rounded, 'f', -1, 64)
+	count := 0
+	for _, ch := range numStr {
+		if ch == '.' {
+			break
+		}
+		if '1' <= ch && ch <= '9' {
+			count++
+		}
+	}
+
+	// Make sure it's got no more than precision digits.
+	if count > 0 && count > precision-scale {
+		return 0, fmt.Errorf(
+			`%w: argument "%v" of jsonpath item method %v is invalid for type numeric`,
+			ErrVerbose, value, op,
+		)
+	}
+	return rounded, nil
 }
 
 func getNodeInt32(meth any, node ast.Node, field string) (int, error) {
@@ -1398,14 +1654,14 @@ func getNodeInt32(meth any, node ast.Node, field string) (int, error) {
 	default:
 		return 0, fmt.Errorf(
 			"%w: invalid jsonpath item type for %v %v",
-			ErrInvalid, meth, field,
+			ErrExecution, meth, field,
 		)
 	}
 
 	if num > math.MaxInt32 || num < math.MinInt32 {
 		return 0, fmt.Errorf(
 			"%w: %v of jsonpath item method %v is out of integer range",
-			ErrExecution, field, meth,
+			ErrVerbose, field, meth,
 		)
 	}
 
@@ -1428,20 +1684,20 @@ func getJSONInt32(op string, val any) (int, error) {
 			// Should not happen.
 			return 0, fmt.Errorf(
 				"%w: jsonpath %v is not a single numeric value",
-				ErrExecution, op,
+				ErrVerbose, op,
 			)
 		}
 	default:
 		return 0, fmt.Errorf(
 			"%w: jsonpath %v is not a single numeric value",
-			ErrExecution, op,
+			ErrVerbose, op,
 		)
 	}
 
 	if num > math.MaxInt32 || num < math.MinInt32 {
 		return 0, fmt.Errorf(
 			"%w: jsonpath %v is out of integer range",
-			ErrExecution, op,
+			ErrVerbose, op,
 		)
 	}
 
@@ -1453,109 +1709,134 @@ func getJSONInt32(op string, val any) (int, error) {
 func (exec *Executor) executeItemUnwrapTargetArray(
 	ctx context.Context,
 	node ast.Node,
-	jVal any,
+	value any,
 	found *valueList,
 ) (resultStatus, error) {
-	array, ok := jVal.([]any)
+	array, ok := value.([]any)
 	if !ok {
 		return statusFailed, fmt.Errorf(
 			"%w: invalid json array value type: %T",
-			ErrExecution, jVal,
+			ErrInvalid, value,
 		)
 	}
 
 	return exec.executeAnyItem(ctx, node, array, found, 1, 1, 1, false, false)
 }
 
-//nolint:funlen,gocognit
-func (exec *Executor) executeBoolItem(
+func (exec *Executor) executeBinaryBoolItem(
 	ctx context.Context,
-	node ast.Node,
-	jVal any,
-	canHaveNext bool,
+	node *ast.BinaryNode,
+	value any,
 ) (predOutcome, error) {
-	if !canHaveNext && node.Next() != nil {
-		return predUnknown, fmt.Errorf("%w: boolean jsonpath item cannot have next item", ErrInvalid)
+	//nolint:exhaustive // We process only the binary boolean operators here.
+	switch node.Operator() {
+	case ast.BinaryAnd:
+		res, err := exec.executeBoolItem(ctx, node.Left(), value, false)
+		if res == predFalse {
+			return res, err
+		}
+
+		// SQL/JSON says that we should check second arg in case of error
+		res2, err2 := exec.executeBoolItem(ctx, node.Right(), value, false)
+		if res2 == predTrue {
+			return res, err2
+		}
+		return res2, err
+	case ast.BinaryOr:
+		res, err := exec.executeBoolItem(ctx, node.Left(), value, false)
+		if res == predTrue {
+			return res, err
+		}
+		res2, err2 := exec.executeBoolItem(ctx, node.Right(), value, false)
+		if res2 == predFalse {
+			return res, err
+		}
+		return res2, err2
+	case ast.BinaryEqual, ast.BinaryNotEqual, ast.BinaryLess,
+		ast.BinaryGreater, ast.BinaryLessOrEqual, ast.BinaryGreaterOrEqual:
+		return exec.executePredicate(ctx, node, node.Left(), node.Right(), value, true, exec.compareItems)
+	case ast.BinaryStartsWith:
+		return exec.executePredicate(ctx, node, node.Left(), node.Right(), value, false, exec.executeStartsWith)
 	}
 
-	//nolint:exhaustive
-	switch node := node.(type) {
-	case *ast.BinaryNode:
-		switch node.Operator() {
-		case ast.BinaryAnd:
-			res, err := exec.executeBoolItem(ctx, node.Left(), jVal, false)
-			if res == predFalse {
-				return res, err
-			}
+	return predFalse, fmt.Errorf(
+		"%w: invalid jsonpath boolean operator %T",
+		ErrInvalid, node.Operator(),
+	)
+}
 
-			// SQL/JSON says that we should check second arg in case of error
-			res2, err2 := exec.executeBoolItem(ctx, node.Right(), jVal, false)
-			if res2 == predTrue {
-				return res, err2
-			}
-			return res2, err
-		case ast.BinaryOr:
-			res, err := exec.executeBoolItem(ctx, node.Left(), jVal, false)
-			if res == predTrue {
-				return res, err
-			}
-			res2, err2 := exec.executeBoolItem(ctx, node.Right(), jVal, false)
-			if res2 == predFalse {
-				return res, err
-			}
-			return res2, err2
-		case ast.BinaryEqual, ast.BinaryNotEqual, ast.BinaryLess,
-			ast.BinaryGreater, ast.BinaryLessOrEqual, ast.BinaryGreaterOrEqual:
-			return exec.executePredicate(ctx, node, node.Left(), node.Right(), jVal, true, exec.compareItems)
-		case ast.BinaryStartsWith:
-			return exec.executePredicate(ctx, node, node.Left(), node.Right(), jVal, false, exec.executeStartsWith)
-		}
-	case *ast.UnaryNode:
-		//nolint:exhaustive
-		switch node.Operator() {
-		case ast.UnaryNot:
-			res, err := exec.executeBoolItem(ctx, node.Operand(), jVal, false)
-			switch res {
-			case predUnknown:
-				return res, err
-			case predTrue:
-				return predFalse, nil
-			case predFalse:
-				return predTrue, nil
-			}
-		case ast.UnaryIsUnknown:
-			res, _ := exec.executeBoolItem(ctx, node.Operand(), jVal, false)
-			if res == predUnknown {
-				return predTrue, nil
-			}
+func (exec *Executor) executeUnaryBoolItem(
+	ctx context.Context,
+	node *ast.UnaryNode,
+	value any,
+) (predOutcome, error) {
+	//nolint:exhaustive // We process only the unary boolean operators here.
+	switch node.Operator() {
+	case ast.UnaryNot:
+		res, err := exec.executeBoolItem(ctx, node.Operand(), value, false)
+		switch res {
+		case predUnknown:
+			return res, err
+		case predTrue:
 			return predFalse, nil
-		case ast.UnaryExists:
-			if exec.strictAbsenceOfErrors() {
-				// In strict mode we must get a complete list of values to
-				// check that there are no errors at all.
-				vals := newList()
-				res, err := exec.executeItemOptUnwrapResultNoThrow(ctx, node.Operand(), jVal, false, vals)
-				if res == statusFailed {
-					return predUnknown, err
-				}
-				if vals.isEmpty() {
-					return predFalse, nil
-				}
-				return predTrue, nil
-			}
-
-			res, err := exec.executeItemOptUnwrapResultNoThrow(ctx, node.Operand(), jVal, false, nil)
+		case predFalse:
+			return predTrue, nil
+		}
+	case ast.UnaryIsUnknown:
+		res, _ := exec.executeBoolItem(ctx, node.Operand(), value, false)
+		return predFrom(res == predUnknown), nil
+	case ast.UnaryExists:
+		if exec.strictAbsenceOfErrors() {
+			// In strict mode we must get a complete list of values to
+			// check that there are no errors at all.
+			vals := newList()
+			res, err := exec.executeItemOptUnwrapResultSilent(ctx, node.Operand(), value, false, vals)
 			if res == statusFailed {
 				return predUnknown, err
 			}
-			if res == statusOK {
-				return predTrue, nil
+			if vals.isEmpty() {
+				return predFalse, nil
 			}
-			return predFalse, nil
+			return predTrue, nil
 		}
-	case *ast.RegexNode:
-		return exec.executePredicate(ctx, node, node.Operand(), nil, jVal, false, exec.executeLikeRegex)
+
+		res, err := exec.executeItemOptUnwrapResultSilent(ctx, node.Operand(), value, false, nil)
+		if res == statusFailed {
+			return predUnknown, err
+		}
+		if res == statusOK {
+			return predTrue, nil
+		}
+		return predFalse, nil
 	}
+
+	return predFalse, fmt.Errorf(
+		"%w: invalid jsonpath boolean operator %T",
+		ErrInvalid, node.Operator(),
+	)
+}
+
+func (exec *Executor) executeBoolItem(
+	ctx context.Context,
+	node ast.Node,
+	value any,
+	canHaveNext bool,
+) (predOutcome, error) {
+	if !canHaveNext && node.Next() != nil {
+		return predUnknown, fmt.Errorf(
+			"%w: boolean jsonpath item cannot have next item", ErrInvalid,
+		)
+	}
+
+	switch node := node.(type) {
+	case *ast.BinaryNode:
+		return exec.executeBinaryBoolItem(ctx, node, value)
+	case *ast.UnaryNode:
+		return exec.executeUnaryBoolItem(ctx, node, value)
+	case *ast.RegexNode:
+		return exec.executePredicate(ctx, node, node.Operand(), nil, value, false, exec.executeLikeRegex)
+	}
+
 	return predUnknown, fmt.Errorf(
 		"%w: invalid boolean jsonpath item type: %T",
 		ErrInvalid, node,
@@ -1582,15 +1863,15 @@ func (exec *Executor) appendBoolResult(
 		// found singleton boolean value
 		return statusOK, nil
 	}
-	var jVal any
+	var value any
 
 	if res == predUnknown {
-		jVal = nil
+		value = nil
 	} else {
-		jVal = res == predTrue
+		value = res == predTrue
 	}
 
-	return exec.executeNextItem(ctx, node, next, jVal, found)
+	return exec.executeNextItem(ctx, node, next, value, found)
 }
 
 /*
@@ -1600,7 +1881,7 @@ func (exec *Executor) appendBoolResult(
 func (exec *Executor) executeNextItem(
 	ctx context.Context,
 	cur, next ast.Node,
-	jVal any,
+	value any,
 	found *valueList,
 	// copy bool,
 ) (resultStatus, error) {
@@ -1616,11 +1897,11 @@ func (exec *Executor) executeNextItem(
 	}
 
 	if hasNext {
-		return exec.executeItem(ctx, next, jVal, found)
+		return exec.executeItem(ctx, next, value, found)
 	}
 
 	if found != nil {
-		found.append(jVal)
+		found.append(value)
 	}
 
 	return statusOK, nil
@@ -1633,7 +1914,7 @@ func (exec *Executor) executeNextItem(
 func (exec *Executor) executeAnyItem(
 	ctx context.Context,
 	node ast.Node,
-	jVal []any,
+	value []any,
 	found *valueList,
 	level, first, last uint32,
 	ignoreStructuralErrors, unwrapNext bool,
@@ -1651,7 +1932,7 @@ func (exec *Executor) executeAnyItem(
 		return res, nil
 	}
 
-	for _, v := range jVal {
+	for _, v := range value {
 		var col []any
 		switch v := v.(type) {
 		case map[string]any:
@@ -1709,7 +1990,7 @@ type predicateCallback func(node ast.Node, left, right any) (predOutcome, error)
 func (exec *Executor) executePredicate(
 	ctx context.Context,
 	pred, left, right ast.Node,
-	jVal any,
+	value any,
 	unwrapRightArg bool,
 	callback predicateCallback,
 ) (predOutcome, error) {
@@ -1718,7 +1999,7 @@ func (exec *Executor) executePredicate(
 
 	// Left argument is always auto-unwrapped.
 	lSeq := newList()
-	res, err := exec.executeItemOptUnwrapResultNoThrow(ctx, left, jVal, true, lSeq)
+	res, err := exec.executeItemOptUnwrapResultSilent(ctx, left, value, true, lSeq)
 	if res == statusFailed {
 		return predUnknown, err
 	}
@@ -1726,7 +2007,7 @@ func (exec *Executor) executePredicate(
 	rSeq := newList()
 	if right != nil {
 		// Right argument is conditionally auto-unwrapped.
-		res, err := exec.executeItemOptUnwrapResultNoThrow(ctx, right, jVal, unwrapRightArg, rSeq)
+		res, err := exec.executeItemOptUnwrapResultSilent(ctx, right, value, unwrapRightArg, rSeq)
 		if res == statusFailed {
 			return predUnknown, err
 		}
@@ -1742,7 +2023,6 @@ func (exec *Executor) executePredicate(
 			if err != nil {
 				return predUnknown, err
 			}
-			//nolint:exhaustive
 			switch res {
 			case predUnknown:
 				if exec.strictAbsenceOfErrors() {
@@ -1754,6 +2034,8 @@ func (exec *Executor) executePredicate(
 					return predTrue, nil
 				}
 				found = true
+			case predFalse:
+				// Do nothing
 			}
 		}
 	}
@@ -1770,11 +2052,8 @@ func (exec *Executor) executePredicate(
 }
 
 // Compare two SQL/JSON items using comparison operation 'op'.
-//
-//nolint:funlen
 func (exec *Executor) compareItems(node ast.Node, left, right any) (predOutcome, error) {
 	var cmp int
-	var res bool
 	bin, ok := node.(*ast.BinaryNode)
 	if !ok {
 		panic(fmt.Sprintf("Invalid node type %T passed to compareItems", node))
@@ -1784,27 +2063,16 @@ func (exec *Executor) compareItems(node ast.Node, left, right any) (predOutcome,
 	if (left == nil && right != nil) || (right == nil && left != nil) {
 		// Equality and order comparison of nulls to non-nulls returns
 		// always false, but inequality comparison returns true.
-		if op == ast.BinaryNotEqual {
-			return predTrue, nil
-		}
-		return predFalse, nil
+		return predFrom(op == ast.BinaryNotEqual), nil
 	}
 
 	switch left := left.(type) {
 	case nil:
 		cmp = 0
 	case bool:
-		right, ok := right.(bool)
+		cmp, ok = compareBool(left, right)
 		if !ok {
 			return predUnknown, nil
-		}
-		switch {
-		case left == right:
-			cmp = 0
-		case left:
-			cmp = 1
-		default:
-			cmp = -1
 		}
 	case int64, float64, json.Number:
 		switch right.(type) {
@@ -1820,10 +2088,7 @@ func (exec *Executor) compareItems(node ast.Node, left, right any) (predOutcome,
 		}
 		cmp = strings.Compare(left, right)
 		if op == ast.BinaryEqual {
-			if cmp == 0 {
-				return predTrue, nil
-			}
-			return predFalse, nil
+			return predFrom(cmp == 0), nil
 		}
 	case *types.Date, *types.Time, *types.TimeTZ, *types.Timestamp, *types.TimestampTZ:
 		var err error
@@ -1835,31 +2100,49 @@ func (exec *Executor) compareItems(node ast.Node, left, right any) (predOutcome,
 		// non-scalars are not comparable
 		return predUnknown, nil
 	default:
-		return predUnknown, fmt.Errorf("%w: invalid json value type %T", ErrInvalid, left)
+		return predUnknown, fmt.Errorf(
+			"%w: invalid json value type %T", ErrInvalid, left,
+		)
 	}
 
-	//nolint:exhaustive
+	return applyCompare(op, cmp)
+}
+
+func compareBool(left bool, right any) (int, bool) {
+	right, ok := right.(bool)
+	if !ok {
+		return 0, false
+	}
+	switch {
+	case left == right:
+		return 0, true
+	case left:
+		return 1, true
+	default:
+		return -1, true
+	}
+}
+
+func applyCompare(op ast.BinaryOperator, cmp int) (predOutcome, error) {
+	//nolint:exhaustive // We only process binary comparison operators here.
 	switch op {
 	case ast.BinaryEqual:
-		res = cmp == 0
+		return predFrom(cmp == 0), nil
 	case ast.BinaryNotEqual:
-		res = cmp != 0
+		return predFrom(cmp != 0), nil
 	case ast.BinaryLess:
-		res = cmp < 0
+		return predFrom(cmp < 0), nil
 	case ast.BinaryGreater:
-		res = cmp > 0
+		return predFrom(cmp > 0), nil
 	case ast.BinaryLessOrEqual:
-		res = cmp <= 0
+		return predFrom(cmp <= 0), nil
 	case ast.BinaryGreaterOrEqual:
-		res = cmp >= 0
-	default:
-		return predUnknown, fmt.Errorf("%w: unrecognized jsonpath operation %v", ErrInvalid, op)
+		return predFrom(cmp >= 0), nil
 	}
 
-	if res {
-		return predTrue, nil
-	}
-	return predFalse, nil
+	return predUnknown, fmt.Errorf(
+		"%w: unrecognized jsonpath operation %v", ErrInvalid, op,
+	)
 }
 
 func compareNumbers[T int | int64 | float64](left, right T) int {
@@ -1933,109 +2216,127 @@ func tzRequiredCast(type1, type2 string) error {
 func incomparableDateTime(val any) (int, error) {
 	return 0, fmt.Errorf(
 		"%w: unrecognized SQL/JSON datetime type %T",
-		ErrInvalid, val,
+		ErrExecution, val,
 	)
 }
 
 // compareDatetime performs a Cross-type comparison of two datetime SQL/JSON
 // items. Returns -1 if items are incomparable. Returns an error if a cast
 // timezone and it is not used.
-//
-//nolint:funlen
 func compareDatetime(val1, val2 any, useTZ bool) (int, error) {
 	switch val1 := val1.(type) {
 	case *types.Date:
-		switch val2 := val2.(type) {
-		case *types.Date:
-			return val1.Compare(val2.Time), nil
-		case *types.Timestamp:
-			return val1.Compare(val2.Time), nil
-		case *types.TimestampTZ:
-			if !useTZ {
-				return 0, tzRequiredCast("date", "timestamptz")
-			}
-			return val1.Compare(val2.Time.UTC()), nil
-		case *types.Time, *types.TimeTZ:
-			// Incomparable types
-			return -2, nil
-		default:
-			return incomparableDateTime(val2)
-		}
+		return compareDate(val1, val2, useTZ)
 	case *types.Time:
-		switch val2 := val2.(type) {
-		case *types.Time:
-			return val1.Compare(val2.Time), nil
-		case *types.TimeTZ:
-			if !useTZ {
-				return 0, tzRequiredCast("time", "timetz")
-			}
-			return types.NewTimeTZ(val1.Time).Compare(val2.Time), nil
-
-		case *types.Date, *types.Timestamp, *types.TimestampTZ:
-			// Incomparable types
-			return -2, nil
-		default:
-			return incomparableDateTime(val2)
-		}
+		return compareTime(val1, val2, useTZ)
 	case *types.TimeTZ:
-		switch val2 := val2.(type) {
-		case *types.Time:
-			if !useTZ {
-				return 0, tzRequiredCast("time", "timetz")
-			}
-			return val1.Compare(val2.Time), nil
-		case *types.TimeTZ:
-			return val1.Compare(val2.Time), nil
-		case *types.Date, *types.Timestamp, *types.TimestampTZ:
-			// Incomparable types
-			return -2, nil
-		default:
-			return incomparableDateTime(val2)
-		}
+		return compareTimeTZ(val1, val2, useTZ)
 	case *types.Timestamp:
-		switch val2 := val2.(type) {
-		case *types.Date:
-			return val1.Compare(val2.Time), nil
-		case *types.Timestamp:
-			return val1.Compare(val2.Time), nil
-		case *types.TimestampTZ:
-			if !useTZ {
-				return 0, tzRequiredCast("timestamp", "timestamptz")
-			}
-			return val1.Compare(val2.Time.UTC()), nil
-		case *types.Time, *types.TimeTZ:
-			// Incomparable types
-			return -2, nil
-		default:
-			return incomparableDateTime(val2)
-		}
+		return compareTimestamp(val1, val2, useTZ)
 	case *types.TimestampTZ:
-		switch val2 := val2.(type) {
-		case *types.Date:
-			if !useTZ {
-				return 0, tzRequiredCast("date", "timestamptz")
-			}
-			return val1.Compare(val2.Time.UTC()), nil
-		case *types.Timestamp:
-			if !useTZ {
-				return 0, tzRequiredCast("timestamp", "timestamptz")
-			}
-			return val1.Compare(val2.Time.UTC()), nil
-		case *types.TimestampTZ:
-			return val1.Compare(val2.Time), nil
-		case *types.Time, *types.TimeTZ:
-			// Incomparable types
-			return -2, nil
-		default:
-			return incomparableDateTime(val2)
-		}
+		return compareTimestampTZ(val1, val2, useTZ)
 	default:
 		return incomparableDateTime(val1)
 	}
 }
 
+func compareDate(val1 *types.Date, val2 any, useTZ bool) (int, error) {
+	switch val2 := val2.(type) {
+	case *types.Date:
+		return val1.Compare(val2.Time), nil
+	case *types.Timestamp:
+		return val1.Compare(val2.Time), nil
+	case *types.TimestampTZ:
+		if !useTZ {
+			return 0, tzRequiredCast("date", "timestamptz")
+		}
+		return val1.Compare(val2.Time.UTC()), nil
+	case *types.Time, *types.TimeTZ:
+		// Incomparable types
+		return -2, nil
+	default:
+		return incomparableDateTime(val2)
+	}
+}
+
+func compareTime(val1 *types.Time, val2 any, useTZ bool) (int, error) {
+	switch val2 := val2.(type) {
+	case *types.Time:
+		return val1.Compare(val2.Time), nil
+	case *types.TimeTZ:
+		if !useTZ {
+			return 0, tzRequiredCast("time", "timetz")
+		}
+		return types.NewTimeTZ(val1.Time).Compare(val2.Time), nil
+
+	case *types.Date, *types.Timestamp, *types.TimestampTZ:
+		// Incomparable types
+		return -2, nil
+	default:
+		return incomparableDateTime(val2)
+	}
+}
+
+func compareTimeTZ(val1 *types.TimeTZ, val2 any, useTZ bool) (int, error) {
+	switch val2 := val2.(type) {
+	case *types.Time:
+		if !useTZ {
+			return 0, tzRequiredCast("time", "timetz")
+		}
+		return val1.Compare(val2.Time), nil
+	case *types.TimeTZ:
+		return val1.Compare(val2.Time), nil
+	case *types.Date, *types.Timestamp, *types.TimestampTZ:
+		// Incomparable types
+		return -2, nil
+	default:
+		return incomparableDateTime(val2)
+	}
+}
+
+func compareTimestamp(val1 *types.Timestamp, val2 any, useTZ bool) (int, error) {
+	switch val2 := val2.(type) {
+	case *types.Date:
+		return val1.Compare(val2.Time), nil
+	case *types.Timestamp:
+		return val1.Compare(val2.Time), nil
+	case *types.TimestampTZ:
+		if !useTZ {
+			return 0, tzRequiredCast("timestamp", "timestamptz")
+		}
+		return val1.Compare(val2.Time.UTC()), nil
+	case *types.Time, *types.TimeTZ:
+		// Incomparable types
+		return -2, nil
+	default:
+		return incomparableDateTime(val2)
+	}
+}
+
+func compareTimestampTZ(val1 *types.TimestampTZ, val2 any, useTZ bool) (int, error) {
+	switch val2 := val2.(type) {
+	case *types.Date:
+		if !useTZ {
+			return 0, tzRequiredCast("date", "timestamptz")
+		}
+		return val1.Compare(val2.Time.UTC()), nil
+	case *types.Timestamp:
+		if !useTZ {
+			return 0, tzRequiredCast("timestamp", "timestamptz")
+		}
+		return val1.Compare(val2.Time.UTC()), nil
+	case *types.TimestampTZ:
+		return val1.Compare(val2.Time), nil
+	case *types.Time, *types.TimeTZ:
+		// Incomparable types
+		return -2, nil
+	default:
+		return incomparableDateTime(val2)
+	}
+}
+
 // executeLikeRegex is the LIKE_REGEX predicate callback.
-func (exec *Executor) executeLikeRegex(node ast.Node, jVal, _ any) (predOutcome, error) {
+func (exec *Executor) executeLikeRegex(node ast.Node, value, _ any) (predOutcome, error) {
 	rn, ok := node.(*ast.RegexNode)
 	if !ok {
 		panic(fmt.Sprintf(
@@ -2044,7 +2345,7 @@ func (exec *Executor) executeLikeRegex(node ast.Node, jVal, _ any) (predOutcome,
 		))
 	}
 
-	str, ok := jVal.(string)
+	str, ok := value.(string)
 	if !ok {
 		return predUnknown, nil
 	}
@@ -2096,7 +2397,7 @@ func floatUMinus(x float64) float64 { return -x }
 func (exec *Executor) executeNumericItemMethod(
 	ctx context.Context,
 	node ast.Node,
-	jVal any,
+	value any,
 	unwrap bool,
 	intCallback intCallback,
 	floatCallback floatCallback,
@@ -2104,10 +2405,10 @@ func (exec *Executor) executeNumericItemMethod(
 ) (resultStatus, error) {
 	var num any
 
-	switch val := jVal.(type) {
+	switch val := value.(type) {
 	case []any:
 		if unwrap {
-			return exec.executeItemUnwrapTargetArray(ctx, node, jVal, found)
+			return exec.executeItemUnwrapTargetArray(ctx, node, value, found)
 		}
 	case int64:
 		num = intCallback(val)
@@ -2119,15 +2420,15 @@ func (exec *Executor) executeNumericItemMethod(
 		} else if float, err := val.Float64(); err == nil {
 			num = floatCallback(float)
 		} else {
-			return exec.returnError(fmt.Errorf(
+			return exec.returnVerboseError(fmt.Errorf(
 				"%w: jsonpath item method %v can only be applied to a numeric value",
-				ErrExecution, node,
+				ErrVerbose, node,
 			))
 		}
 	default:
-		return exec.returnError(fmt.Errorf(
+		return exec.returnVerboseError(fmt.Errorf(
 			"%w: jsonpath item method %v can only be applied to a numeric value",
-			ErrExecution, node,
+			ErrVerbose, node,
 		))
 	}
 
@@ -2139,10 +2440,10 @@ func (exec *Executor) executeNumericItemMethod(
 func (exec *Executor) getArrayIndex(
 	ctx context.Context,
 	node ast.Node,
-	jVal any,
+	value any,
 ) (int, error) {
 	found := newList()
-	res, err := exec.executeItem(ctx, node, jVal, found)
+	res, err := exec.executeItem(ctx, node, value, found)
 	if res == statusFailed {
 		return 0, err
 	}
@@ -2150,7 +2451,7 @@ func (exec *Executor) getArrayIndex(
 	if len(found.list) != 1 {
 		return 0, fmt.Errorf(
 			"%w: jsonpath array subscript is not a single numeric value",
-			ErrExecution,
+			ErrVerbose,
 		)
 	}
 
@@ -2162,12 +2463,12 @@ func (exec *Executor) getArrayIndex(
 func (exec *Executor) executeNestedBoolItem(
 	ctx context.Context,
 	node ast.Node,
-	jVal any,
+	value any,
 ) (predOutcome, error) {
 	prev := exec.current
 	defer func(e *Executor, c any) { e.current = c }(exec, prev)
-	exec.current = jVal
-	return exec.executeBoolItem(ctx, node, jVal, false)
+	exec.current = value
+	return exec.executeBoolItem(ctx, node, value, false)
 }
 
 // executeDateTimeMethod implements .datetime() and related methods.
@@ -2180,182 +2481,61 @@ func (exec *Executor) executeNestedBoolItem(
 // .date(), .time(), .time_tz(), .timestamp(), .timestamp_tz() methods don't
 // have a format, so ISO format is used. However, except for .date(), they all
 // take an optional time precision.
-//
-//nolint:funlen,gocognit,gocyclo,maintidx
 func (exec *Executor) executeDateTimeMethod(
 	ctx context.Context,
 	node *ast.UnaryNode,
-	jVal any,
+	value any,
 	found *valueList,
 ) (resultStatus, error) {
 	op := node.Operator()
 
-	datetime, ok := jVal.(string)
+	datetime, ok := value.(string)
 	if !ok {
-		return exec.returnError(fmt.Errorf(
+		return exec.returnVerboseError(fmt.Errorf(
 			"%w: jsonpath item method %v() can only be applied to a string",
-			ErrExecution, op,
+			ErrVerbose, op,
 		))
 	}
 
 	arg := node.Operand()
-	var timeVal any
+	var timeVal types.DateTime
+	var err error
 
 	// .datetime(template) has an argument, the rest of the methods don't have
 	// an argument.  So we handle that separately.
 	if op == ast.UnaryDateTime && arg != nil {
-		// XXX: Requires a format parser, so defer for now.
-		return statusFailed, fmt.Errorf(
-			"%w: .datetime(template) is not yet supported",
-			ErrInvalid,
-		)
-		// var str *ast.StringNode
-		// str, ok = arg.(*ast.StringNode)
-		// if !ok {
-		// 	return statusFailed, fmt.Errorf(
-		// 		"%w: invalid jsonpath item type for .datetime() argument",
-		// 		ErrInvalid,
-		// 	)
-		// }
-		// value, ok = types.ParseDateTime(str.Text(), datetime)
-		// timeVal = types.NewTimestampTZ(value)
-	} // else {
-	// Check for optional precision for methods other than .datetime() and
-	// .date()
-	precision := -1
-	//nolint:nestif
-	if op != ast.UnaryDateTime && op != ast.UnaryDate && arg != nil {
-		var err error
-		precision, err = getNodeInt32(op.String()+"()", arg, "time precision")
-		if err != nil {
-			if errors.Is(err, ErrInvalid) {
-				return statusFailed, err
-			}
-			return exec.returnError(err)
-		}
-		const maxTimestampPrecision = 6
-		if precision < 0 {
-			return exec.returnError(fmt.Errorf(
-				"%w: time precision of jsonpath item method %v() is invalid",
-				ErrExecution, op,
-			))
-		}
-		if precision > maxTimestampPrecision {
-			// pg: issues a warning
-			precision = maxTimestampPrecision
-		}
+		err = exec.parseDateTimeFormat(datetime, arg)
+	} else {
+		timeVal, err = exec.parseDateTime(op, datetime, arg)
 	}
-
-	// Parse the value.
-	timeVal, ok = types.ParseTime(datetime, precision)
-	if !ok {
-		return exec.returnError(fmt.Errorf(
-			`%w: %v format is not recognized: "%v"`,
-			ErrExecution, op.String()[1:], datetime,
-		))
+	if err != nil {
+		return exec.returnError(err)
 	}
-	// }
 
 	// The parsing above processes the entire input string and returns the
 	// best fitted datetime type. So, if this call is for a specific datatype,
 	// then we do the conversion here. Return an error for incompatible types.
-	//nolint:exhaustive
+	//
+	//nolint:exhaustive // We only process date and time unary operators here.
 	switch op {
 	case ast.UnaryDateTime:
 		// Nothing to do for DATETIME
 	case ast.UnaryDate:
-		// Convert result type to date
-		switch tv := timeVal.(type) {
-		case *types.Date:
-			// Nothing to do for DATE
-		case *types.Time, *types.TimeTZ:
-			// Incompatible.
-			return exec.returnError(notRecognized(op, datetime))
-		case *types.Timestamp:
-			timeVal = types.NewDate(tv.Time)
-		case *types.TimestampTZ:
-			if !exec.useTZ {
-				return statusFailed, tzRequiredCast("timestamptz", "date")
-			}
-			timeVal = types.NewDate(tv.Time.UTC())
-		default:
-			return statusFailed, fmt.Errorf("%w: type %T not supported", ErrInvalid, tv)
-		}
+		timeVal, err = exec.castDate(datetime, timeVal)
 	case ast.UnaryTime:
-		switch tv := timeVal.(type) {
-		case *types.Date:
-			return exec.returnError(notRecognized(op, datetime))
-		case *types.Time:
-			// Nothing to do for time
-		case *types.TimeTZ:
-			if !exec.useTZ {
-				return statusFailed, tzRequiredCast("timetz", "time")
-			}
-			timeVal = types.NewTime(tv.Time)
-		case *types.Timestamp:
-			timeVal = types.NewTime(tv.Time)
-		case *types.TimestampTZ:
-			if !exec.useTZ {
-				return statusFailed, tzRequiredCast("timestamptz", "time")
-			}
-			timeVal = types.NewTime(tv.Time.UTC())
-		default:
-			return statusFailed, fmt.Errorf("%w: type %T not supported", ErrInvalid, tv)
-		}
+		timeVal, err = exec.castTime(datetime, timeVal)
 	case ast.UnaryTimeTZ:
-		switch tv := timeVal.(type) {
-		case *types.Date, *types.Timestamp:
-			return exec.returnError(notRecognized(op, datetime))
-		case *types.Time:
-			if !exec.useTZ {
-				return statusFailed, tzRequiredCast("time", "timetz")
-			}
-			timeVal = types.NewTimeTZ(tv.Time.UTC())
-		case *types.TimeTZ:
-			// Nothing to do for TIMETZ
-		case *types.TimestampTZ:
-			// Retain the offset.
-			timeVal = types.NewTimeTZ(tv.Time)
-		default:
-			return statusFailed, fmt.Errorf("%w: type %T not supported", ErrInvalid, tv)
-		}
+		timeVal, err = exec.castTimeTZ(datetime, timeVal)
 	case ast.UnaryTimestamp:
-		switch tv := timeVal.(type) {
-		case *types.Date:
-			timeVal = types.NewTimestamp(tv.Time)
-		case *types.Time, *types.TimeTZ:
-			return exec.returnError(notRecognized(op, datetime))
-		case *types.Timestamp:
-			// Nothing to do for TIMESTAMP
-		case *types.TimestampTZ:
-			if !exec.useTZ {
-				return statusFailed, tzRequiredCast("timestamptz", "timestamp")
-			}
-			timeVal = types.NewTimestamp(tv.Time.UTC())
-		default:
-			return statusFailed, fmt.Errorf("%w: type %T not supported", ErrInvalid, tv)
-		}
+		timeVal, err = exec.castTimestamp(datetime, timeVal)
 	case ast.UnaryTimestampTZ:
-		switch tv := timeVal.(type) {
-		case *types.Date:
-			if !exec.useTZ {
-				return statusFailed, tzRequiredCast("date", "timestamptz")
-			}
-			timeVal = types.NewTimestampTZ(tv.Time)
-		case *types.Time, *types.TimeTZ:
-			return exec.returnError(notRecognized(op, datetime))
-		case *types.Timestamp:
-			if !exec.useTZ {
-				return statusFailed, tzRequiredCast("timestamp", "timestamptz")
-			}
-			timeVal = types.NewTimestampTZ(tv.Time.UTC())
-		case *types.TimestampTZ:
-			// Nothing to do for TIMESTAMPTZ
-		default:
-			return statusFailed, fmt.Errorf("%w: type %T not supported", ErrInvalid, tv)
-		}
+		timeVal, err = exec.castTimestampTZ(datetime, timeVal)
 	default:
 		return statusFailed, fmt.Errorf("%w: unrecognized jsonpath item type: %T", ErrInvalid, op)
+	}
+
+	if err != nil {
+		return exec.returnError(err)
 	}
 
 	next := node.Next()
@@ -2366,11 +2546,174 @@ func (exec *Executor) executeDateTimeMethod(
 	return exec.executeNextItem(ctx, node, next, timeVal, found)
 }
 
+func (exec *Executor) parseDateTimeFormat(_ string, _ ast.Node) error {
+	// func (exec *Executor) parseDateTimeFormat(datetime string, arg ast.Node) (types.DateTime, error) {
+	// XXX: Requires a format parser, so defer for now.
+	return fmt.Errorf(
+		"%w: .datetime(template) is not yet supported",
+		ErrExecution,
+	)
+
+	// var str *ast.StringNode
+	// str, ok := arg.(*ast.StringNode)
+	// if !ok {
+	// 	return nil, fmt.Errorf(
+	// 		"%w: invalid jsonpath item type for .datetime() argument",
+	// 		ErrExecution,
+	// 	)
+	// }
+	// timeVal, ok := types.ParseDateTime(str.Text(), datetime)
+}
+
+func (exec *Executor) parseDateTime(op ast.UnaryOperator, datetime string, arg ast.Node) (types.DateTime, error) {
+	// Check for optional precision for methods other than .datetime() and
+	// .date()
+	precision := -1
+	if op != ast.UnaryDateTime && op != ast.UnaryDate && arg != nil {
+		var err error
+		precision, err = getNodeInt32(op.String()+"()", arg, "time precision")
+		if err != nil {
+			if !errors.Is(err, ErrVerbose) {
+				return nil, err
+			}
+			return nil, err
+		}
+		const maxTimestampPrecision = 6
+		if precision < 0 {
+			return nil, fmt.Errorf(
+				"%w: time precision of jsonpath item method %v() is invalid",
+				ErrVerbose, op,
+			)
+		}
+		if precision > maxTimestampPrecision {
+			// pg: issues a warning
+			precision = maxTimestampPrecision
+		}
+	}
+
+	// Parse the value.
+	timeVal, ok := types.ParseTime(datetime, precision)
+	if !ok {
+		return nil, fmt.Errorf(
+			`%w: %v format is not recognized: "%v"`,
+			ErrVerbose, op.String()[1:], datetime,
+		)
+	}
+
+	return timeVal, nil
+}
+
 func notRecognized(op ast.UnaryOperator, datetime string) error {
 	return fmt.Errorf(
 		`%w: %v format is not recognized: "%v"`,
-		ErrExecution, op.String()[1:], datetime,
+		ErrVerbose, op.String()[1:], datetime,
 	)
+}
+
+func (exec *Executor) castDate(datetime string, timeVal types.DateTime) (*types.Date, error) {
+	// Convert result type to date
+	switch tv := timeVal.(type) {
+	case *types.Date:
+		// Nothing to do for DATE
+		return tv, nil
+	case *types.Time, *types.TimeTZ:
+		// Incompatible.
+		return nil, notRecognized(ast.UnaryDate, datetime)
+	case *types.Timestamp:
+		return types.NewDate(tv.Time), nil
+	case *types.TimestampTZ:
+		if !exec.useTZ {
+			return nil, tzRequiredCast("timestamptz", "date")
+		}
+		return types.NewDate(tv.Time.UTC()), nil
+	default:
+		return nil, fmt.Errorf("%w: type %T not supported", ErrInvalid, tv)
+	}
+}
+
+func (exec *Executor) castTime(datetime string, timeVal types.DateTime) (*types.Time, error) {
+	switch tv := timeVal.(type) {
+	case *types.Date:
+		return nil, notRecognized(ast.UnaryTime, datetime)
+	case *types.Time:
+		// Nothing to do for time
+		return tv, nil
+	case *types.TimeTZ:
+		if !exec.useTZ {
+			return nil, tzRequiredCast("timetz", "time")
+		}
+		return types.NewTime(tv.Time), nil
+	case *types.Timestamp:
+		return types.NewTime(tv.Time), nil
+	case *types.TimestampTZ:
+		if !exec.useTZ {
+			return nil, tzRequiredCast("timestamptz", "time")
+		}
+		return types.NewTime(tv.Time.UTC()), nil
+	default:
+		return nil, fmt.Errorf("%w: type %T not supported", ErrInvalid, tv)
+	}
+}
+
+func (exec *Executor) castTimeTZ(datetime string, timeVal types.DateTime) (*types.TimeTZ, error) {
+	switch tv := timeVal.(type) {
+	case *types.Date, *types.Timestamp:
+		return nil, notRecognized(ast.UnaryTimeTZ, datetime)
+	case *types.Time:
+		if !exec.useTZ {
+			return nil, tzRequiredCast("time", "timetz")
+		}
+		return types.NewTimeTZ(tv.Time.UTC()), nil
+	case *types.TimeTZ:
+		// Nothing to do for TIMETZ
+		return tv, nil
+	case *types.TimestampTZ:
+		// Retain the offset.
+		return types.NewTimeTZ(tv.Time), nil
+	default:
+		return nil, fmt.Errorf("%w: type %T not supported", ErrInvalid, tv)
+	}
+}
+
+func (exec *Executor) castTimestamp(datetime string, timeVal types.DateTime) (*types.Timestamp, error) {
+	switch tv := timeVal.(type) {
+	case *types.Date:
+		return types.NewTimestamp(tv.Time), nil
+	case *types.Time, *types.TimeTZ:
+		return nil, notRecognized(ast.UnaryTimestamp, datetime)
+	case *types.Timestamp:
+		// Nothing to do for TIMESTAMP
+		return tv, nil
+	case *types.TimestampTZ:
+		if !exec.useTZ {
+			return nil, tzRequiredCast("timestamptz", "timestamp")
+		}
+		return types.NewTimestamp(tv.Time.UTC()), nil
+	default:
+		return nil, fmt.Errorf("%w: type %T not supported", ErrInvalid, tv)
+	}
+}
+
+func (exec *Executor) castTimestampTZ(datetime string, timeVal types.DateTime) (*types.TimestampTZ, error) {
+	switch tv := timeVal.(type) {
+	case *types.Date:
+		if !exec.useTZ {
+			return nil, tzRequiredCast("date", "timestamptz")
+		}
+		return types.NewTimestampTZ(tv.Time), nil
+	case *types.Time, *types.TimeTZ:
+		return nil, notRecognized(ast.UnaryTimestampTZ, datetime)
+	case *types.Timestamp:
+		if !exec.useTZ {
+			return nil, tzRequiredCast("timestamp", "timestamptz")
+		}
+		return types.NewTimestampTZ(tv.Time.UTC()), nil
+	case *types.TimestampTZ:
+		// Nothing to do for TIMESTAMPTZ
+		return tv, nil
+	default:
+		return nil, fmt.Errorf("%w: type %T not supported", ErrInvalid, tv)
+	}
 }
 
 // executeKeyValueMethod implements the .keyvalue() method.
@@ -2398,26 +2741,26 @@ func notRecognized(op ast.UnaryOperator, datetime string) error {
 func (exec *Executor) executeKeyValueMethod(
 	ctx context.Context,
 	node ast.Node,
-	jVal any,
+	value any,
 	found *valueList,
 	unwrap bool,
 ) (resultStatus, error) {
 	var obj map[string]any
-	switch val := jVal.(type) {
+	switch val := value.(type) {
 	case []any:
 		if unwrap {
-			return exec.executeItemUnwrapTargetArray(ctx, node, jVal, found)
+			return exec.executeItemUnwrapTargetArray(ctx, node, value, found)
 		}
-		return exec.returnError(fmt.Errorf(
+		return exec.returnVerboseError(fmt.Errorf(
 			`%w: jsonpath item method .keyvalue() can only be applied to an object`,
-			ErrExecution,
+			ErrVerbose,
 		))
 	case map[string]any:
 		obj = val
 	default:
-		return exec.returnError(fmt.Errorf(
+		return exec.returnVerboseError(fmt.Errorf(
 			`%w: jsonpath item method .keyvalue() can only be applied to an object`,
-			ErrExecution,
+			ErrVerbose,
 		))
 	}
 

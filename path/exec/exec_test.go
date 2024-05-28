@@ -35,7 +35,7 @@ func newExecutor(path *ast.AST, vars vars, throwErrors, useTZ bool) *Executor {
 		innermostArraySize:     -1,
 		useTZ:                  useTZ,
 		ignoreStructuralErrors: path.IsLax(),
-		throwErrors:            throwErrors,
+		verbose:                throwErrors,
 		lastGeneratedObjectID:  1,
 	}
 }

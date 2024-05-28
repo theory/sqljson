@@ -1,3 +1,4 @@
+//nolint:lll // Ignore long lines copied from Postgres.
 package exec
 
 // Tests from https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql
@@ -57,7 +58,7 @@ func (tc existsTestCase) run(a *assert.Assertions, r *require.Assertions) {
 		a.False(res)
 	case tc.exp == nil:
 		// When Postgres returns NULL, we return false + ErrNull
-		r.EqualError(err, "exec: NULL")
+		r.EqualError(err, "NULL")
 		r.ErrorIs(err, ErrNull)
 		a.False(res)
 	default:
@@ -87,7 +88,7 @@ func (tc matchTestCase) run(a *assert.Assertions, r *require.Assertions) {
 		a.False(res)
 	case tc.exp == nil:
 		// When Postgres returns NULL, we return false + ErrNull
-		r.EqualError(err, "exec: NULL")
+		r.EqualError(err, "NULL")
 		r.ErrorIs(err, ErrNull)
 		a.False(res)
 	default:
@@ -2355,7 +2356,6 @@ func TestPgQueryDoubleMethod(t *testing.T) {
 		},
 		// Go cannot parse 1e1000 into a float because it's too big.
 		// Postgres JSONB accepts arbitrary numeric sizes.
-		//nolint:lll
 		// {
 		// 	name: "test_13",
 		// 	json: js(`1e1000`),
@@ -2864,7 +2864,6 @@ func TestPgQueryBigInt(t *testing.T) {
 		},
 		// Go cannot parse 1e1000 into a float because it's too big.
 		// Postgres JSONB accepts arbitrary numeric sizes.
-		//nolint:lll
 		// {
 		// 	name: "test_12",
 		// 	json: js(`1e1000`),
@@ -3062,7 +3061,6 @@ func TestPgQueryBooleanMethod(t *testing.T) {
 		},
 		// Go cannot parse 1e1000 into a float because it's too big.
 		// Postgres JSONB accepts arbitrary numeric sizes.
-		//nolint:lll
 		// {
 		// 	name: "test_11",
 		// 	json: js(`1e1000`),
@@ -3478,7 +3476,6 @@ func TestPgQueryDecimalMethod(t *testing.T) {
 		},
 		// Go cannot parse 1e1000 into a float because it's too big.
 		// Postgres JSONB accepts arbitrary numeric sizes.
-		//nolint:lll
 		// {
 		// 	name: "test_13",
 		// 	json: js(`1e1000`),
@@ -3760,7 +3757,6 @@ func TestPgQueryIntegerMethod(t *testing.T) {
 		},
 		// Go cannot parse 1e1000 into a float because it's too big.
 		// Postgres JSONB accepts arbitrary numeric sizes.
-		//nolint:lll
 		// {
 		// 	name: "test_12",
 		// 	json: js(`1e1000`),
@@ -3959,7 +3955,6 @@ func TestPgQueryNumberMethod(t *testing.T) {
 		},
 		// Go cannot parse 1e1000 into a float because it's too big.
 		// Postgres JSONB accepts arbitrary numeric sizes.
-		//nolint:lll
 		// {
 		// 	name: "test_13",
 		// 	json: js(`1e1000`),
@@ -5401,7 +5396,6 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 	}
 }
 
-//nolint:lll
 func TestPgQueryDateComparison(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
@@ -5522,7 +5516,6 @@ func TestPgQueryDateComparison(t *testing.T) {
 	}
 }
 
-//nolint:lll
 func TestPgQueryTimeComparison(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
@@ -5656,7 +5649,6 @@ func TestPgQueryTimeComparison(t *testing.T) {
 	}
 }
 
-//nolint:lll
 func TestPgQueryTimeTZComparison(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
@@ -5801,7 +5793,6 @@ func TestPgQueryTimeTZComparison(t *testing.T) {
 	}
 }
 
-//nolint:lll
 func TestPgQueryTimestampComparison(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
@@ -5935,7 +5926,6 @@ func TestPgQueryTimestampComparison(t *testing.T) {
 	}
 }
 
-//nolint:lll
 func TestPgQueryTimestampTZComparison(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
@@ -6460,7 +6450,6 @@ func TestPgAtAtOperators(t *testing.T) {
 	}
 }
 
-//nolint:lll
 func TestPgFirstStringComparison(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
