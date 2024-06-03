@@ -182,7 +182,7 @@ const (
 
 // Priority returns the priority of the operator.
 //
-//nolint:mnd,exhaustive
+//nolint:mnd
 func (op BinaryOperator) priority() uint8 {
 	switch op {
 	case BinaryOr:
@@ -222,7 +222,7 @@ const (
 
 // Priority returns the priority of the operator.
 //
-//nolint:mnd,exhaustive
+//nolint:mnd
 func (op UnaryOperator) priority() uint8 {
 	switch op {
 	case UnaryPlus, UnaryMinus:
@@ -983,18 +983,19 @@ func validateNode(node Node, depth int, inSubscript bool) error {
 			return err
 		}
 	case *ConstNode:
-		//nolint:exhaustive
 		switch node.kind {
 		case ConstCurrent:
 			if depth <= 0 {
-				//nolint:goerr113
+				//nolint:err113
 				return errors.New("@ is not allowed in root expressions")
 			}
 		case ConstLast:
 			if !inSubscript {
-				//nolint:goerr113
+				//nolint:err113
 				return errors.New("LAST is allowed only in array subscripts")
 			}
+		default:
+			// Nothing to check.
 		}
 	case *ArrayIndexNode:
 		for _, n := range node.subscripts {
@@ -1019,7 +1020,6 @@ func NewUnaryOrNumber(op UnaryOperator, node Node) Node {
 	if node.Next() == nil {
 		switch node := node.(type) {
 		case *NumericNode:
-			//nolint:exhaustive
 			switch op {
 			case UnaryPlus:
 				// Just a positive number, return it.
@@ -1031,7 +1031,6 @@ func NewUnaryOrNumber(op UnaryOperator, node Node) Node {
 				panic(fmt.Sprintf("Operator must be + or - but is %v", op))
 			}
 		case *IntegerNode:
-			//nolint:exhaustive
 			switch op {
 			case UnaryPlus:
 				// Just a positive number, return it.

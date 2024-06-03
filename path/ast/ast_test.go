@@ -588,7 +588,6 @@ func TestBinaryNode(t *testing.T) {
 			buf.Reset()
 			node.writeTo(buf, false, true)
 
-			//nolint:exhaustive
 			switch node.op {
 			case BinaryAnd, BinaryOr, BinaryEqual, BinaryNotEqual, BinaryLess,
 				BinaryGreater, BinaryLessOrEqual, BinaryGreaterOrEqual,
@@ -726,7 +725,6 @@ func TestUnaryNode(t *testing.T) {
 			buf.Reset()
 			node.writeTo(buf, false, true)
 
-			//nolint:exhaustive
 			switch node.op {
 			case UnaryPlus, UnaryMinus:
 				a.Equal("("+tc.str+`)."foo"`, buf.String())

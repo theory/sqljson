@@ -18,7 +18,7 @@ import (
 type execTestCase struct {
 	name   string
 	path   string
-	vars   vars
+	vars   Vars
 	useTZ  bool
 	silent bool
 	result resultStatus
@@ -28,7 +28,7 @@ type execTestCase struct {
 	rand   bool
 }
 
-func newExecutor(path *ast.AST, vars vars, throwErrors, useTZ bool) *Executor {
+func newExecutor(path *ast.AST, vars Vars, throwErrors, useTZ bool) *Executor {
 	return &Executor{
 		path:                   path,
 		vars:                   vars,
@@ -2128,7 +2128,7 @@ func TestExecuteKeyValueMethod(t *testing.T) {
 		{
 			name: "kv_variable",
 			path: "$foo.keyvalue()",
-			vars: vars{"foo": map[string]any{"x": true, "y": 1}},
+			vars: Vars{"foo": map[string]any{"x": true, "y": 1}},
 			json: `""`,
 			exp: []any{
 				map[string]any{"key": "x", "value": true, "id": int64(10000000048)},

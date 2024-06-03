@@ -59,7 +59,7 @@ func (tc existsTestCase) run(a *assert.Assertions, r *require.Assertions) {
 	case tc.exp == nil:
 		// When Postgres returns NULL, we return false + ErrNull
 		r.EqualError(err, "NULL")
-		r.ErrorIs(err, ErrNull)
+		r.ErrorIs(err, NULL)
 		a.False(res)
 	default:
 		r.NoError(err)
@@ -89,7 +89,7 @@ func (tc matchTestCase) run(a *assert.Assertions, r *require.Assertions) {
 	case tc.exp == nil:
 		// When Postgres returns NULL, we return false + ErrNull
 		r.EqualError(err, "NULL")
-		r.ErrorIs(err, ErrNull)
+		r.ErrorIs(err, NULL)
 		a.False(res)
 	default:
 		r.NoError(err)
@@ -6628,7 +6628,7 @@ func TestPgFirstStringComparison(t *testing.T) {
 				firstTestCase{
 					json: tc.obj1,
 					path: "$.s" + opCase.op + " $s",
-					opt:  []Option{WithVars(vars(tc.obj2))},
+					opt:  []Option{WithVars(Vars(tc.obj2))},
 					exp:  opCase.exp,
 				}.run(a, r)
 			})

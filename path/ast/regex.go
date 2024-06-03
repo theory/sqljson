@@ -50,7 +50,7 @@ func newRegexFlags(flags string) (regexFlags, error) {
 		case 'q':
 			bitMask |= regexQuote
 		default:
-			//nolint:goerr113,stylecheck
+			//nolint:err113,stylecheck
 			return 0, fmt.Errorf(
 				`Unrecognized flag character "%c" in LIKE_REGEX predicate`,
 				f,
@@ -121,7 +121,7 @@ func (f regexFlags) _syntaxFlags() (syntax.Flags, error) {
 	// Go regexp doesn't appear to support 'x', so we, too, treat it as
 	// unimplemented.
 	if bitMask&regexWSpace != 0 {
-		//nolint:goerr113
+		//nolint:err113
 		return 0, errors.New(
 			`XQuery "x" flag (expanded regular expressions) is not implemented`,
 		)
