@@ -43,9 +43,10 @@ func (exec *Executor) execVariable(
 }
 
 // execKeyNode executes node against value, which is expected to be of type
-// map[string]any. If it's type is []any and unwrap is true, it passes it to
-// [executeAnyItem]. Otherwise it returns an error if
-// exec.ignoreStructuralErrors is false.
+// map[string]any. If its type is []any and unwrap is true, it passes it to
+// [executeAnyItem]. Otherwise, it returns statusFailed and an error if
+// exec.ignoreStructuralErrors is false and statusNotFound and no error if
+// it's true.
 func (exec *Executor) execKeyNode(
 	ctx context.Context,
 	node *ast.KeyNode,

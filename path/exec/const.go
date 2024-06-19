@@ -32,7 +32,11 @@ func (exec *Executor) execConstNode(
 		return exec.execLastConst(ctx, node, found)
 	}
 
-	return statusNotFound, nil
+	// Should only happen if a new constant ast.Constant is not added to the
+	// switch statement above.
+	return statusFailed, fmt.Errorf(
+		"%w: Unknown ConstNode %v", ErrInvalid, node.Const(),
+	)
 }
 
 // execLiteralConst handles the execution of a null or boolean node.
@@ -41,8 +45,8 @@ func (exec *Executor) execLiteralConst(
 	node *ast.ConstNode,
 	found *valueList,
 ) (resultStatus, error) {
-	elem := node.Next()
-	if elem == nil && found == nil {
+	next := node.Next()
+	if next == nil && found == nil {
 		return statusOK, nil
 	}
 
@@ -53,7 +57,7 @@ func (exec *Executor) execLiteralConst(
 		v = node.Const() == ast.ConstTrue
 	}
 
-	return exec.executeNextItem(ctx, node, elem, v, found)
+	return exec.executeNextItem(ctx, node, next, v, found)
 }
 
 // execAnyKey handles execution of an ast.ConstAnyKey node. If value is an

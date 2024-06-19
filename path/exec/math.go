@@ -74,7 +74,8 @@ func mathOperandErr(op ast.BinaryOperator, pos string) error {
 
 // execUnaryMathExpr executes a unary arithmetic expression for each numeric
 // item in its operand's sequence. An array operand is automatically unwrapped
-// in lax mode.
+// in lax mode. intCallback and floatCallback are responsible for executing
+// the unary math operation.
 func (exec *Executor) execUnaryMathExpr(
 	ctx context.Context,
 	node *ast.UnaryNode,
@@ -144,7 +145,6 @@ func (exec *Executor) execBinaryMathExpr(
 	ctx context.Context,
 	node *ast.BinaryNode,
 	value any,
-	op ast.BinaryOperator,
 	found *valueList,
 ) (resultStatus, error) {
 	// Get the left node.
@@ -156,6 +156,7 @@ func (exec *Executor) execBinaryMathExpr(
 		return res, err
 	}
 
+	op := node.Operator()
 	if len(lSeq.list) != 1 {
 		return exec.returnVerboseError(mathOperandErr(op, "left"))
 	}

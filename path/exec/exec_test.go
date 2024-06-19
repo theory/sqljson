@@ -15,6 +15,417 @@ import (
 	"github.com/theory/sqljson/path/types"
 )
 
+func TestResultStatus(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	for _, tc := range []struct {
+		name string
+		res  resultStatus
+	}{
+		{"OK", statusOK},
+		{"NOT_FOUND", statusNotFound},
+		{"FAILED", statusFailed},
+		{"UNKNOWN_RESULT_STATUS", resultStatus(255)},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			a.Equal(tc.name, tc.res.String())
+			a.Equal(tc.res == statusFailed, tc.res.failed())
+		})
+	}
+}
+
+func TestValueList(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	list := newList()
+	a.NotNil(list)
+	a.True(list.isEmpty())
+	a.Equal(1, cap(list.list))
+
+	list.append("foo")
+	a.False(list.isEmpty())
+	a.Len(list.list, 1)
+	a.Equal(1, cap(list.list))
+
+	list.append(42)
+	a.False(list.isEmpty())
+	a.Len(list.list, 2)
+	a.Equal(2, cap(list.list))
+}
+
+func TestOptions(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	for _, tc := range []struct {
+		name string
+		opt  Option
+		exp  *Executor
+	}{
+		{
+			name: "vars",
+			opt:  WithVars(Vars{"foo": 1}),
+			exp:  &Executor{verbose: true, vars: Vars{"foo": 1}},
+		},
+		{
+			name: "vars_nested",
+			opt:  WithVars(Vars{"foo": 1, "bar": []any{1, 2}}),
+			exp:  &Executor{verbose: true, vars: Vars{"foo": 1, "bar": []any{1, 2}}},
+		},
+		{
+			name: "tz",
+			opt:  WithTZ(),
+			exp:  &Executor{verbose: true, useTZ: true},
+		},
+		{
+			name: "silent",
+			opt:  WithSilent(),
+			exp:  &Executor{verbose: false},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			e := &Executor{verbose: true}
+			tc.opt(e)
+			a.Equal(tc.exp, e)
+		})
+	}
+}
+
+func TestNewExec(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+	lax, _ := parser.Parse("$")
+	strict, _ := parser.Parse("strict $")
+
+	for _, tc := range []struct {
+		name string
+		path *ast.AST
+		opts []Option
+		exp  *Executor
+	}{
+		{
+			name: "lax_default",
+			path: lax,
+			exp: &Executor{
+				path:                   lax,
+				innermostArraySize:     -1,
+				ignoreStructuralErrors: true,
+				lastGeneratedObjectID:  1,
+				verbose:                true,
+			},
+		},
+		{
+			name: "strict_default",
+			path: strict,
+			exp: &Executor{
+				path:                   strict,
+				innermostArraySize:     -1,
+				ignoreStructuralErrors: false,
+				lastGeneratedObjectID:  1,
+				verbose:                true,
+			},
+		},
+		{
+			name: "lax_vars_silent",
+			path: lax,
+			opts: []Option{WithVars(Vars{"x": 1}), WithSilent()},
+			exp: &Executor{
+				path:                   lax,
+				innermostArraySize:     -1,
+				ignoreStructuralErrors: true,
+				lastGeneratedObjectID:  1,
+				verbose:                false,
+				vars:                   Vars{"x": 1},
+			},
+		},
+		{
+			name: "strict_tz_silent",
+			path: strict,
+			opts: []Option{WithTZ(), WithSilent()},
+			exp: &Executor{
+				path:                   strict,
+				innermostArraySize:     -1,
+				ignoreStructuralErrors: false,
+				lastGeneratedObjectID:  1,
+				verbose:                false,
+				useTZ:                  true,
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			e := newExec(tc.path, tc.opts...)
+			a.Equal(tc.exp, e)
+		})
+	}
+}
+
+func TestQueryAndFirstAndExists(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+	r := require.New(t)
+	ctx := context.Background()
+
+	for _, tc := range []struct {
+		name  string
+		path  string
+		value any
+		opts  []Option
+		exp   []any
+		err   string
+		isErr error
+		null  bool
+	}{
+		{
+			name:  "root",
+			path:  "$",
+			value: []any{1, 2},
+			exp:   []any{[]any{1, 2}},
+		},
+		{
+			name:  "empty",
+			path:  "$[3]",
+			value: []any{1, 2},
+			exp:   []any{},
+		},
+		{
+			name:  "error",
+			path:  "$.string()",
+			value: []any{1, 2},
+			err:   "exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value",
+			isErr: ErrVerbose,
+		},
+		{
+			name:  "silent_no_error",
+			path:  "$.string()",
+			opts:  []Option{WithSilent()},
+			value: []any{1, 2},
+			exp:   []any{},
+			null:  true,
+		},
+		{
+			name:  "like_regex_object",
+			path:  `$ like_regex "^hi"`,
+			value: map[string]any{"x": "HIGH"},
+			exp:   []any{nil},
+		},
+		{
+			name:  "like_regex_object_filter",
+			path:  `$ ?(@ like_regex "^hi")`,
+			value: map[string]any{"x": "HIGH"},
+			exp:   []any{},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			// Parse the path.
+			path, err := parser.Parse(tc.path)
+			r.NoError(err)
+
+			t.Run("query", func(t *testing.T) {
+				t.Parallel()
+				// Run the query.
+				res, err := Query(ctx, path, tc.value, tc.opts...)
+				a.Equal(tc.exp, res)
+
+				// Check the error.
+				if tc.isErr == nil {
+					r.NoError(err)
+				} else {
+					r.EqualError(err, tc.err)
+					r.ErrorIs(err, tc.isErr)
+				}
+			})
+
+			t.Run("first", func(t *testing.T) {
+				t.Parallel()
+				// Run the query.
+				res, err := First(ctx, path, tc.value, tc.opts...)
+				if len(tc.exp) > 0 {
+					a.Equal(tc.exp[0], res)
+				} else {
+					a.Nil(res)
+				}
+
+				// Check the error.
+				if tc.isErr == nil {
+					r.NoError(err)
+				} else {
+					r.EqualError(err, tc.err)
+					r.ErrorIs(err, tc.isErr)
+				}
+			})
+
+			t.Run("exists", func(t *testing.T) {
+				t.Parallel()
+				// Run the query.
+				res, err := Exists(ctx, path, tc.value, tc.opts...)
+				a.Equal(len(tc.exp) > 0, res)
+
+				// Check the error.
+				if tc.isErr == nil {
+					if tc.null {
+						r.EqualError(err, "NULL")
+						r.ErrorIs(err, NULL)
+					} else {
+						r.NoError(err)
+					}
+				} else {
+					r.EqualError(err, tc.err)
+					r.ErrorIs(err, tc.isErr)
+				}
+			})
+		})
+	}
+}
+
+func TestMatch(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+	r := require.New(t)
+	ctx := context.Background()
+
+	for _, tc := range []struct {
+		name  string
+		path  string
+		value any
+		opts  []Option
+		exp   bool
+		err   string
+		isErr error
+	}{
+		{
+			name:  "root_eq",
+			path:  "$ == 42",
+			value: int64(42),
+			exp:   true,
+		},
+		{
+			name:  "root_ne",
+			path:  "$ != 42",
+			value: int64(42),
+			exp:   false,
+		},
+		{
+			name:  "null",
+			path:  "$.string() == 12",
+			value: []any{1, 2},
+			err:   "NULL",
+			isErr: NULL,
+		},
+		{
+			name:  "strict_null",
+			path:  "strict $.string() == 12",
+			value: []any{1, 2},
+			err:   "NULL",
+			isErr: NULL,
+		},
+		{
+			name:  "not_boolean",
+			path:  "$",
+			value: []any{1, 2},
+			err:   "exec: single boolean result is expected",
+			isErr: ErrVerbose,
+		},
+		{
+			name:  "not_boolean_silent",
+			path:  "$",
+			opts:  []Option{WithSilent()},
+			value: []any{1, 2},
+			err:   "NULL",
+			isErr: NULL,
+		},
+		{
+			name:  "single_boolean_non_predicate",
+			path:  "$",
+			value: true,
+			exp:   true,
+		},
+		{
+			name:  "error",
+			path:  `strict $.a`,
+			value: map[string]any{},
+			err:   `exec: JSON object does not contain key "a"`,
+			isErr: ErrVerbose,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			// Parse the path.
+			path, err := parser.Parse(tc.path)
+			r.NoError(err)
+
+			// Run the query.
+			res, err := Match(ctx, path, tc.value, tc.opts...)
+			a.Equal(tc.exp, res)
+
+			// Check the error.
+			if tc.isErr == nil {
+				r.NoError(err)
+			} else {
+				r.EqualError(err, tc.err)
+				r.ErrorIs(err, tc.isErr)
+			}
+		})
+	}
+}
+
+func TestExecAccessors(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+
+	// Test lax.
+	lax, _ := parser.Parse("$")
+	e := newExec(lax)
+	a.False(e.strictAbsenceOfErrors())
+	a.True(e.autoWrap())
+	a.True(e.autoUnwrap())
+
+	// Test strict.
+	strict, _ := parser.Parse("strict $")
+	e = newExec(strict)
+	a.True(e.strictAbsenceOfErrors())
+	a.False(e.autoWrap())
+	a.False(e.autoUnwrap())
+}
+
+func TestReturnError(t *testing.T) {
+	t.Parallel()
+	a := assert.New(t)
+	r := require.New(t)
+
+	// Verbose.
+	e := &Executor{verbose: true}
+	res, err := e.returnVerboseError(ErrVerbose)
+	a.Equal(statusFailed, res)
+	r.ErrorIs(err, ErrVerbose)
+	res, err = e.returnError(ErrVerbose)
+	a.Equal(statusFailed, res)
+	r.ErrorIs(err, ErrVerbose)
+	res, err = e.returnError(ErrExecution)
+	a.Equal(statusFailed, res)
+	r.ErrorIs(err, ErrExecution)
+
+	// Silent
+	e.verbose = false
+	res, err = e.returnVerboseError(ErrVerbose)
+	a.Equal(statusFailed, res)
+	r.NoError(err)
+	res, err = e.returnError(ErrVerbose)
+	a.Equal(statusFailed, res)
+	r.NoError(err)
+	res, err = e.returnError(ErrExecution)
+	a.Equal(statusFailed, res)
+	r.ErrorIs(err, ErrExecution)
+}
+
+// The tests below are admittedly duplicate unit tests for methods in other
+// files, but came first while writing the first pass at the implementation.
+
 type execTestCase struct {
 	name   string
 	path   string
@@ -28,7 +439,7 @@ type execTestCase struct {
 	rand   bool
 }
 
-func newExecutor(path *ast.AST, vars Vars, throwErrors, useTZ bool) *Executor {
+func newTestExecutor(path *ast.AST, vars Vars, throwErrors, useTZ bool) *Executor {
 	return &Executor{
 		path:                   path,
 		vars:                   vars,
@@ -46,7 +457,7 @@ func (tc execTestCase) run(t *testing.T) {
 	a := assert.New(t)
 	path, err := parser.Parse(tc.path)
 	r.NoError(err)
-	exec := newExecutor(path, tc.vars, !tc.silent, tc.useTZ)
+	exec := newTestExecutor(path, tc.vars, !tc.silent, tc.useTZ)
 	list, err := exec.execute(context.Background(), tc.json)
 	if tc.err != "" {
 		r.EqualError(err, tc.err)
@@ -745,7 +1156,7 @@ func TestExecuteDateTimeErrors(t *testing.T) {
 	}
 }
 
-const hint = " HINT: Use WithTZ() option for time zone support"
+const tzHint = " HINT: Use WithTZ() option for time zone support"
 
 func TestExecuteDateTimeCast(t *testing.T) {
 	t.Parallel()
@@ -771,7 +1182,7 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			name: "timestamp_tz_to_date",
 			path: `$.x.date()`,
 			json: map[string]any{"x": "2009-10-03 20:59:19.79142-01"},
-			err:  "exec: cannot convert value from timestamptz to date without time zone usage." + hint,
+			err:  "exec: cannot convert value from timestamptz to date without time zone usage." + tzHint,
 		},
 		{
 			name:  "timestamp_with_tz_to_date",
@@ -813,7 +1224,7 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			name: "time_tz_to_time",
 			path: `$.x.time()`,
 			json: map[string]any{"x": "20:59:19.79142-01"},
-			err:  "exec: cannot convert value from timetz to time without time zone usage." + hint,
+			err:  "exec: cannot convert value from timetz to time without time zone usage." + tzHint,
 		},
 		{
 			name:  "time_with_tz_to_time",
@@ -836,7 +1247,7 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			name: "timestamp_tz_to_time",
 			path: `$.x.time()`,
 			json: map[string]any{"x": "2009-10-03 20:59:19.79142+01"},
-			err:  "exec: cannot convert value from timestamptz to time without time zone usage." + hint,
+			err:  "exec: cannot convert value from timestamptz to time without time zone usage." + tzHint,
 		},
 		{
 			name:  "timestamp_with_tz_to_time",
@@ -858,7 +1269,7 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			name: "time_to_timetz",
 			path: `$.x.time_tz()`,
 			json: map[string]any{"x": "20:59:19.79142"},
-			err:  "exec: cannot convert value from time to timetz without time zone usage." + hint,
+			err:  "exec: cannot convert value from time to timetz without time zone usage." + tzHint,
 		},
 		{
 			name:  "time_to_time_with_tz",
@@ -924,7 +1335,7 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			name: "timestamp_tz_to_timestamp",
 			path: `$.x.timestamp()`,
 			json: map[string]any{"x": "2009-10-03 20:59:19.79142Z"},
-			err:  "exec: cannot convert value from timestamptz to timestamp without time zone usage." + hint,
+			err:  "exec: cannot convert value from timestamptz to timestamp without time zone usage." + tzHint,
 		},
 		{
 			name:  "timestamp_with_tz_to_timestamp",
@@ -940,7 +1351,7 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			name: "date_to_timestamptz",
 			path: `$.x.timestamp_tz()`,
 			json: map[string]any{"x": "2009-10-03"},
-			err:  "exec: cannot convert value from date to timestamptz without time zone usage." + hint,
+			err:  "exec: cannot convert value from date to timestamptz without time zone usage." + tzHint,
 		},
 		{
 			name:  "date_to_timestamp_with_tz",
@@ -967,7 +1378,7 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			name: "timestamp_to_timestamptz",
 			path: `$.x.timestamp_tz()`,
 			json: map[string]any{"x": "2009-10-03 20:59:19.79142"},
-			err:  "exec: cannot convert value from timestamp to timestamptz without time zone usage." + hint,
+			err:  "exec: cannot convert value from timestamp to timestamptz without time zone usage." + tzHint,
 		},
 		{
 			name:  "timestamp_to_timestamp_with_tz",
@@ -1092,7 +1503,7 @@ func TestExecuteDateComparison(t *testing.T) {
 			name: "date_eq_timestamp_tz",
 			path: `$.x.date() == $.y.timestamp_tz()`,
 			json: map[string]any{"x": "2024-05-03", "y": "2024-05-03 23:53:42.232Z"},
-			err:  "exec: cannot convert value from date to timestamptz without time zone usage." + hint,
+			err:  "exec: cannot convert value from date to timestamptz without time zone usage." + tzHint,
 		},
 		{
 			name:  "date_eq_timestamp_with_tz",
@@ -1153,7 +1564,7 @@ func TestExecuteTimeComparison(t *testing.T) {
 			name: "time_eq_time_tz",
 			path: `$.x.time() == $.y.time_tz()`,
 			json: map[string]any{"x": "14:32:43.123345", "y": "14:32:43.123345Z"},
-			err:  "exec: cannot convert value from time to timetz without time zone usage." + hint,
+			err:  "exec: cannot convert value from time to timetz without time zone usage." + tzHint,
 		},
 		{
 			name:  "time_eq_time_with_tz",
@@ -1209,7 +1620,7 @@ func TestExecuteTimeComparison(t *testing.T) {
 			name: "timetz_eq_time",
 			path: `$.y.time_tz() == $.x.time()`,
 			json: map[string]any{"x": "14:32:43.123345", "y": "14:32:43.123345Z"},
-			err:  "exec: cannot convert value from time to timetz without time zone usage." + hint,
+			err:  "exec: cannot convert value from time to timetz without time zone usage." + tzHint,
 		},
 		{
 			name:  "time_with_tz_eq_time",
@@ -1288,7 +1699,7 @@ func TestExecuteTimestampComparison(t *testing.T) {
 			name: "ts_eq_ts_tz",
 			path: `$[0].timestamp() == $[1].timestamp_tz()`,
 			json: []any{"2024-05-05 00:00:00", "2024-05-05 00:00:00Z"},
-			err:  "exec: cannot convert value from timestamp to timestamptz without time zone usage." + hint,
+			err:  "exec: cannot convert value from timestamp to timestamptz without time zone usage." + tzHint,
 		},
 		{
 			name:  "ts_eq_ts_with_tz",
@@ -1337,7 +1748,7 @@ func TestExecuteTimestampComparison(t *testing.T) {
 			name: "ts_tz_eq_date",
 			path: `$[0].timestamp_tz() == $[1].date()`,
 			json: []any{"2024-05-05 14:32:43.123345Z", "2024-05-05"},
-			err:  "exec: cannot convert value from date to timestamptz without time zone usage." + hint,
+			err:  "exec: cannot convert value from date to timestamptz without time zone usage." + tzHint,
 		},
 		{
 			name:  "ts_with_tz_ne_date",
@@ -1357,7 +1768,7 @@ func TestExecuteTimestampComparison(t *testing.T) {
 			name: "ts_tz_eq_timestamp",
 			path: `$[0].timestamp_tz() == $[1].timestamp()`,
 			json: []any{"2024-05-05 14:32:43.123345Z", "2024-05-05 14:32:43.123345"},
-			err:  "exec: cannot convert value from timestamp to timestamptz without time zone usage." + hint,
+			err:  "exec: cannot convert value from timestamp to timestamptz without time zone usage." + tzHint,
 		},
 		{
 			name:  "ts_with_tz_eq_timestamp",
@@ -1493,20 +1904,14 @@ func TestExecuteBigintMethod(t *testing.T) {
 		{
 			name: "int_json_number_float",
 			path: `$.x.bigint()`,
-			json: map[string]any{"x": json.Number("9876543219.0")},
-			err:  `exec: argument "9876543219.0" of jsonpath item method .bigint() is invalid for type bigint`,
+			json: map[string]any{"x": json.Number("9876543219.2")},
+			exp:  []any{int64(9876543219)},
 		},
 		{
 			name: "int_string",
 			path: `$.x.bigint()`,
 			json: map[string]any{"x": "99"},
 			exp:  []any{int64(99)},
-		},
-		{
-			name: "int_string_float",
-			path: `$.x.bigint()`,
-			json: map[string]any{"x": "98.6"},
-			err:  `exec: argument "98.6" of jsonpath item method .bigint() is invalid for type bigint`,
 		},
 		{
 			name: "int_array",
@@ -1582,8 +1987,8 @@ func TestExecuteIntegerMethod(t *testing.T) {
 		{
 			name: "int_json_number_float",
 			path: `$.x.integer()`,
-			json: map[string]any{"x": json.Number("42.0")},
-			err:  `exec: argument "42.0" of jsonpath item method .integer() is invalid for type integer`,
+			json: map[string]any{"x": json.Number("42.2")},
+			exp:  []any{int64(42)},
 		},
 		{
 			name: "int_json_number_big",
@@ -1602,12 +2007,6 @@ func TestExecuteIntegerMethod(t *testing.T) {
 			path: `$.x.integer()`,
 			json: map[string]any{"x": "99"},
 			exp:  []any{int64(99)},
-		},
-		{
-			name: "int_string_float",
-			path: `$.x.integer()`,
-			json: map[string]any{"x": "98.6"},
-			err:  `exec: argument "98.6" of jsonpath item method .integer() is invalid for type integer`,
 		},
 		{
 			name: "int_string_big",
@@ -1744,8 +2143,8 @@ func TestExecuteStringMethod(t *testing.T) {
 		{
 			name: "array_string",
 			path: `$.x.string()`,
-			json: map[string]any{"x": []any{"hi"}},
-			err:  `exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value`,
+			json: map[string]any{"x": []any{int64(42), true}},
+			exp:  []any{"42", "true"},
 		},
 		{
 			name: "obj_string",
@@ -1761,7 +2160,6 @@ func TestExecuteStringMethod(t *testing.T) {
 	}
 }
 
-//nolint:maintidx
 func TestExecuteBooleanMethod(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []execTestCase{
@@ -1810,8 +2208,8 @@ func TestExecuteBooleanMethod(t *testing.T) {
 		{
 			name: "bool_json_number_float",
 			path: "$.x.boolean()",
-			json: map[string]any{"x": json.Number("-42.0")},
-			err:  `exec: argument "-42.0" of jsonpath item method .boolean() is invalid for type boolean`,
+			json: map[string]any{"x": json.Number("-42.1")},
+			err:  `exec: argument "-42.1" of jsonpath item method .boolean() is invalid for type boolean`,
 		},
 		{
 			name: "bool_string_t",
@@ -2046,108 +2444,6 @@ func TestExecuteBooleanMethod(t *testing.T) {
 			path: "strict $.x.boolean()",
 			json: map[string]any{"x": map[string]any{"0": true}},
 			err:  `exec: jsonpath item method .boolean() can only be applied to a bool, string, or numeric value`,
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			tc.run(t)
-		})
-	}
-}
-
-func TestExecuteKeyValueMethod(t *testing.T) {
-	t.Parallel()
-	for _, tc := range []execTestCase{
-		{
-			name: "kv_single",
-			path: "$.keyvalue()",
-			json: map[string]any{"x": true},
-			exp:  []any{map[string]any{"key": "x", "value": true, "id": int64(0)}},
-		},
-		{
-			name: "kv_double",
-			path: "$.keyvalue()",
-			json: map[string]any{"x": true, "y": "hi"},
-			exp: []any{
-				map[string]any{"key": "x", "value": true, "id": int64(0)},
-				map[string]any{"key": "y", "value": "hi", "id": int64(0)},
-			},
-			rand: true, // Results can be in any order
-		},
-		{
-			name: "kv_sequence",
-			path: "$.keyvalue().keyvalue()",
-			json: map[string]any{"x": true, "y": "hi"},
-			exp: []any{
-				map[string]any{"id": int64(20000000000), "key": "key", "value": "x"},
-				map[string]any{"id": int64(20000000000), "key": "value", "value": true},
-				map[string]any{"id": int64(20000000000), "key": "id", "value": int64(0)},
-				map[string]any{"id": int64(60000000000), "key": "id", "value": int64(0)},
-				map[string]any{"id": int64(60000000000), "key": "key", "value": "y"},
-				map[string]any{"id": int64(60000000000), "key": "value", "value": "hi"},
-			},
-			rand: true, // Results can be in any order
-		},
-		{
-			name: "kv_nested",
-			path: "$.keyvalue()",
-			json: map[string]any{"foo": map[string]any{"x": true, "y": "hi"}},
-			exp: []any{
-				map[string]any{"id": int64(0), "key": "foo", "value": map[string]any{"x": true, "y": "hi"}},
-			},
-			rand: true, // Results can be in any order
-		},
-		{
-			name: "kv_nested_sequence",
-			path: "$.keyvalue().keyvalue()",
-			json: map[string]any{"foo": map[string]any{"x": true, "y": "hi"}},
-			exp: []any{
-				map[string]any{"id": int64((20000000000)), "key": "id", "value": int64(0)},
-				map[string]any{"id": int64(20000000000), "key": "key", "value": "foo"},
-				map[string]any{"id": int64(20000000000), "key": "value", "value": map[string]any{"x": true, "y": "hi"}},
-			},
-			rand: true, // Results can be in any order
-		},
-		{
-			name: "kv_multi_nested_sequence",
-			path: "$.keyvalue().keyvalue()",
-			json: map[string]any{"foo": map[string]any{"x": true, "y": "hi"}, "bar": 2, "baz": 1},
-			exp: []any{
-				map[string]any{"id": int64(20000000000), "key": "id", "value": int64(0)},
-				map[string]any{"id": int64(20000000000), "key": "key", "value": "bar"},
-				map[string]any{"id": int64(20000000000), "key": "value", "value": 2},
-				map[string]any{"id": int64(60000000000), "key": "id", "value": int64(0)},
-				map[string]any{"id": int64(60000000000), "key": "key", "value": "baz"},
-				map[string]any{"id": int64(60000000000), "key": "value", "value": 1},
-				map[string]any{"id": int64(100000000000), "key": "id", "value": int64(0)},
-				map[string]any{"id": int64(100000000000), "key": "key", "value": "foo"},
-				map[string]any{"id": int64(100000000000), "key": "value", "value": map[string]any{"x": true, "y": "hi"}},
-			},
-			rand: true, // Results can be in any order
-		},
-		{
-			name: "kv_variable",
-			path: "$foo.keyvalue()",
-			vars: Vars{"foo": map[string]any{"x": true, "y": 1}},
-			json: `""`,
-			exp: []any{
-				map[string]any{"key": "x", "value": true, "id": int64(10000000048)},
-				map[string]any{"key": "y", "value": 1, "id": int64(10000000048)},
-			},
-			rand: true, // Results can be in any order
-		},
-		{
-			name: "kv_empty",
-			path: "$.keyvalue()",
-			json: map[string]any{},
-			exp:  []any{},
-		},
-		{
-			name: "kv_null",
-			path: "$.keyvalue()",
-			json: nil,
-			err:  "exec: jsonpath item method .keyvalue() can only be applied to an object",
-			exp:  []any{},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

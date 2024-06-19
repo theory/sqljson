@@ -7,12 +7,12 @@ import (
 	"github.com/theory/sqljson/path/ast"
 )
 
-// exec is the main entry point for all path executions. It executes node
+// query is the main entry point for all path executions. It executes node
 // against value and appends results to vals if vals is not nil. Returns
 // statusOK if values are found, statusNotFound if none are found, and
 // statusFailed on error. When statusFailed is returned, an error will also be
-// returned unless exec.verbose is false.
-func (exec *Executor) exec(ctx context.Context, vals *valueList, node ast.Node, value any) (resultStatus, error) {
+// returned, except when query.verbose is false and the error is ErrVerbose.
+func (exec *Executor) query(ctx context.Context, vals *valueList, node ast.Node, value any) (resultStatus, error) {
 	if exec.strictAbsenceOfErrors() && vals == nil {
 		// In strict mode we must get a complete list of values to check that
 		// there are no errors at all.
@@ -44,7 +44,7 @@ func (exec *Executor) executeItem(
 
 // executeItemOptUnwrapResult is the same as executeItem(), but when unwrap is
 // true, it automatically unwraps each array item from the resulting sequence
-// in lax mode.
+// in lax mode. The found parameter must not be nil.
 func (exec *Executor) executeItemOptUnwrapResult(
 	ctx context.Context,
 	node ast.Node,
@@ -60,12 +60,9 @@ func (exec *Executor) executeItemOptUnwrapResult(
 		}
 
 		for _, item := range seq.list {
-			switch item.(type) {
+			switch item := item.(type) {
 			case []any:
-				_, err = exec.executeItemUnwrapTargetArray(ctx, nil, item, found)
-				if err != nil {
-					return statusFailed, err
-				}
+				_, _ = exec.executeItemUnwrapTargetArray(ctx, nil, item, found)
 			default:
 				found.append(item)
 			}
@@ -105,7 +102,7 @@ func (exec *Executor) executeItemOptUnwrapTarget(
 	// Check for interrupts.
 	select {
 	case <-ctx.Done():
-		return statusNotFound, nil
+		return statusFailed, fmt.Errorf("%w: %w", ErrExecution, ctx.Err())
 	default:
 	}
 
@@ -136,7 +133,7 @@ func (exec *Executor) executeItemOptUnwrapTarget(
 		return exec.execArrayIndex(ctx, node, value, found)
 	}
 
-	return statusNotFound, fmt.Errorf("%w: Unknown node type %T", ErrInvalid, node)
+	return statusFailed, fmt.Errorf("%w: Unknown node type %T", ErrInvalid, node)
 }
 
 // executeNextItem executes the next jsonpath item if it exists. Otherwise, if
@@ -146,7 +143,6 @@ func (exec *Executor) executeNextItem(
 	cur, next ast.Node,
 	value any,
 	found *valueList,
-	// copy bool,
 ) (resultStatus, error) {
 	var hasNext bool
 	switch {

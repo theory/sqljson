@@ -15,6 +15,20 @@ const (
 	predUnknown
 )
 
+// String prints a string representation of p. Used for debugging.
+func (p predOutcome) String() string {
+	switch p {
+	case predFalse:
+		return "FALSE"
+	case predTrue:
+		return "TRUE"
+	case predUnknown:
+		return "UNKNOWN"
+	default:
+		return "UNKNOWN_PREDICATE_OUTCOME"
+	}
+}
+
 // predFrom converts book to a predOutcome, returning predTrue if ok is true
 // and predFalse if ok is false.
 func predFrom(ok bool) predOutcome {

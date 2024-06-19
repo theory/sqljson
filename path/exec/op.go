@@ -26,9 +26,9 @@ func (exec *Executor) execBinaryNode(
 		res, err := exec.executeBoolItem(ctx, node, value, true)
 		return exec.appendBoolResult(ctx, node, found, res, err)
 	case ast.BinaryAdd, ast.BinarySub, ast.BinaryMul, ast.BinaryDiv, ast.BinaryMod:
-		return exec.execBinaryMathExpr(ctx, node, value, node.Operator(), found)
+		return exec.execBinaryMathExpr(ctx, node, value, found)
 	case ast.BinaryDecimal:
-		return exec.executeNumberMethod(ctx, node, value, found, unwrap)
+		return exec.executeNumberMethod(ctx, node, value, found, unwrap, node.Operator())
 	case ast.BinarySubscript:
 		// This should not happen because the Parser disallows it.
 		return statusFailed, fmt.Errorf(
@@ -94,8 +94,15 @@ func (exec *Executor) execRegexNode(
 	return exec.appendBoolResult(ctx, regex, found, res, err)
 }
 
-// execAnyNode handles the execution of node. value' must be either
-// map[string]any or []any.
+func (exec *Executor) tempSetIgnoreStructuralErrors(val bool) func() {
+	savedIgnoreStructuralErrors := exec.ignoreStructuralErrors
+	exec.ignoreStructuralErrors = val
+	return func() { exec.ignoreStructuralErrors = savedIgnoreStructuralErrors }
+}
+
+// execAnyNode handles the execution of node. value must be either
+// map[string]any or []any. If found is not nil then resultStatus should be
+// ignored.
 func (exec *Executor) execAnyNode(
 	ctx context.Context,
 	node *ast.AnyNode,
@@ -105,11 +112,9 @@ func (exec *Executor) execAnyNode(
 	next := node.Next()
 	// first try without any intermediate steps
 	if node.First() == 0 {
-		savedIgnoreStructuralErrors := exec.ignoreStructuralErrors
-		defer func() { exec.ignoreStructuralErrors = savedIgnoreStructuralErrors }()
-		exec.ignoreStructuralErrors = true
+		defer exec.tempSetIgnoreStructuralErrors(true)()
 		res, err := exec.executeNextItem(ctx, node, next, value, found)
-		if res == statusOK && found == nil {
+		if err != nil || (res == statusOK && found == nil) {
 			return res, err
 		}
 	}
@@ -130,6 +135,18 @@ func (exec *Executor) execAnyNode(
 	return statusNotFound, nil
 }
 
+// collection converts v into a slice of values if it's either a map or a
+// slice. Otherwise it returns nil.
+func collection(v any) []any {
+	switch v := v.(type) {
+	case map[string]any:
+		return maps.Values(v) // Just work with the values
+	case []any:
+		return v
+	}
+	return nil
+}
+
 // executeAnyItem is the implementation of several jsonpath nodes:
 //
 //   - ast.AnyNode (.** accessor)
@@ -137,7 +154,8 @@ func (exec *Executor) execAnyNode(
 //   - ast.ConstAnyArray ([*] accessor)
 //
 // The value parameter must be a slice of values; the caller must properly
-// extract the values from a map.
+// extract the values from a map. If found is not nil then resultStatus should
+// be ignored.
 func (exec *Executor) executeAnyItem(
 	ctx context.Context,
 	node ast.Node,
@@ -146,46 +164,43 @@ func (exec *Executor) executeAnyItem(
 	level, first, last uint32,
 	ignoreStructuralErrors, unwrapNext bool,
 ) (resultStatus, error) {
-	// Check for interrupts.
-	select {
-	case <-ctx.Done():
-		return statusNotFound, nil
-	default:
-	}
-
 	res := statusNotFound
 	var err error
 	if level > last {
 		return res, nil
 	}
 
+	// When found is not nil, executeAnyItem can return statusNotFound even
+	// when items were found. This seems to be because it returns the last
+	// result in the list it iterates over or from a recursive call. This
+	// isn't super important for the top-level query functions, which pay
+	// attention to either the contents of found or the result, and not both.
+	// But to be internally consistent, look at the size of the found values
+	// and return statusOK below if it has grown, regardless of what the last
+	// result was.
+	size := 0
+	if found != nil {
+		size = len(found.list)
+	}
+
+	// Recursively iterate over jsonb objects/arrays
 	for _, v := range value {
-		var col []any
-		switch v := v.(type) {
-		case map[string]any:
-			col = maps.Values(v) // Just work with the values
-		case []any:
-			col = v
-		}
+		col := collection(v)
 
 		if level >= first || (first == math.MaxUint32 && last == math.MaxUint32 && col == nil) {
 			// check expression
 			switch {
 			case node != nil:
 				if ignoreStructuralErrors {
-					savedIgnoreStructuralErrors := exec.ignoreStructuralErrors
-					exec.ignoreStructuralErrors = true
-					res, err = exec.executeItemOptUnwrapTarget(ctx, node, v, found, unwrapNext)
-					exec.ignoreStructuralErrors = savedIgnoreStructuralErrors
-				} else {
-					res, err = exec.executeItemOptUnwrapTarget(ctx, node, v, found, unwrapNext)
+					defer exec.tempSetIgnoreStructuralErrors(true)()
 				}
-
+				res, err = exec.executeItemOptUnwrapTarget(ctx, node, v, found, unwrapNext)
 				if res.failed() || (res == statusOK && found == nil) {
 					return res, err
 				}
 			case found != nil:
 				found.append(v)
+				res = statusOK
 			default:
 				return statusOK, nil
 			}
@@ -199,6 +214,11 @@ func (exec *Executor) executeAnyItem(
 				return res, err
 			}
 		}
+	}
+
+	// Always return OK if items were found.
+	if found != nil && res != statusFailed && err == nil && len(found.list) > size {
+		res = statusOK
 	}
 
 	return res, err
@@ -230,13 +250,9 @@ func (exec *Executor) executeLikeRegex(node ast.Node, value, _ any) (predOutcome
 // predTrue when whole string starts with initial and predFalse if it does
 // not. Returns predUnknown if either whole or initial is not a string.
 // Implements predicateCallback.
-func (exec *Executor) executeStartsWith(_ ast.Node, whole, initial any) (predOutcome, error) {
-	//nolint:gocritic // We want the single type check because .(string) would
-	//convert.
-	switch str := whole.(type) {
-	case string:
-		switch prefix := initial.(type) {
-		case string:
+func executeStartsWith(_ ast.Node, whole, initial any) (predOutcome, error) {
+	if str, ok := whole.(string); ok {
+		if prefix, ok := initial.(string); ok {
 			if strings.HasPrefix(str, prefix) {
 				return predTrue, nil
 			}

@@ -3337,7 +3337,7 @@ func TestPgQueryDateMethod(t *testing.T) {
 			name: "test_14",
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.date()`,
-			err:  `exec: cannot convert value from timestamptz to date without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamptz to date without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_15",
@@ -3390,7 +3390,6 @@ func TestPgQueryDateMethodSyntaxError(t *testing.T) {
 	})
 }
 
-//nolint:maintidx
 func TestPgQueryDecimalMethod(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
@@ -4079,7 +4078,7 @@ func TestPgQueryStringMethod(t *testing.T) {
 			name: "test_3",
 			json: js(`[]`),
 			path: `$.string()`,
-			err:  `exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value`,
+			exp:  []any{},
 		},
 		{
 			name: "test_4",
@@ -4144,15 +4143,21 @@ func TestPgQueryStringMethod(t *testing.T) {
 			exp:  []any{"string"},
 		},
 		{
-			// pg: parses 2023-08-15 12:34:56 +5:30
 			name: "test_14",
-			json: js(`"2023-08-15 12:34:56+05:30"`),
-			path: `$.timestamp().string()`,
-			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + hint,
+			json: js(`[2, true]`),
+			path: `$.string()`,
+			exp:  []any{"2", "true"},
 		},
 		{
 			// pg: parses 2023-08-15 12:34:56 +5:30
 			name: "test_15",
+			json: js(`"2023-08-15 12:34:56+05:30"`),
+			path: `$.timestamp().string()`,
+			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + tzHint,
+		},
+		{
+			// pg: parses 2023-08-15 12:34:56 +5:30
+			name: "test_16",
 			json: js(`"2023-08-15 12:34:56+05:30"`),
 			path: `$.timestamp().string()`,
 			opt:  []Option{WithTZ()},
@@ -4162,13 +4167,13 @@ func TestPgQueryStringMethod(t *testing.T) {
 		// pg: tests 16 & 17 use jsonb_path_query_array but our Query() always
 		// returns a slice.
 		{
-			name: "test_16",
+			name: "test_17",
 			json: js(`[1.23, "yes", false]`),
 			path: `$[*].string()`,
 			exp:  []any{"1.23", "yes", "false"},
 		},
 		{
-			name: "test_17",
+			name: "test_18",
 			json: js(`[1.23, "yes", false]`),
 			path: `$[*].string().type()`,
 			exp:  []any{"string", "string", "string"},
@@ -4253,7 +4258,7 @@ func TestPgQueryTimeMethod(t *testing.T) {
 			name: "test_12",
 			json: js(`"12:34:56+05:30"`), // pg: uses 12:34:56 +05:30
 			path: `$.time()`,
-			err:  `exec: cannot convert value from timetz to time without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timetz to time without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_13",
@@ -4776,7 +4781,7 @@ func TestPgQueryTimestampTZMethod(t *testing.T) {
 			name: "test_11",
 			json: js(`"2023-08-15"`),
 			path: `$.timestamp_tz()`,
-			err:  `exec: cannot convert value from date to timestamptz without time zone usage.` + hint,
+			err:  `exec: cannot convert value from date to timestamptz without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_12",
@@ -4908,7 +4913,7 @@ func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 			name: "test_1",
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.time()`,
-			err:  `exec: cannot convert value from timestamptz to time without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamptz to time without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_2",
@@ -4929,7 +4934,7 @@ func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 			name: "test_4",
 			json: js(`"12:34:56"`),
 			path: `$.time_tz()`,
-			err:  `exec: cannot convert value from time to timetz without time zone usage.` + hint,
+			err:  `exec: cannot convert value from time to timetz without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_5",
@@ -4942,7 +4947,7 @@ func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 			name: "test_6",
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.timestamp()`,
-			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_7",
@@ -4955,7 +4960,7 @@ func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 			name: "test_8",
 			json: js(`"2023-08-15 12:34:56"`),
 			path: `$.timestamp_tz()`,
-			err:  `exec: cannot convert value from timestamp to timestamptz without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamp to timestamptz without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_9",
@@ -5073,7 +5078,7 @@ func TestPgQueryDateTimeMethodsPlus10(t *testing.T) {
 			name: "test_1",
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.time()`,
-			err:  `exec: cannot convert value from timestamptz to time without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamptz to time without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_2",
@@ -5092,7 +5097,7 @@ func TestPgQueryDateTimeMethodsPlus10(t *testing.T) {
 			name: "test_4",
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.timestamp()`,
-			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_5",
@@ -5105,7 +5110,7 @@ func TestPgQueryDateTimeMethodsPlus10(t *testing.T) {
 			name: "test_6",
 			json: js(`"2023-08-15 12:34:56"`),
 			path: `$.timestamp_tz()`,
-			err:  `exec: cannot convert value from timestamp to timestamptz without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamp to timestamptz without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_7",
@@ -5228,7 +5233,7 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 			name: "test_1",
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.time()`,
-			err:  `exec: cannot convert value from timestamptz to time without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamptz to time without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_2",
@@ -5247,7 +5252,7 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 			name: "test_4",
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.timestamp()`,
-			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_5",
@@ -5473,19 +5478,19 @@ func TestPgQueryDateComparison(t *testing.T) {
 			name: "test_10",
 			json: js(`["2017-03-10", "2017-03-11", "2017-03-09", "2017-03-10 00:00:00", "2017-03-10 12:34:56", "2017-03-10 01:02:03+04", "2017-03-10 03:00:00+03"]`),
 			path: `$[*].date() ? (@ == "2017-03-10".date())`,
-			err:  `exec: cannot convert value from timestamptz to date without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamptz to date without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_11",
 			json: js(`["2017-03-10", "2017-03-11", "2017-03-09", "2017-03-10 00:00:00", "2017-03-10 12:34:56", "2017-03-10 01:02:03+04", "2017-03-10 03:00:00+03"]`),
 			path: `$[*].date() ? (@ >= "2017-03-10".date())`,
-			err:  `exec: cannot convert value from timestamptz to date without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamptz to date without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_12",
 			json: js(`["2017-03-10", "2017-03-11", "2017-03-09", "2017-03-10 00:00:00", "2017-03-10 12:34:56", "2017-03-10 01:02:03+04", "2017-03-10 03:00:00+03"]`),
 			path: `$[*].date() ? (@ <  "2017-03-10".date())`,
-			err:  `exec: cannot convert value from timestamptz to date without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamptz to date without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_13",
@@ -5593,25 +5598,25 @@ func TestPgQueryTimeComparison(t *testing.T) {
 			name: "test_10",
 			json: js(`["12:34:00", "12:35:00", "12:36:00", "12:35:00+00", "12:35:00+01", "13:35:00+01", "2017-03-10 12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].time() ? (@ == "12:35:00".time())`,
-			err:  `exec: cannot convert value from timetz to time without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timetz to time without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_11",
 			json: js(`["12:34:00", "12:35:00", "12:36:00", "12:35:00+00", "12:35:00+01", "13:35:00+01", "2017-03-10 12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].time() ? (@ >= "12:35:00".time())`,
-			err:  `exec: cannot convert value from timetz to time without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timetz to time without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_12",
 			json: js(`["12:34:00", "12:35:00", "12:36:00", "12:35:00+00", "12:35:00+01", "13:35:00+01", "2017-03-10 12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].time() ? (@ <  "12:35:00".time())`,
-			err:  `exec: cannot convert value from timetz to time without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timetz to time without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_13",
 			json: js(`["12:34:00.123", "12:35:00.123", "12:36:00.1123", "12:35:00.1123+00", "12:35:00.123+01", "13:35:00.123+01", "2017-03-10 12:35:00.1", "2017-03-10 12:35:00.123+01"]`),
 			path: `$[*].time(2) ? (@ >= "12:35:00.123".time(2))`,
-			err:  `exec: cannot convert value from timetz to time without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timetz to time without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_14",
@@ -5730,25 +5735,25 @@ func TestPgQueryTimeTZComparison(t *testing.T) {
 			name: "test_10",
 			json: js(`["12:34:00+01", "12:35:00+01", "12:36:00+01", "12:35:00+02", "12:35:00-02", "10:35:00", "11:35:00", "12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].time_tz() ? (@ == "12:35:00+01".time_tz())`,
-			err:  `exec: cannot convert value from time to timetz without time zone usage.` + hint,
+			err:  `exec: cannot convert value from time to timetz without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_11",
 			json: js(`["12:34:00+01", "12:35:00+01", "12:36:00+01", "12:35:00+02", "12:35:00-02", "10:35:00", "11:35:00", "12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].time_tz() ? (@ >= "12:35:00+01".time_tz())`,
-			err:  `exec: cannot convert value from time to timetz without time zone usage.` + hint,
+			err:  `exec: cannot convert value from time to timetz without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_12",
 			json: js(`["12:34:00+01", "12:35:00+01", "12:36:00+01", "12:35:00+02", "12:35:00-02", "10:35:00", "11:35:00", "12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].time_tz() ? (@ <  "12:35:00+01".time_tz())`,
-			err:  `exec: cannot convert value from time to timetz without time zone usage.` + hint,
+			err:  `exec: cannot convert value from time to timetz without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_13",
 			json: js(`["12:34:00.123+01", "12:35:00.123+01", "12:36:00.1123+01", "12:35:00.1123+02", "12:35:00.123-02", "10:35:00.123", "11:35:00.1", "12:35:00.123", "2017-03-10 12:35:00.123 +1"]`),
 			path: `$[*].time_tz(2) ? (@ >= "12:35:00.123 +1".time_tz(2))`,
-			err:  `exec: cannot convert value from time to timetz without time zone usage.` + hint,
+			err:  `exec: cannot convert value from time to timetz without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_14",
@@ -5870,25 +5875,25 @@ func TestPgQueryTimestampComparison(t *testing.T) {
 			name: "test_10",
 			json: js(`["2017-03-10 12:34:00", "2017-03-10 12:35:00", "2017-03-10 12:36:00", "2017-03-10 12:35:00+01", "2017-03-10 13:35:00+01", "2017-03-10 12:35:00-01", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp() ? (@ == "2017-03-10 12:35:00".timestamp())`,
-			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_11",
 			json: js(`["2017-03-10 12:34:00", "2017-03-10 12:35:00", "2017-03-10 12:36:00", "2017-03-10 12:35:00+01", "2017-03-10 13:35:00+01", "2017-03-10 12:35:00-01", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp() ? (@ >= "2017-03-10 12:35:00".timestamp())`,
-			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_12",
 			json: js(`["2017-03-10 12:34:00", "2017-03-10 12:35:00", "2017-03-10 12:36:00", "2017-03-10 12:35:00+01", "2017-03-10 13:35:00+01", "2017-03-10 12:35:00-01", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp() ? (@ < "2017-03-10 12:35:00".timestamp())`,
-			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_13",
 			json: js(`["2017-03-10 12:34:00.123", "2017-03-10 12:35:00.123", "2017-03-10 12:36:00.1123", "2017-03-10 12:35:00.1123+01", "2017-03-10 13:35:00.123+01", "2017-03-10 12:35:00.1-01", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp(2) ? (@ >= "2017-03-10 12:35:00.123".timestamp(2))`,
-			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_14",
@@ -6003,25 +6008,25 @@ func TestPgQueryTimestampTZComparison(t *testing.T) {
 			name: "test_10",
 			json: js(`["2017-03-10 12:34:00+01", "2017-03-10 12:35:00+01", "2017-03-10 12:36:00+01", "2017-03-10 12:35:00+02", "2017-03-10 12:35:00-02", "2017-03-10 10:35:00", "2017-03-10 11:35:00", "2017-03-10 12:35:00", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp_tz() ? (@ == "2017-03-10 12:35:00+01".timestamp_tz())`, // pg: 2017-03-10 12:35:00 +1
-			err:  `exec: cannot convert value from timestamp to timestamptz without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamp to timestamptz without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_11",
 			json: js(`["2017-03-10 12:34:00+01", "2017-03-10 12:35:00+01", "2017-03-10 12:36:00+01", "2017-03-10 12:35:00+02", "2017-03-10 12:35:00-02", "2017-03-10 10:35:00", "2017-03-10 11:35:00", "2017-03-10 12:35:00", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp_tz() ? (@ >= "2017-03-10 12:35:00+01".timestamp_tz())`, // pg: 2017-03-10 12:35:00 +1
-			err:  `exec: cannot convert value from timestamp to timestamptz without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamp to timestamptz without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_12",
 			json: js(`["2017-03-10 12:34:00+01", "2017-03-10 12:35:00+01", "2017-03-10 12:36:00+01", "2017-03-10 12:35:00+02", "2017-03-10 12:35:00-02", "2017-03-10 10:35:00", "2017-03-10 11:35:00", "2017-03-10 12:35:00", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp_tz() ? (@ < "2017-03-10 12:35:00+01".timestamp_tz())`, // pg: 2017-03-10 12:35:00 +1
-			err:  `exec: cannot convert value from timestamp to timestamptz without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamp to timestamptz without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_13",
 			json: js(`["2017-03-10 12:34:00.123+01", "2017-03-10 12:35:00.123+01", "2017-03-10 12:36:00.1123+01", "2017-03-10 12:35:00.1123+02", "2017-03-10 12:35:00.123-02", "2017-03-10 10:35:00.123", "2017-03-10 11:35:00.1", "2017-03-10 12:35:00.123", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp_tz(2) ? (@ >= "2017-03-10 12:35:00.123+01".timestamp_tz(2))`, // pg" 2017-03-10 12:35:00.123 +1
-			err:  `exec: cannot convert value from timestamp to timestamptz without time zone usage.` + hint,
+			err:  `exec: cannot convert value from timestamp to timestamptz without time zone usage.` + tzHint,
 		},
 		{
 			name: "test_14",

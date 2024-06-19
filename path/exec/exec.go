@@ -54,12 +54,26 @@ const (
 	statusFailed
 )
 
+// String returns a string representation of s.
+func (s resultStatus) String() string {
+	switch s {
+	case statusOK:
+		return "OK"
+	case statusNotFound:
+		return "NOT_FOUND"
+	case statusFailed:
+		return "FAILED"
+	default:
+		return "UNKNOWN_RESULT_STATUS"
+	}
+}
+
 // failed returns true when s is statusFailed.
 func (s resultStatus) failed() bool {
 	return s == statusFailed
 }
 
-// List of jsonb values with shortcut for single-value list.
+// valueList holds a list of jsonb values optimized for a single-value list.
 type valueList struct {
 	list []any
 }
@@ -257,7 +271,7 @@ func (exec *Executor) execute(ctx context.Context, value any) (*valueList, error
 	exec.root = value
 	exec.current = value
 	vals := newList()
-	_, err := exec.exec(ctx, vals, exec.path.Root(), value)
+	_, err := exec.query(ctx, vals, exec.path.Root(), value)
 	return vals, err
 }
 
@@ -266,11 +280,7 @@ func (exec *Executor) execute(ctx context.Context, value any) (*valueList, error
 func (exec *Executor) exists(ctx context.Context, json any) (resultStatus, error) {
 	exec.root = json
 	exec.current = json
-	res, err := exec.exec(ctx, nil, exec.path.Root(), json)
-	if err != nil {
-		return res, err
-	}
-	return res, nil
+	return exec.query(ctx, nil, exec.path.Root(), json)
 }
 
 // returnVerboseError returns statusFailed and, when exec.verbose is true, it

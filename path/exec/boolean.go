@@ -16,7 +16,7 @@ func (exec *Executor) executeBinaryBoolItem(
 	switch node.Operator() {
 	case ast.BinaryAnd:
 		res, err := exec.executeBoolItem(ctx, node.Left(), value, false)
-		if res == predFalse {
+		if res == predFalse || err != nil {
 			return res, err
 		}
 
@@ -25,10 +25,10 @@ func (exec *Executor) executeBinaryBoolItem(
 		if res2 == predTrue {
 			return res, err2
 		}
-		return res2, err
+		return res2, err2
 	case ast.BinaryOr:
 		res, err := exec.executeBoolItem(ctx, node.Left(), value, false)
-		if res == predTrue {
+		if res == predTrue || err != nil {
 			return res, err
 		}
 		res2, err2 := exec.executeBoolItem(ctx, node.Right(), value, false)
@@ -40,10 +40,10 @@ func (exec *Executor) executeBinaryBoolItem(
 		ast.BinaryGreater, ast.BinaryLessOrEqual, ast.BinaryGreaterOrEqual:
 		return exec.executePredicate(ctx, node, node.Left(), node.Right(), value, true, exec.compareItems)
 	case ast.BinaryStartsWith:
-		return exec.executePredicate(ctx, node, node.Left(), node.Right(), value, false, exec.executeStartsWith)
+		return exec.executePredicate(ctx, node, node.Left(), node.Right(), value, false, executeStartsWith)
 	default:
-		return predFalse, fmt.Errorf(
-			"%w: invalid jsonpath boolean operator %T",
+		return predUnknown, fmt.Errorf(
+			"%w: invalid jsonpath boolean operator %v",
 			ErrInvalid, node.Operator(),
 		)
 	}
@@ -97,8 +97,8 @@ func (exec *Executor) executeUnaryBoolItem(
 		// We only process boolean unary operators here.
 	}
 
-	return predFalse, fmt.Errorf(
-		"%w: invalid jsonpath boolean operator %T",
+	return predUnknown, fmt.Errorf(
+		"%w: invalid jsonpath boolean operator %v",
 		ErrInvalid, node.Operator(),
 	)
 }
@@ -127,7 +127,7 @@ func (exec *Executor) executeBoolItem(
 	}
 
 	return predUnknown, fmt.Errorf(
-		"%w: invalid boolean jsonpath item type: %T",
+		"%w: invalid boolean jsonpath item type: %v",
 		ErrInvalid, node,
 	)
 }

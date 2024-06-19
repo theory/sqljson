@@ -2,7 +2,6 @@ package exec
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/theory/sqljson/path/ast"
@@ -202,17 +201,17 @@ func (exec *Executor) executeDateTimeMethod(
 	case ast.UnaryDateTime:
 		// Nothing to do for DATETIME
 	case ast.UnaryDate:
-		timeVal, err = exec.castDate(datetime, timeVal)
+		timeVal, err = exec.castDate(timeVal, datetime)
 	case ast.UnaryTime:
-		timeVal, err = exec.castTime(datetime, timeVal)
+		timeVal, err = exec.castTime(timeVal, datetime)
 	case ast.UnaryTimeTZ:
-		timeVal, err = exec.castTimeTZ(datetime, timeVal)
+		timeVal, err = exec.castTimeTZ(timeVal, datetime)
 	case ast.UnaryTimestamp:
-		timeVal, err = exec.castTimestamp(datetime, timeVal)
+		timeVal, err = exec.castTimestamp(timeVal, datetime)
 	case ast.UnaryTimestampTZ:
-		timeVal, err = exec.castTimestampTZ(datetime, timeVal)
+		timeVal, err = exec.castTimestampTZ(timeVal, datetime)
 	case ast.UnaryExists, ast.UnaryNot, ast.UnaryIsUnknown, ast.UnaryPlus, ast.UnaryMinus, ast.UnaryFilter:
-		return statusFailed, fmt.Errorf("%w: unrecognized jsonpath item type: %T", ErrInvalid, op)
+		return statusFailed, fmt.Errorf("%w: unrecognized jsonpath datetime method: %v", ErrInvalid, op)
 	}
 
 	if err != nil {
@@ -259,20 +258,19 @@ func (exec *Executor) parseDateTime(op ast.UnaryOperator, datetime string, arg a
 	precision := -1
 	if op != ast.UnaryDateTime && op != ast.UnaryDate && arg != nil {
 		var err error
-		precision, err = getNodeInt32(op.String()+"()", arg, "time precision")
+		precision, err = getNodeInt32(arg, op.String()+"()", "time precision")
 		if err != nil {
-			if !errors.Is(err, ErrVerbose) {
-				return nil, err
-			}
 			return nil, err
 		}
-		const maxTimestampPrecision = 6
+
 		if precision < 0 {
 			return nil, fmt.Errorf(
 				"%w: time precision of jsonpath item method %v() is invalid",
 				ErrVerbose, op,
 			)
 		}
+
+		const maxTimestampPrecision = 6
 		if precision > maxTimestampPrecision {
 			// pg: issues a warning
 			precision = maxTimestampPrecision
@@ -302,7 +300,7 @@ func notRecognized(op ast.UnaryOperator, datetime string) error {
 
 // castDate casts timeVal to [types.Date]. The datetime param is used in error
 // messages.
-func (exec *Executor) castDate(datetime string, timeVal types.DateTime) (*types.Date, error) {
+func (exec *Executor) castDate(timeVal types.DateTime, datetime string) (*types.Date, error) {
 	// Convert result type to date
 	switch tv := timeVal.(type) {
 	case *types.Date:
@@ -325,7 +323,7 @@ func (exec *Executor) castDate(datetime string, timeVal types.DateTime) (*types.
 
 // castTime casts timeVal to [types.Time]. The datetime param is used in error
 // messages.
-func (exec *Executor) castTime(datetime string, timeVal types.DateTime) (*types.Time, error) {
+func (exec *Executor) castTime(timeVal types.DateTime, datetime string) (*types.Time, error) {
 	switch tv := timeVal.(type) {
 	case *types.Date:
 		return nil, notRecognized(ast.UnaryTime, datetime)
@@ -351,7 +349,7 @@ func (exec *Executor) castTime(datetime string, timeVal types.DateTime) (*types.
 
 // castTimeTZ casts timeVal to [types.TimeTZ]. The datetime param is used in
 // error messages.
-func (exec *Executor) castTimeTZ(datetime string, timeVal types.DateTime) (*types.TimeTZ, error) {
+func (exec *Executor) castTimeTZ(timeVal types.DateTime, datetime string) (*types.TimeTZ, error) {
 	switch tv := timeVal.(type) {
 	case *types.Date, *types.Timestamp:
 		return nil, notRecognized(ast.UnaryTimeTZ, datetime)
@@ -373,7 +371,7 @@ func (exec *Executor) castTimeTZ(datetime string, timeVal types.DateTime) (*type
 
 // castTimestamp casts timeVal to [types.Timestamp]. The datetime param is
 // used in error messages.
-func (exec *Executor) castTimestamp(datetime string, timeVal types.DateTime) (*types.Timestamp, error) {
+func (exec *Executor) castTimestamp(timeVal types.DateTime, datetime string) (*types.Timestamp, error) {
 	switch tv := timeVal.(type) {
 	case *types.Date:
 		return types.NewTimestamp(tv.Time), nil
@@ -394,7 +392,7 @@ func (exec *Executor) castTimestamp(datetime string, timeVal types.DateTime) (*t
 
 // castTimestampTZ casts timeVal to [types.TimestampTZ]. The datetime param is
 // used in error messages.
-func (exec *Executor) castTimestampTZ(datetime string, timeVal types.DateTime) (*types.TimestampTZ, error) {
+func (exec *Executor) castTimestampTZ(timeVal types.DateTime, datetime string) (*types.TimestampTZ, error) {
 	switch tv := timeVal.(type) {
 	case *types.Date:
 		if !exec.useTZ {

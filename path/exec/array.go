@@ -101,14 +101,13 @@ func (exec *Executor) execArrayIndex(
 		}
 
 		return res, resErr
-	} else if !exec.ignoreStructuralErrors {
-		return exec.returnVerboseError(fmt.Errorf(
-			"%w: jsonpath array accessor can only be applied to an array",
-			ErrVerbose,
-		))
 	}
 
-	return statusNotFound, nil
+	// In strict mode we accept only arrays.
+	return exec.returnVerboseError(fmt.Errorf(
+		"%w: jsonpath array accessor can only be applied to an array",
+		ErrVerbose,
+	))
 }
 
 // executeItemUnwrapTargetArray unwraps the current array item and executes
@@ -150,5 +149,5 @@ func (exec *Executor) getArrayIndex(
 		)
 	}
 
-	return getJSONInt32("array subscript", found.list[0])
+	return getJSONInt32(found.list[0], "array subscript")
 }

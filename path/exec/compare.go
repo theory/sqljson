@@ -15,7 +15,9 @@ func (exec *Executor) compareItems(node ast.Node, left, right any) (predOutcome,
 	var cmp int
 	bin, ok := node.(*ast.BinaryNode)
 	if !ok {
-		panic(fmt.Sprintf("Invalid node type %T passed to compareItems", node))
+		return predUnknown, fmt.Errorf(
+			"%w: invalid node type %T passed to compareItems", ErrInvalid, node,
+		)
 	}
 	op := bin.Operator()
 
@@ -102,7 +104,7 @@ func applyCompare(op ast.BinaryOperator, cmp int) (predOutcome, error) {
 	default:
 		// We only process binary comparison operators here.
 		return predUnknown, fmt.Errorf(
-			"%w: unrecognized jsonpath operation %v", ErrInvalid, op,
+			"%w: unrecognized jsonpath comparison operation %v", ErrInvalid, op,
 		)
 	}
 }
@@ -119,7 +121,7 @@ func compareNumbers[T int | int64 | float64](left, right T) int {
 }
 
 // compareBool compares two numeric values and returns 0, 1, or -1. The left
-// and right params must be in64, float64, or json.Number values.
+// and right params must be int64, float64, or json.Number values.
 func compareNumeric(left, right any) int {
 	switch left := left.(type) {
 	case int64:

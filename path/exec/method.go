@@ -22,7 +22,7 @@ func (exec *Executor) execMethodNode(
 ) (resultStatus, error) {
 	switch name := node.Name(); name {
 	case ast.MethodNumber:
-		return exec.executeNumberMethod(ctx, node, value, found, unwrap)
+		return exec.executeNumberMethod(ctx, node, value, found, unwrap, node)
 	case ast.MethodAbs:
 		return exec.executeNumericItemMethod(
 			ctx, node, value, unwrap,
@@ -49,14 +49,16 @@ func (exec *Executor) execMethodNode(
 	case ast.MethodBigInt:
 		return exec.execMethodBigInt(ctx, node, value, found, unwrap)
 	case ast.MethodString:
-		return exec.execMethodString(ctx, node, value, found)
+		return exec.execMethodString(ctx, node, value, found, unwrap)
 	case ast.MethodBoolean:
 		return exec.execMethodBoolean(ctx, node, value, found, unwrap)
 	case ast.MethodKeyValue:
 		return exec.executeKeyValueMethod(ctx, node, value, found, unwrap)
+	default:
+		return statusFailed, fmt.Errorf(
+			"%w: unknown method %v", ErrInvalid, name,
+		)
 	}
-
-	return statusNotFound, nil
 }
 
 // execMethodType handles the execution of .type() by determining the type of
@@ -91,6 +93,10 @@ func (exec *Executor) execMethodType(
 		typeName = "timestamp with time zone"
 	case nil:
 		typeName = "null"
+	default:
+		return statusFailed, fmt.Errorf(
+			"%w: unsupported data type %T", ErrInvalid, value,
+		)
 	}
 
 	return exec.executeNextItem(ctx, node, nil, typeName, found)
@@ -153,7 +159,7 @@ func (exec *Executor) execMethodDouble(
 		double, err = val.Float64()
 		if err != nil {
 			return statusFailed, fmt.Errorf(
-				`%w: argument "%v" of jsonpath item method %v is invalid for type double precision`,
+				`%w: argument %q of jsonpath item method %v is invalid for type double precision`,
 				ErrExecution, val, name,
 			)
 		}
@@ -162,7 +168,7 @@ func (exec *Executor) execMethodDouble(
 		double, err = strconv.ParseFloat(val, 64)
 		if err != nil {
 			return statusFailed, fmt.Errorf(
-				`%w: argument "%v" of jsonpath item method %v is invalid for type double precision`,
+				`%w: argument %q of jsonpath item method %v is invalid for type double precision`,
 				ErrExecution, val, name,
 			)
 		}
@@ -186,7 +192,9 @@ func (exec *Executor) execMethodDouble(
 // execMethodInteger handles the execution of .integer(). value must be a
 // numeric value or a string that can be parsed into an int32, or an array
 // ([]any) to which .integer() will be applied to all of its values when
-// unwrap is true.
+// unwrap is true. The value must be within the bounds of int32; returns a
+// value of int64 since to allow its processing by other parts of the
+// executor, which does not handle int32.
 func (exec *Executor) execMethodInteger(
 	ctx context.Context,
 	node *ast.MethodNode,
@@ -194,8 +202,10 @@ func (exec *Executor) execMethodInteger(
 	found *valueList,
 	unwrap bool,
 ) (resultStatus, error) {
-	var integer int64
-	name := node.Name()
+	var (
+		integer int64
+		err     error
+	)
 
 	switch val := value.(type) {
 	case []any:
@@ -204,41 +214,34 @@ func (exec *Executor) execMethodInteger(
 		}
 		return exec.returnVerboseError(fmt.Errorf(
 			"%w: jsonpath item method %v can only be applied to a string or numeric value",
-			ErrVerbose, name,
+			ErrVerbose, node.Name(),
 		))
 	case int64:
 		integer = val
 	case float64:
 		integer = int64(math.Round(val))
 	case json.Number:
-		var err error
 		integer, err = val.Int64()
-		if err != nil || integer > math.MaxInt32 || integer < math.MinInt32 {
-			return exec.returnVerboseError(fmt.Errorf(
-				`%w: argument "%v" of jsonpath item method %v is invalid for type integer`,
-				ErrVerbose, value, name,
-			))
+		if err != nil {
+			var f float64
+			f, err = val.Float64()
+			if err == nil {
+				integer = int64(math.Round(f))
+			}
 		}
 	case string:
-		var err error
 		integer, err = strconv.ParseInt(val, 10, 32)
-		if err != nil {
-			return exec.returnVerboseError(fmt.Errorf(
-				`%w: argument "%v" of jsonpath item method %v is invalid for type integer`,
-				ErrVerbose, value, name,
-			))
-		}
 	default:
 		return exec.returnVerboseError(fmt.Errorf(
 			"%w: jsonpath item method %v can only be applied to a string or numeric value",
-			ErrVerbose, name,
+			ErrVerbose, node.Name(),
 		))
 	}
 
-	if integer > math.MaxInt32 || integer < math.MinInt32 {
+	if err != nil || integer > math.MaxInt32 || integer < math.MinInt32 {
 		return exec.returnVerboseError(fmt.Errorf(
 			`%w: argument "%v" of jsonpath item method %v is invalid for type integer`,
-			ErrVerbose, value, name,
+			ErrVerbose, value, node.Name(),
 		))
 	}
 
@@ -257,7 +260,6 @@ func (exec *Executor) execMethodBigInt(
 	unwrap bool,
 ) (resultStatus, error) {
 	var bigInt int64
-	name := node.Name()
 
 	switch val := value.(type) {
 	case []any:
@@ -266,15 +268,15 @@ func (exec *Executor) execMethodBigInt(
 		}
 		return exec.returnVerboseError(fmt.Errorf(
 			"%w: jsonpath item method %v can only be applied to a string or numeric value",
-			ErrVerbose, name,
+			ErrVerbose, node.Name(),
 		))
 	case int64:
 		bigInt = val
 	case float64:
-		if val > math.MaxInt64 || val < math.MinInt64 {
+		if val > math.MaxInt64 || val < math.MinInt64 || math.IsInf(val, 0) || math.IsNaN(val) {
 			return exec.returnVerboseError(fmt.Errorf(
 				`%w: argument "%v" of jsonpath item method %v is invalid for type bigint`,
-				ErrVerbose, val, name,
+				ErrVerbose, val, node.Name(),
 			))
 		}
 		bigInt = int64(math.Round(val))
@@ -282,10 +284,15 @@ func (exec *Executor) execMethodBigInt(
 		var err error
 		bigInt, err = val.Int64()
 		if err != nil {
-			return exec.returnVerboseError(fmt.Errorf(
-				`%w: argument "%v" of jsonpath item method %v is invalid for type bigint`,
-				ErrVerbose, val, name,
-			))
+			var f float64
+			f, err = val.Float64()
+			if err != nil || f > math.MaxInt64 || f < math.MinInt64 || math.IsInf(f, 0) || math.IsNaN(f) {
+				return exec.returnVerboseError(fmt.Errorf(
+					`%w: argument "%v" of jsonpath item method %v is invalid for type bigint`,
+					ErrVerbose, val, node.Name(),
+				))
+			}
+			bigInt = int64(math.Round(f))
 		}
 	case string:
 		var err error
@@ -293,13 +300,13 @@ func (exec *Executor) execMethodBigInt(
 		if err != nil {
 			return exec.returnVerboseError(fmt.Errorf(
 				`%w: argument "%v" of jsonpath item method %v is invalid for type bigint`,
-				ErrVerbose, val, name,
+				ErrVerbose, val, node.Name(),
 			))
 		}
 	default:
 		return exec.returnVerboseError(fmt.Errorf(
 			"%w: jsonpath item method %v can only be applied to a string or numeric value",
-			ErrVerbose, name,
+			ErrVerbose, node.Name(),
 		))
 	}
 
@@ -313,11 +320,20 @@ func (exec *Executor) execMethodString(
 	node *ast.MethodNode,
 	value any,
 	found *valueList,
+	unwrap bool,
 ) (resultStatus, error) {
 	var str string
 	name := node.Name()
 
 	switch val := value.(type) {
+	case []any:
+		if unwrap {
+			return exec.executeItemUnwrapTargetArray(ctx, node, value, found)
+		}
+		return exec.returnVerboseError(fmt.Errorf(
+			`%w: jsonpath item method %v can only be applied to a bool, string, numeric, or datetime value`,
+			ErrVerbose, node.Name(),
+		))
 	case string:
 		str = val
 	case fmt.Stringer:
@@ -381,17 +397,17 @@ func (exec *Executor) execMethodBoolean(
 		boolean = val != 0
 
 	case json.Number:
-		num, err := val.Int64()
-		if err != nil {
+		num, err := val.Float64()
+		if err != nil || num != math.Trunc(num) {
 			return exec.returnVerboseError(fmt.Errorf(
-				`%w: argument "%v" of jsonpath item method %v is invalid for type boolean`,
+				`%w: argument %q of jsonpath item method %v is invalid for type boolean`,
 				ErrVerbose, val, name,
 			))
 		}
 		boolean = num != 0
 	case string:
 		var err error
-		boolean, err = exec.execBooleanString(val, name)
+		boolean, err = execBooleanString(val, name)
 		if err != nil {
 			return exec.returnVerboseError(err)
 		}
@@ -420,11 +436,11 @@ func (exec *Executor) execMethodBoolean(
 //   - off
 //   - 1
 //   - 0
-func (exec *Executor) execBooleanString(val string, name ast.MethodName) (bool, error) {
+func execBooleanString(val string, name ast.MethodName) (bool, error) {
 	size := len(val)
 	if size == 0 {
 		return false, fmt.Errorf(
-			`%w: argument "%v" of jsonpath item method %v is invalid for type boolean`,
+			`%w: argument %q of jsonpath item method %v is invalid for type boolean`,
 			ErrVerbose, val, name,
 		)
 	}
@@ -463,23 +479,25 @@ func (exec *Executor) execBooleanString(val string, name ast.MethodName) (bool, 
 	}
 
 	return false, fmt.Errorf(
-		`%w: argument "%v" of jsonpath item method %v is invalid for type boolean`,
+		`%w: argument %q of jsonpath item method %v is invalid for type boolean`,
 		ErrVerbose, val, name,
 	)
 }
 
-// executeNumberMethod implements the numeric() and decimal() methods. It
+// executeNumberMethod implements the number() and decimal() methods. It
 // varies somewhat from Postgres because Postgres uses its arbitrary precision
 // numeric type, which can be huge and precise, while we use only float64 and
 // int64 values. If we ever switch to the github.com/shopspring/decimal
 // package we could make it more precise and therefore compatible, at least
-// when numbers are parsed into [json.Number].
+// when numbers are parsed into [json.Number]. The method parameter should
+// stringify to `.number()` or `.decimal()` as appropriate.
 func (exec *Executor) executeNumberMethod(
 	ctx context.Context,
 	node ast.Node,
 	value any,
 	found *valueList,
 	unwrap bool,
+	method any,
 ) (resultStatus, error) {
 	var (
 		num float64
@@ -493,7 +511,7 @@ func (exec *Executor) executeNumberMethod(
 		}
 		return exec.returnVerboseError(fmt.Errorf(
 			`%w: jsonpath item method %v can only be applied to a string or numeric value`,
-			ErrVerbose, node,
+			ErrVerbose, method,
 		))
 	case float64:
 		num = val
@@ -507,21 +525,21 @@ func (exec *Executor) executeNumberMethod(
 	default:
 		return exec.returnVerboseError(fmt.Errorf(
 			`%w: jsonpath item method %v can only be applied to a string or numeric value`,
-			ErrVerbose, node,
+			ErrVerbose, method,
 		))
 	}
 
 	if err != nil {
 		return exec.returnVerboseError(fmt.Errorf(
 			`%w: argument "%v" of jsonpath item method %v is invalid for type numeric`,
-			ErrVerbose, value, node,
+			ErrVerbose, value, method,
 		))
 	}
 
 	if math.IsInf(num, 0) || math.IsNaN(num) {
 		return exec.returnVerboseError(fmt.Errorf(
 			"%w: NaN or Infinity is not allowed for jsonpath item method %v",
-			ErrVerbose, node,
+			ErrVerbose, method,
 		))
 	}
 
@@ -556,7 +574,7 @@ func (exec *Executor) executeDecimalMethod(
 		return num, nil
 	}
 
-	precision, err := getNodeInt32(op, node.Left(), "precision")
+	precision, err := getNodeInt32(node.Left(), op, "precision")
 	if err != nil {
 		return 0, err
 	}
@@ -573,7 +591,7 @@ func (exec *Executor) executeDecimalMethod(
 	scale := 0
 	if right := node.Right(); right != nil {
 		var err error
-		scale, err = getNodeInt32(op, right, "scale")
+		scale, err = getNodeInt32(right, op, "scale")
 		if err != nil {
 			return 0, err
 		}
@@ -658,6 +676,10 @@ func (exec *Executor) executeNumericItemMethod(
 		if unwrap {
 			return exec.executeItemUnwrapTargetArray(ctx, node, value, found)
 		}
+		return exec.returnVerboseError(fmt.Errorf(
+			"%w: jsonpath item method %v can only be applied to a numeric value",
+			ErrVerbose, node,
+		))
 	case int64:
 		num = intCallback(val)
 	case float64:
