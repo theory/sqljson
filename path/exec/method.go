@@ -336,8 +336,9 @@ func (exec *Executor) execMethodString(
 		))
 	case string:
 		str = val
-	case fmt.Stringer:
-		// Covers json.Number and date/time types (ISO-8601 only, no date style)
+	case types.DateTime:
+		str = val.ToString(ctx)
+	case json.Number:
 		str = val.String()
 	case int64:
 		str = strconv.FormatInt(val, 10)

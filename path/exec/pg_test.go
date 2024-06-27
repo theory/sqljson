@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -46,11 +47,11 @@ type existsTestCase struct {
 	opt  []Option
 }
 
-func (tc existsTestCase) run(a *assert.Assertions, r *require.Assertions) {
+func (tc existsTestCase) run(ctx context.Context, a *assert.Assertions, r *require.Assertions) {
 	path, err := parser.Parse(tc.path)
 	r.NoError(err)
 
-	res, err := Exists(context.Background(), path, tc.json, tc.opt...)
+	res, err := Exists(ctx, path, tc.json, tc.opt...)
 	switch {
 	case tc.err != "":
 		r.EqualError(err, tc.err)
@@ -68,19 +69,19 @@ func (tc existsTestCase) run(a *assert.Assertions, r *require.Assertions) {
 }
 
 // Mimic the Postgres @? operator.
-func (tc existsTestCase) runAtQuestion(a *assert.Assertions, r *require.Assertions) {
+func (tc existsTestCase) runAtQuestion(ctx context.Context, a *assert.Assertions, r *require.Assertions) {
 	tc.opt = append(tc.opt, WithSilent())
-	tc.run(a, r)
+	tc.run(ctx, a, r)
 }
 
 // Test cases for Match().
 type matchTestCase existsTestCase
 
-func (tc matchTestCase) run(a *assert.Assertions, r *require.Assertions) {
+func (tc matchTestCase) run(ctx context.Context, a *assert.Assertions, r *require.Assertions) {
 	path, err := parser.Parse(tc.path)
 	r.NoError(err)
 
-	res, err := Match(context.Background(), path, tc.json, tc.opt...)
+	res, err := Match(ctx, path, tc.json, tc.opt...)
 	switch {
 	case tc.err != "":
 		r.EqualError(err, tc.err)
@@ -98,9 +99,9 @@ func (tc matchTestCase) run(a *assert.Assertions, r *require.Assertions) {
 }
 
 // Mimic the Postgres @@ operator.
-func (tc matchTestCase) runAtAt(a *assert.Assertions, r *require.Assertions) {
+func (tc matchTestCase) runAtAt(ctx context.Context, a *assert.Assertions, r *require.Assertions) {
 	tc.opt = append(tc.opt, WithSilent())
-	tc.run(a, r)
+	tc.run(ctx, a, r)
 }
 
 // Test cases for Query().
@@ -114,10 +115,10 @@ type queryTestCase struct {
 	rand bool
 }
 
-func (tc queryTestCase) run(a *assert.Assertions, r *require.Assertions) {
+func (tc queryTestCase) run(ctx context.Context, a *assert.Assertions, r *require.Assertions) {
 	path, err := parser.Parse(tc.path)
 	r.NoError(err)
-	res, err := Query(context.Background(), path, tc.json, tc.opt...)
+	res, err := Query(ctx, path, tc.json, tc.opt...)
 
 	if tc.err != "" {
 		r.EqualError(err, tc.err)
@@ -144,10 +145,10 @@ type firstTestCase struct {
 	rand bool
 }
 
-func (tc firstTestCase) run(a *assert.Assertions, r *require.Assertions) {
+func (tc firstTestCase) run(ctx context.Context, a *assert.Assertions, r *require.Assertions) {
 	path, err := parser.Parse(tc.path)
 	r.NoError(err)
-	res, err := First(context.Background(), path, tc.json, tc.opt...)
+	res, err := First(ctx, path, tc.json, tc.opt...)
 
 	if tc.err != "" {
 		r.EqualError(err, tc.err)
@@ -167,6 +168,7 @@ func TestPgAtQuestion(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1-L40
 	for _, tc := range []existsTestCase{
@@ -391,7 +393,7 @@ func TestPgAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtQuestion(a, r)
+			tc.runAtQuestion(ctx, a, r)
 		})
 	}
 }
@@ -400,6 +402,7 @@ func TestPgQueryCompareAtQuestion(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L21-L26
 	for _, tc := range []queryTestCase{
@@ -431,7 +434,7 @@ func TestPgQueryCompareAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -440,6 +443,7 @@ func TestPgExists(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L42-L45
 	for _, tc := range []existsTestCase{
@@ -472,7 +476,7 @@ func TestPgExists(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -481,6 +485,7 @@ func TestPgQueryModes(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L47-L57
 	for _, tc := range []queryTestCase{
@@ -557,7 +562,7 @@ func TestPgQueryModes(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -566,6 +571,7 @@ func TestPgQueryStrict(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L59-L66
 	for _, tc := range []queryTestCase{
@@ -624,7 +630,7 @@ func TestPgQueryStrict(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -633,6 +639,7 @@ func TestPgQueryBasics(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L68-L97
 	for _, tc := range []queryTestCase{
@@ -825,7 +832,7 @@ func TestPgQueryBasics(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -834,6 +841,7 @@ func TestPgQueryBinaryOps(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L99-L115
 	for _, tc := range []queryTestCase{
@@ -954,7 +962,7 @@ func TestPgQueryBinaryOps(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -963,6 +971,7 @@ func TestPgQueryAny(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L117-L138
 	for _, tc := range []queryTestCase{
@@ -1101,7 +1110,7 @@ func TestPgQueryAny(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -1110,6 +1119,7 @@ func TestPgAtQuestionAny(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L140-L152
 	for _, tc := range []existsTestCase{
@@ -1194,7 +1204,7 @@ func TestPgAtQuestionAny(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtQuestion(a, r)
+			tc.runAtQuestion(ctx, a, r)
 		})
 	}
 }
@@ -1203,6 +1213,7 @@ func TestPgQueryExists(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L154-L163
 	for _, tc := range []queryTestCase{
@@ -1269,7 +1280,7 @@ func TestPgQueryExists(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -1278,6 +1289,7 @@ func TestPgQueryTernaryLogic(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L166-L190
 	path1 := `$[*] ? (@ == true  &&  ($x == true && $y == true) ||
@@ -1418,7 +1430,7 @@ func TestPgQueryTernaryLogic(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -1427,6 +1439,7 @@ func TestPgAtQuestionFilter(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L192-L198
 	for _, tc := range []existsTestCase{
@@ -1475,7 +1488,7 @@ func TestPgAtQuestionFilter(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtQuestion(a, r)
+			tc.runAtQuestion(ctx, a, r)
 		})
 	}
 }
@@ -1484,6 +1497,7 @@ func TestPgQueryAnyMath(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L200-L203
 	for _, tc := range []queryTestCase{
@@ -1514,7 +1528,7 @@ func TestPgQueryAnyMath(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -1523,6 +1537,7 @@ func TestPgAtQuestionAnyMath(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L204-L215
 	for _, tc := range []existsTestCase{
@@ -1601,7 +1616,7 @@ func TestPgAtQuestionAnyMath(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtQuestion(a, r)
+			tc.runAtQuestion(ctx, a, r)
 		})
 	}
 }
@@ -1610,6 +1625,7 @@ func TestPgQueryMathErrors(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L218-L230
 	for _, tc := range []queryTestCase{
@@ -1698,7 +1714,7 @@ func TestPgQueryMathErrors(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -1707,6 +1723,7 @@ func TestPgAtQuestionMathErrors(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L231-L234
 	for _, tc := range []existsTestCase{
@@ -1737,7 +1754,7 @@ func TestPgAtQuestionMathErrors(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtQuestion(a, r)
+			tc.runAtQuestion(ctx, a, r)
 		})
 	}
 }
@@ -1746,6 +1763,7 @@ func TestPgQueryUnwrapping(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L236-L242
 	for _, tc := range []queryTestCase{
@@ -1784,7 +1802,7 @@ func TestPgQueryUnwrapping(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -1793,6 +1811,7 @@ func TestPgQueryBoolean(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L245-L247
 	for _, tc := range []queryTestCase{
@@ -1817,7 +1836,7 @@ func TestPgQueryBoolean(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -1826,6 +1845,7 @@ func TestPgAtQuestionBoolean(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L248
 	for _, tc := range []existsTestCase{
@@ -1838,7 +1858,7 @@ func TestPgAtQuestionBoolean(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtQuestion(a, r)
+			tc.runAtQuestion(ctx, a, r)
 		})
 	}
 }
@@ -1847,6 +1867,7 @@ func TestPgAtAtBoolean(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L250-L257
 	for _, tc := range []matchTestCase{
@@ -1901,7 +1922,7 @@ func TestPgAtAtBoolean(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtAt(a, r)
+			tc.runAtAt(ctx, a, r)
 		})
 	}
 }
@@ -1910,6 +1931,7 @@ func TestPgMatch(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L258-L264
 	for _, tc := range []matchTestCase{
@@ -1956,7 +1978,7 @@ func TestPgMatch(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -1965,6 +1987,7 @@ func TestPgQueryTypeMethod(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L267-L273
 	for _, tc := range []queryTestCase{
@@ -2013,7 +2036,7 @@ func TestPgQueryTypeMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -2022,6 +2045,7 @@ func TestPgQueryAbsFloorType(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L275-L280
 	for _, tc := range []queryTestCase{
@@ -2064,7 +2088,7 @@ func TestPgQueryAbsFloorType(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -2073,6 +2097,7 @@ func TestPgQuerySizeMethod(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L282-L284
 	for _, tc := range []queryTestCase{
@@ -2101,7 +2126,7 @@ func TestPgQuerySizeMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -2110,6 +2135,7 @@ func TestPgQueryMethodChain(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L286-L290
 	for _, tc := range []queryTestCase{
@@ -2146,7 +2172,7 @@ func TestPgQueryMethodChain(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -2164,6 +2190,7 @@ func TestPgQueryKeyValue(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// Go can have different array offsets when executing stuff in parallel,
 	// so create the data here so we can calculate the correct IDs in tests 5
@@ -2239,7 +2266,7 @@ func TestPgQueryKeyValue(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -2248,6 +2275,7 @@ func TestPgAtQuestionKeyValue(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L300-L301
 	for _, tc := range []existsTestCase{
@@ -2266,7 +2294,7 @@ func TestPgAtQuestionKeyValue(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtQuestion(a, r)
+			tc.runAtQuestion(ctx, a, r)
 		})
 	}
 }
@@ -2275,6 +2303,7 @@ func TestPgQueryDoubleMethod(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L303-L321
 	for _, tc := range []queryTestCase{
@@ -2403,7 +2432,7 @@ func TestPgQueryDoubleMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -2412,6 +2441,7 @@ func TestPgQueryAbsFloorCeilErr(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L323-L328
 	for _, tc := range []queryTestCase{
@@ -2457,7 +2487,7 @@ func TestPgQueryAbsFloorCeilErr(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -2466,6 +2496,7 @@ func TestPgQueryStartsWith(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L330-L337
 	for _, tc := range []queryTestCase{
@@ -2520,7 +2551,7 @@ func TestPgQueryStartsWith(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -2529,6 +2560,7 @@ func TestPgQueryLikeRegex(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L339-L348
 	// pg: Using \t instead of \b, because \b is word boundary only in Go, while
@@ -2597,7 +2629,7 @@ func TestPgQueryLikeRegex(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -2606,6 +2638,7 @@ func TestPgQueryDateTimeErr(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L350-L358
 	for _, tc := range []queryTestCase{
@@ -2668,7 +2701,7 @@ func TestPgQueryDateTimeErr(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -2677,6 +2710,7 @@ func TestPgQueryDateTimeAtQuestion(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L360
 	for _, tc := range []existsTestCase{
@@ -2690,13 +2724,13 @@ func TestPgQueryDateTimeAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtQuestion(a, r)
+			tc.runAtQuestion(ctx, a, r)
 		})
 	}
 }
 
-func pt(ts string) types.DateTime {
-	val, ok := types.ParseTime(ts, -1)
+func pt(ctx context.Context, ts string) types.DateTime {
+	val, ok := types.ParseTime(ctx, ts, -1)
 	if !ok {
 		panic("Failed to parse " + ts)
 	}
@@ -2707,6 +2741,7 @@ func TestPgQueryDateTimeFormat(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L361-L373
 	for _, tc := range []queryTestCase{
@@ -2714,7 +2749,7 @@ func TestPgQueryDateTimeFormat(t *testing.T) {
 			name: "test_1",
 			json: js(`"10-03-2017"`),
 			path: `$.datetime("dd-mm-yyyy")`,
-			// exp:  []any{pt("2017-03-10")},
+			// exp:  []any{pt(ctx, "2017-03-10")},
 		},
 		{
 			name: "test_2",
@@ -2762,7 +2797,7 @@ func TestPgQueryDateTimeFormat(t *testing.T) {
 			name: "test_9",
 			json: js(`"10-03-2017T12:34:56"`),
 			path: `$.datetime("dd-mm-yyyy\"T\"HH24:MI:SS")`,
-			// exp:  []any{pt("2017-03-10T12:34:56")},
+			// exp:  []any{pt(ctx, "2017-03-10T12:34:56")},
 		},
 		{
 			name: "test_10",
@@ -2780,7 +2815,7 @@ func TestPgQueryDateTimeFormat(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			tc.err = `exec: .datetime(template) is not yet supported`
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -2789,6 +2824,7 @@ func TestPgQueryBigInt(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L375-L405
 	for _, tc := range []queryTestCase{
@@ -2984,7 +3020,7 @@ func TestPgQueryBigInt(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -2993,6 +3029,7 @@ func TestPgQueryBooleanMethod(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L407-L447
 	for _, tc := range []queryTestCase{
@@ -3248,7 +3285,7 @@ func TestPgQueryBooleanMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -3257,6 +3294,10 @@ func TestPgQueryDateMethod(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+
+	loc, err := time.LoadLocation("PST8PDT")
+	r.NoError(err)
+	ctx := types.ContextWithTZ(context.Background(), loc)
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L449-L466
 	for _, tc := range []queryTestCase{
@@ -3307,7 +3348,7 @@ func TestPgQueryDateMethod(t *testing.T) {
 			name: "test_9",
 			json: js(`"2023-08-15"`),
 			path: `$.date()`,
-			exp:  []any{pt("2023-08-15")},
+			exp:  []any{pt(ctx, "2023-08-15")},
 		},
 		{
 			name: "test_10",
@@ -3331,7 +3372,7 @@ func TestPgQueryDateMethod(t *testing.T) {
 			name: "test_13",
 			json: js(`"2023-08-15 12:34:56"`),
 			path: `$.date()`,
-			exp:  []any{pt("2023-08-15")},
+			exp:  []any{pt(ctx, "2023-08-15")},
 		},
 		{
 			name: "test_14",
@@ -3344,12 +3385,12 @@ func TestPgQueryDateMethod(t *testing.T) {
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.date()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2023-08-15")}, // should work
+			exp:  []any{pt(ctx, "2023-08-15")}, // should work
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -3358,6 +3399,7 @@ func TestPgQueryDateAtQuestion(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L458
 	for _, tc := range []existsTestCase{
@@ -3370,7 +3412,7 @@ func TestPgQueryDateAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtQuestion(a, r)
+			tc.runAtQuestion(ctx, a, r)
 		})
 	}
 }
@@ -3394,6 +3436,7 @@ func TestPgQueryDecimalMethod(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L470-L514
 	for _, tc := range []queryTestCase{
@@ -3672,7 +3715,7 @@ func TestPgQueryDecimalMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -3681,6 +3724,7 @@ func TestPgQueryIntegerMethod(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L516-L544
 	for _, tc := range []queryTestCase{
@@ -3864,7 +3908,7 @@ func TestPgQueryIntegerMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -3873,6 +3917,7 @@ func TestPgQueryNumberMethod(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L546-L573
 	for _, tc := range []queryTestCase{
@@ -4049,7 +4094,7 @@ func TestPgQueryNumberMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -4058,6 +4103,10 @@ func TestPgQueryStringMethod(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+
+	loc, err := time.LoadLocation("PST8PDT")
+	r.NoError(err)
+	ctx := types.ContextWithTZ(context.Background(), loc)
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L575-L592
 	for _, tc := range []queryTestCase{
@@ -4149,22 +4198,20 @@ func TestPgQueryStringMethod(t *testing.T) {
 			exp:  []any{"2", "true"},
 		},
 		{
-			// pg: parses 2023-08-15 12:34:56 +5:30
 			name: "test_15",
-			json: js(`"2023-08-15 12:34:56+05:30"`),
+			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +5:30
 			path: `$.timestamp().string()`,
 			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + tzHint,
 		},
 		{
-			// pg: parses 2023-08-15 12:34:56 +5:30
 			name: "test_16",
-			json: js(`"2023-08-15 12:34:56+05:30"`),
+			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +5:30
 			path: `$.timestamp().string()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{"2023-08-15T07:04:56"}, // should work
+			exp:  []any{"2023-08-15T00:04:56"}, // should work
 			// Tue Aug 15 00:04:56 2023
 		},
-		// pg: tests 16 & 17 use jsonb_path_query_array but our Query() always
+		// pg: tests 17 & 18 use jsonb_path_query_array but our Query() always
 		// returns a slice.
 		{
 			name: "test_17",
@@ -4181,7 +4228,7 @@ func TestPgQueryStringMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -4191,7 +4238,11 @@ func TestPgQueryTimeMethod(t *testing.T) {
 	r := require.New(t)
 	a := assert.New(t)
 
-	// https
+	loc, err := time.LoadLocation("PST8PDT")
+	r.NoError(err)
+	ctx := types.ContextWithTZ(context.Background(), loc)
+
+	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L594-L619
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -4240,7 +4291,7 @@ func TestPgQueryTimeMethod(t *testing.T) {
 			name: "test_9",
 			json: js(`"12:34:56"`),
 			path: `$.time()`,
-			exp:  []any{pt("12:34:56")},
+			exp:  []any{pt(ctx, "12:34:56")},
 		},
 		{
 			name: "test_10",
@@ -4265,13 +4316,13 @@ func TestPgQueryTimeMethod(t *testing.T) {
 			json: js(`"12:34:56+05:30"`), // pg: uses 12:34:56 +05:30
 			path: `$.time()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:34:56")}, // should work
+			exp:  []any{pt(ctx, "12:34:56")}, // should work
 		},
 		{
 			name: "test_14",
 			json: js(`"2023-08-15 12:34:56"`),
 			path: `$.time()`,
-			exp:  []any{pt("12:34:56")},
+			exp:  []any{pt(ctx, "12:34:56")},
 		},
 		// Tests 15 & 16 in TestPgQueryTimeMethodSyntaxError below.
 		{
@@ -4284,36 +4335,36 @@ func TestPgQueryTimeMethod(t *testing.T) {
 			name: "test_18",
 			json: js(`"12:34:56.789"`),
 			path: `$.time(0)`,
-			exp:  []any{pt("12:34:57")},
+			exp:  []any{pt(ctx, "12:34:57")},
 		},
 		{
 			name: "test_19",
 			json: js(`"12:34:56.789"`),
 			path: `$.time(2)`,
-			exp:  []any{pt("12:34:56.79")},
+			exp:  []any{pt(ctx, "12:34:56.79")},
 		},
 		{
 			name: "test_20",
 			json: js(`"12:34:56.789"`),
 			path: `$.time(5)`,
-			exp:  []any{pt("12:34:56.789")},
+			exp:  []any{pt(ctx, "12:34:56.789")},
 		},
 		{
 			name: "test_21",
 			json: js(`"12:34:56.789"`),
 			path: `$.time(10)`,
-			exp:  []any{pt("12:34:56.789")},
+			exp:  []any{pt(ctx, "12:34:56.789")},
 		},
 		{
 			name: "test_22",
 			json: js(`"12:34:56.789012"`),
 			path: `$.time(8)`,
-			exp:  []any{pt("12:34:56.789012")},
+			exp:  []any{pt(ctx, "12:34:56.789012")},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -4322,6 +4373,7 @@ func TestPgQueryTimeAtQuestion(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L603
 	for _, tc := range []existsTestCase{
@@ -4334,7 +4386,7 @@ func TestPgQueryTimeAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtQuestion(a, r)
+			tc.runAtQuestion(ctx, a, r)
 		})
 	}
 }
@@ -4373,6 +4425,7 @@ func TestPgQueryTimeTZMethod(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L621-L644
 	for _, tc := range []queryTestCase{
@@ -4423,7 +4476,7 @@ func TestPgQueryTimeTZMethod(t *testing.T) {
 			name: "test_9",
 			json: js(`"12:34:56+05:30"`), // pg: 12:34:56 +05:30
 			path: `$.time_tz()`,
-			exp:  []any{pt("12:34:56+05:30")},
+			exp:  []any{pt(ctx, "12:34:56+05:30")},
 		},
 		{
 			name: "test_10",
@@ -4454,36 +4507,36 @@ func TestPgQueryTimeTZMethod(t *testing.T) {
 			name: "test_16",
 			json: js(`"12:34:56.789+05:30"`), // pg: 12:34:56.789 +05:30
 			path: `$.time_tz(0)`,
-			exp:  []any{pt("12:34:57+05:30")},
+			exp:  []any{pt(ctx, "12:34:57+05:30")},
 		},
 		{
 			name: "test_17",
 			json: js(`"12:34:56.789+05:30"`), // pg: 12:34:56.789 +05:30
 			path: `$.time_tz(2)`,
-			exp:  []any{pt("12:34:56.79+05:30")},
+			exp:  []any{pt(ctx, "12:34:56.79+05:30")},
 		},
 		{
 			name: "test_18",
 			json: js(`"12:34:56.789+05:30"`), // pg: 12:34:56.789 +05:30
 			path: `$.time_tz(5)`,
-			exp:  []any{pt("12:34:56.789+05:30")},
+			exp:  []any{pt(ctx, "12:34:56.789+05:30")},
 		},
 		{
 			name: "test_19",
 			json: js(`"12:34:56.789+05:30"`), // pg: 12:34:56.789 +05:30
 			path: `$.time_tz(10)`,
-			exp:  []any{pt("12:34:56.789+05:30")},
+			exp:  []any{pt(ctx, "12:34:56.789+05:30")},
 		},
 		{
 			name: "test_20",
 			json: js(`"12:34:56.789012+05:30"`), // pg: 12:34:56.789012 +05:30
 			path: `$.time_tz(8)`,
-			exp:  []any{pt("12:34:56.789012+05:30")},
+			exp:  []any{pt(ctx, "12:34:56.789012+05:30")},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -4492,6 +4545,7 @@ func TestPgQueryTimeTZAtQuestion(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L630
 	for _, tc := range []existsTestCase{
@@ -4504,7 +4558,7 @@ func TestPgQueryTimeTZAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtQuestion(a, r)
+			tc.runAtQuestion(ctx, a, r)
 		})
 	}
 }
@@ -4543,6 +4597,10 @@ func TestPgQueryTimestampMethod(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+
+	loc, err := time.LoadLocation("PST8PDT")
+	r.NoError(err)
+	ctx := types.ContextWithTZ(context.Background(), loc)
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L646-L670
 	for _, tc := range []queryTestCase{
@@ -4593,7 +4651,7 @@ func TestPgQueryTimestampMethod(t *testing.T) {
 			name: "test_9",
 			json: js(`"2023-08-15 12:34:56"`),
 			path: `$.timestamp()`,
-			exp:  []any{pt("2023-08-15T12:34:56")},
+			exp:  []any{pt(ctx, "2023-08-15T12:34:56")},
 		},
 		{
 			name: "test_10",
@@ -4605,7 +4663,7 @@ func TestPgQueryTimestampMethod(t *testing.T) {
 			name: "test_11",
 			json: js(`"2023-08-15"`),
 			path: `$.timestamp()`,
-			exp:  []any{pt("2023-08-15T00:00:00")},
+			exp:  []any{pt(ctx, "2023-08-15T00:00:00")},
 		},
 		{
 			name: "test_12",
@@ -4630,36 +4688,36 @@ func TestPgQueryTimestampMethod(t *testing.T) {
 			name: "test_17",
 			json: js(`"2023-08-15 12:34:56.789"`),
 			path: `$.timestamp(0)`,
-			exp:  []any{pt("2023-08-15T12:34:57")},
+			exp:  []any{pt(ctx, "2023-08-15T12:34:57")},
 		},
 		{
 			name: "test_18",
 			json: js(`"2023-08-15 12:34:56.789"`),
 			path: `$.timestamp(2)`,
-			exp:  []any{pt("2023-08-15T12:34:56.79")},
+			exp:  []any{pt(ctx, "2023-08-15T12:34:56.79")},
 		},
 		{
 			name: "test_19",
 			json: js(`"2023-08-15 12:34:56.789"`),
 			path: `$.timestamp(5)`,
-			exp:  []any{pt("2023-08-15T12:34:56.789")},
+			exp:  []any{pt(ctx, "2023-08-15T12:34:56.789")},
 		},
 		{
 			name: "test_20",
 			json: js(`"2023-08-15 12:34:56.789"`),
 			path: `$.timestamp(10)`,
-			exp:  []any{pt("2023-08-15T12:34:56.789")},
+			exp:  []any{pt(ctx, "2023-08-15T12:34:56.789")},
 		},
 		{
 			name: "test_21",
 			json: js(`"2023-08-15 12:34:56.789012"`),
 			path: `$.timestamp(8)`,
-			exp:  []any{pt("2023-08-15T12:34:56.789012")},
+			exp:  []any{pt(ctx, "2023-08-15T12:34:56.789012")},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -4668,6 +4726,7 @@ func TestPgQueryTimestampAtQuestion(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L655
 	for _, tc := range []existsTestCase{
@@ -4680,7 +4739,7 @@ func TestPgQueryTimestampAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtQuestion(a, r)
+			tc.runAtQuestion(ctx, a, r)
 		})
 	}
 }
@@ -4719,6 +4778,10 @@ func TestPgQueryTimestampTZMethod(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+
+	loc, err := time.LoadLocation("PST8PDT")
+	r.NoError(err)
+	ctx := types.ContextWithTZ(context.Background(), loc)
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L672-L697
 	for _, tc := range []queryTestCase{
@@ -4769,7 +4832,7 @@ func TestPgQueryTimestampTZMethod(t *testing.T) {
 			name: "test_9",
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.timestamp_tz()`,
-			exp:  []any{pt("2023-08-15T12:34:56+05:30")},
+			exp:  []any{pt(ctx, "2023-08-15T12:34:56+05:30")},
 		},
 		{
 			name: "test_10",
@@ -4788,7 +4851,7 @@ func TestPgQueryTimestampTZMethod(t *testing.T) {
 			json: js(`"2023-08-15"`),
 			path: `$.timestamp_tz()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2023-08-15T00:00:00Z")}, // should work // pg: 2023-08-15T07:00:00+00:00
+			exp:  []any{pt(ctx, "2023-08-15T07:00:00+00:00")}, // should work
 		},
 		{
 			name: "test_13",
@@ -4813,36 +4876,36 @@ func TestPgQueryTimestampTZMethod(t *testing.T) {
 			name: "test_18",
 			json: js(`"2023-08-15 12:34:56.789+05:30"`), // pg: 2023-08-15 12:34:56.789 +05:30
 			path: `$.timestamp_tz(0)`,
-			exp:  []any{pt("2023-08-15T12:34:57+05:30")},
+			exp:  []any{pt(ctx, "2023-08-15T12:34:57+05:30")},
 		},
 		{
 			name: "test_19",
 			json: js(`"2023-08-15 12:34:56.789+05:30"`), // pg: 2023-08-15 12:34:56.789 +05:30
 			path: `$.timestamp_tz(2)`,
-			exp:  []any{pt("2023-08-15T12:34:56.79+05:30")},
+			exp:  []any{pt(ctx, "2023-08-15T12:34:56.79+05:30")},
 		},
 		{
 			name: "test_20",
 			json: js(`"2023-08-15 12:34:56.789+05:30"`), // pg: 2023-08-15 12:34:56.789 +05:30
 			path: `$.timestamp_tz(5)`,
-			exp:  []any{pt("2023-08-15T12:34:56.789+05:30")},
+			exp:  []any{pt(ctx, "2023-08-15T12:34:56.789+05:30")},
 		},
 		{
 			name: "test_21",
 			json: js(`"2023-08-15 12:34:56.789+05:30"`), // pg: 2023-08-15 12:34:56.789 +05:30
 			path: `$.timestamp_tz(10)`,
-			exp:  []any{pt("2023-08-15T12:34:56.789+05:30")},
+			exp:  []any{pt(ctx, "2023-08-15T12:34:56.789+05:30")},
 		},
 		{
 			name: "test_22",
 			json: js(`"2023-08-15 12:34:56.789012+05:30"`), // pg: 2023-08-15 12:34:56.789012 +05:30
 			path: `$.timestamp_tz(8)`,
-			exp:  []any{pt("2023-08-15T12:34:56.789012+05:30")},
+			exp:  []any{pt(ctx, "2023-08-15T12:34:56.789012+05:30")},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -4851,6 +4914,7 @@ func TestPgQueryTimestampTZAtQuestion(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L681
 	for _, tc := range []existsTestCase{
@@ -4863,7 +4927,7 @@ func TestPgQueryTimestampTZAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtQuestion(a, r)
+			tc.runAtQuestion(ctx, a, r)
 		})
 	}
 }
@@ -4902,10 +4966,7 @@ func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
-
-	// For these tests, Postgres uses
-	//   set time zone '+00';
-	// UTC is the default for us, so not much to adjust here.
+	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L700-L723
 	for _, tc := range []queryTestCase{
@@ -4920,15 +4981,13 @@ func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.time()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("07:04:56")}, // should work
+			exp:  []any{pt(ctx, "07:04:56")}, // should work
 		},
 		{
 			name: "test_3",
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.time_tz()`,
-			// Postgres displays the output as UTC thanks to `set time zone '+00'`.
-			// The Go Time object stringifies for the parsed offset.
-			exp: []any{pt("12:34:56+05:30")}, // Retains TZ (pg: 07:04:56+00:00)
+			exp:  []any{pt(ctx, "07:04:56+00:00")},
 		},
 		{
 			name: "test_4",
@@ -4941,7 +5000,7 @@ func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 			json: js(`"12:34:56"`),
 			path: `$.time_tz()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:34:56Z")}, // should work
+			exp:  []any{pt(ctx, "12:34:56Z")}, // should work
 		},
 		{
 			name: "test_6",
@@ -4954,7 +5013,7 @@ func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.timestamp()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2023-08-15T07:04:56")}, // should work
+			exp:  []any{pt(ctx, "2023-08-15T07:04:56")}, // should work
 		},
 		{
 			name: "test_8",
@@ -4967,14 +5026,14 @@ func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 			json: js(`"2023-08-15 12:34:56"`),
 			path: `$.timestamp_tz()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2023-08-15T12:34:56Z")}, // should work
+			exp:  []any{pt(ctx, "2023-08-15T12:34:56+00:00")}, // should work
 		},
 		// Remove err field from remaining tests once .datetime(template) implemented
 		{
 			name: "test_10",
 			json: js(`"10-03-2017 12:34"`),
 			path: `$.datetime("dd-mm-yyyy HH24:MI")`,
-			exp:  []any{pt("2017-03-10T12:34:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -4988,35 +5047,35 @@ func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 			name: "test_12",
 			json: js(`"10-03-2017 12:34 +05"`),
 			path: `$.datetime("dd-mm-yyyy HH24:MI TZH")`,
-			exp:  []any{pt("2017-03-10T12:34:00+05:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00+05:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
 			name: "test_13",
 			json: js(`"10-03-2017 12:34 -05"`),
 			path: `$.datetime("dd-mm-yyyy HH24:MI TZH")`,
-			exp:  []any{pt("2017-03-10T12:34:00-05:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00-05:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
 			name: "test_14",
 			json: js(`"10-03-2017 12:34 +05:20"`),
 			path: `$.datetime("dd-mm-yyyy HH24:MI TZH:TZM")`,
-			exp:  []any{pt("2017-03-10T12:34:00+05:20")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00+05:20")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
 			name: "test_15",
 			json: js(`"10-03-2017 12:34 -05:20"`),
 			path: `$.datetime("dd-mm-yyyy HH24:MI TZH:TZM")`,
-			exp:  []any{pt("2017-03-10T12:34:00-05:20")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00-05:20")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
 			name: "test_16",
 			json: js(`"12:34"`),
 			path: `$.datetime("HH24:MI")`,
-			exp:  []any{pt("12:34:00")},
+			exp:  []any{pt(ctx, "12:34:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5030,7 +5089,7 @@ func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 			name: "test_18",
 			json: js(`"12:34 +05"`),
 			path: `$.datetime("HH24:MI TZH")`,
-			exp:  []any{pt("12:34:00+05:00")},
+			exp:  []any{pt(ctx, "12:34:00+05:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5038,26 +5097,26 @@ func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 			json: js(`"12:34 -05"`),
 			path: `$.datetime("HH24:MI TZH")`,
 			err:  `exec: .datetime(template) is not yet supported`,
-			exp:  []any{pt("12:34:00-05:00")},
+			exp:  []any{pt(ctx, "12:34:00-05:00")},
 		},
 		{
 			name: "test_20",
 			json: js(`"12:34 +05:20"`),
 			path: `$.datetime("HH24:MI TZH:TZM")`,
-			exp:  []any{pt("12:34:00+05:20")},
+			exp:  []any{pt(ctx, "12:34:00+05:20")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
 			name: "test_21",
 			json: js(`"12:34 -05:20"`),
 			path: `$.datetime("HH24:MI TZH:TZM")`,
-			exp:  []any{pt("12:34:00-05:20")},
+			exp:  []any{pt(ctx, "12:34:00-05:20")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -5066,11 +5125,7 @@ func TestPgQueryDateTimeMethodsPlus10(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
-
-	// For these tests, Postgres uses
-	//   set time zone '+10';
-	// UTC is the default for us, so the results here differ by +10, but the
-	// precise instant should be the same.
+	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 10*3600))
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L725-L747
 	for _, tc := range []queryTestCase{
@@ -5085,13 +5140,13 @@ func TestPgQueryDateTimeMethodsPlus10(t *testing.T) {
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.time()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("07:04:56")}, // should work // pg: 17:04:56
+			exp:  []any{pt(ctx, "17:04:56")}, // should work
 		},
 		{
 			name: "test_3",
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.time_tz()`,
-			exp:  []any{pt("12:34:56+05:30")}, // retains tz. pg: "17:04:56+10:00"
+			exp:  []any{pt(ctx, "17:04:56+10:00")},
 		},
 		{
 			name: "test_4",
@@ -5104,7 +5159,7 @@ func TestPgQueryDateTimeMethodsPlus10(t *testing.T) {
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.timestamp()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2023-08-15T07:04:56")}, // should work // pg: 2023-08-15T17:04:56
+			exp:  []any{pt(ctx, "2023-08-15T17:04:56")}, // should work
 		},
 		{
 			name: "test_6",
@@ -5117,19 +5172,19 @@ func TestPgQueryDateTimeMethodsPlus10(t *testing.T) {
 			json: js(`"2023-08-15 12:34:56"`),
 			path: `$.timestamp_tz()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2023-08-15T12:34:56Z")}, // should work // pg: 2023-08-15T02:34:56+00:00
+			exp:  []any{pt(ctx, "2023-08-15T02:34:56+00:00")}, // should work
 		},
 		{
 			name: "test_8",
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.timestamp_tz()`,
-			exp:  []any{pt("2023-08-15T12:34:56+05:30")},
+			exp:  []any{pt(ctx, "2023-08-15T12:34:56+05:30")},
 		},
 		{
 			name: "test_9",
 			json: js(`"10-03-2017 12:34"`),
 			path: `$.datetime("dd-mm-yyyy HH24:MI")`,
-			exp:  []any{pt("2017-03-10T12:34:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5143,35 +5198,35 @@ func TestPgQueryDateTimeMethodsPlus10(t *testing.T) {
 			name: "test_11",
 			json: js(`"10-03-2017 12:34 +05"`),
 			path: `$.datetime("dd-mm-yyyy HH24:MI TZH")`,
-			exp:  []any{pt("2017-03-10T12:34:00+05:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00+05:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
 			name: "test_12",
 			json: js(`"10-03-2017 12:34 -05"`),
 			path: `$.datetime("dd-mm-yyyy HH24:MI TZH")`,
-			exp:  []any{pt("2017-03-10T12:34:00-05:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00-05:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
 			name: "test_13",
 			json: js(`"10-03-2017 12:34 +05:20"`),
 			path: `$.datetime("dd-mm-yyyy HH24:MI TZH:TZM")`,
-			exp:  []any{pt("2017-03-10T12:34:00+05:20")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00+05:20")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
 			name: "test_14",
 			json: js(`"10-03-2017 12:34 -05:20"`),
 			path: `$.datetime("dd-mm-yyyy HH24:MI TZH:TZM")`,
-			exp:  []any{pt("2017-03-10T12:34:00-05:20")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00-05:20")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
 			name: "test_15",
 			json: js(`"12:34"`),
 			path: `$.datetime("HH24:MI")`,
-			exp:  []any{pt("12:34:00")},
+			exp:  []any{pt(ctx, "12:34:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5185,34 +5240,34 @@ func TestPgQueryDateTimeMethodsPlus10(t *testing.T) {
 			name: "test_17",
 			json: js(`"12:34 +05"`),
 			path: `$.datetime("HH24:MI TZH")`,
-			exp:  []any{pt("12:34:00+05:00")},
+			exp:  []any{pt(ctx, "12:34:00+05:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
 			name: "test_18",
 			json: js(`"12:34 -05"`),
 			path: `$.datetime("HH24:MI TZH")`,
-			exp:  []any{pt("12:34:00-05:00")},
+			exp:  []any{pt(ctx, "12:34:00-05:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
 			name: "test_19",
 			json: js(`"12:34 +05:20"`),
 			path: `$.datetime("HH24:MI TZH:TZM")`,
-			exp:  []any{pt("12:34:00+05:20")},
+			exp:  []any{pt(ctx, "12:34:00+05:20")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
 			name: "test_20",
 			json: js(`"12:34 -05:20"`),
 			path: `$.datetime("HH24:MI TZH:TZM")`,
-			exp:  []any{pt("12:34:00-05:20")},
+			exp:  []any{pt(ctx, "12:34:00-05:20")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -5222,10 +5277,9 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 	r := require.New(t)
 	a := assert.New(t)
 
-	// For these tests, Postgres uses
-	//   set time zone default;
-	// Which seems to be -07. UTC is the default for us, so the results here
-	// differ by -07, but the precise instant should be the same.
+	loc, err := time.LoadLocation("PST8PDT")
+	r.NoError(err)
+	ctx := types.ContextWithTZ(context.Background(), loc)
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L749-L778
 	for _, tc := range []queryTestCase{
@@ -5240,13 +5294,13 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.time()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("07:04:56")}, // should work, converted to UTC // pg: "00:04:56"
+			exp:  []any{pt(ctx, "00:04:56")}, // should work
 		},
 		{
 			name: "test_3",
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.time_tz()`,
-			exp:  []any{pt("12:34:56+05:30")}, // retains tz. pg: "00:04:56-07:00"
+			exp:  []any{pt(ctx, "00:04:56-07:00")},
 		},
 		{
 			name: "test_4",
@@ -5259,13 +5313,13 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.timestamp()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2023-08-15T07:04:56")}, // should work // pg: 2023-08-15T00:04:56
+			exp:  []any{pt(ctx, "2023-08-15T00:04:56")}, // should work
 		},
 		{
 			name: "test_6",
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +05:30
 			path: `$.timestamp_tz()`,
-			exp:  []any{pt("2023-08-15T12:34:56+05:30")},
+			exp:  []any{pt(ctx, "2023-08-15T12:34:56+05:30")},
 		},
 		{
 			name: "test_7",
@@ -5277,7 +5331,7 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 			name: "test_8",
 			json: js(`"2017-03-10"`),
 			path: `$.datetime()`,
-			exp:  []any{pt("2017-03-10")},
+			exp:  []any{pt(ctx, "2017-03-10")},
 		},
 		{
 			name: "test_9",
@@ -5289,7 +5343,7 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 			name: "test_10",
 			json: js(`"2017-03-10 12:34:56"`),
 			path: `$.datetime()`,
-			exp:  []any{pt("2017-03-10T12:34:56")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:56")},
 		},
 		{
 			name: "test_11",
@@ -5301,7 +5355,7 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 			name: "test_12",
 			json: js(`"2017-03-10 12:34:56+03"`), // pg: 2017-03-10 12:34:56+3
 			path: `$.datetime()`,
-			exp:  []any{pt("2017-03-10T12:34:56+03:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:56+03:00")},
 		},
 		{
 			name: "test_13",
@@ -5313,13 +5367,13 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 			name: "test_14",
 			json: js(`"2017-03-10 12:34:56+03:10"`), // pg: 2017-03-10 12:34:56+3:10
 			path: `$.datetime()`,
-			exp:  []any{pt("2017-03-10T12:34:56+03:10")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:56+03:10")},
 		},
 		{
 			name: "test_15",
 			json: js(`"2017-03-10T12:34:56+03:10"`), // pg: 2017-03-10T12:34:56+3:10
 			path: `$.datetime()`,
-			exp:  []any{pt("2017-03-10T12:34:56+03:10")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:56+03:10")},
 		},
 		{
 			name: "test_16",
@@ -5331,13 +5385,13 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 			name: "test_17",
 			json: js(`"2017-03-10 12:34:56.789+03:10"`), // pg: 2017-03-10 12:34:56.789+3:10
 			path: `$.datetime()`,
-			exp:  []any{pt("2017-03-10T12:34:56.789+03:10")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:56.789+03:10")},
 		},
 		{
 			name: "test_18",
 			json: js(`"2017-03-10T12:34:56.789+03:10"`), // pg: 2017-03-10T12:34:56.789+3:10
 			path: `$.datetime()`,
-			exp:  []any{pt("2017-03-10T12:34:56.789+03:10")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:56.789+03:10")},
 		},
 		{
 			name: "test_19",
@@ -5349,13 +5403,13 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 			name: "test_20",
 			json: js(`"2017-03-10T12:34:56.789-05:00"`), // pg: 2017-03-10T12:34:56.789EST
 			path: `$.datetime()`,
-			exp:  []any{pt("2017-03-10T12:34:56.789-05:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:56.789-05:00")},
 		},
 		{
 			name: "test_21",
 			json: js(`"2017-03-10T12:34:56.789Z"`),
 			path: `$.datetime()`,
-			exp:  []any{pt("2017-03-10T12:34:56.789Z")}, // pg 2017-03-10T12:34:56.789+00:00
+			exp:  []any{pt(ctx, "2017-03-10T12:34:56.789+00:00")},
 		},
 		{
 			name: "test_22",
@@ -5367,7 +5421,7 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 			name: "test_23",
 			json: js(`"12:34:56"`),
 			path: `$.datetime()`,
-			exp:  []any{pt("12:34:56")},
+			exp:  []any{pt(ctx, "12:34:56")},
 		},
 		{
 			name: "test_24",
@@ -5379,7 +5433,7 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 			name: "test_25",
 			json: js(`"12:34:56+03"`), // pg: 12:34:56+3
 			path: `$.datetime()`,
-			exp:  []any{pt("12:34:56+03:00")},
+			exp:  []any{pt(ctx, "12:34:56+03:00")},
 		},
 		{
 			name: "test_26",
@@ -5391,12 +5445,12 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 			name: "test_27",
 			json: js(`"12:34:56+03:10"`), // pg: 12:34:56+3:10
 			path: `$.datetime()`,
-			exp:  []any{pt("12:34:56+03:10")},
+			exp:  []any{pt(ctx, "12:34:56+03:10")},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -5405,6 +5459,7 @@ func TestPgQueryDateComparison(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L782-L828
 	for _, tc := range []queryTestCase{
@@ -5434,7 +5489,7 @@ func TestPgQueryDateComparison(t *testing.T) {
 			json: js(`["2017-03-10", "2017-03-11", "2017-03-09", "12:34:56", "01:02:03+04", "2017-03-10 00:00:00", "2017-03-10 12:34:56", "2017-03-10 01:02:03+04", "2017-03-10 03:00:00+03"]`),
 			path: `$[*].datetime() ? (@ == "10.03.2017".datetime("dd.mm.yyyy"))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10"), pt("2017-03-10T00:00:00"), pt("2017-03-10T03:00:00+03:00")},
+			exp:  []any{pt(ctx, "2017-03-10"), pt(ctx, "2017-03-10T00:00:00"), pt(ctx, "2017-03-10T03:00:00+03:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5442,7 +5497,7 @@ func TestPgQueryDateComparison(t *testing.T) {
 			json: js(`["2017-03-10", "2017-03-11", "2017-03-09", "12:34:56", "01:02:03+04", "2017-03-10 00:00:00", "2017-03-10 12:34:56", "2017-03-10 01:02:03+04", "2017-03-10 03:00:00+03"]`),
 			path: `$[*].datetime() ? (@ >= "10.03.2017".datetime("dd.mm.yyyy"))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10"), pt("2017-03-11"), pt("2017-03-10T00:00:00"), pt("2017-03-10T12:34:56"), pt("2017-03-10T03:00:00+03:00")},
+			exp:  []any{pt(ctx, "2017-03-10"), pt(ctx, "2017-03-11"), pt(ctx, "2017-03-10T00:00:00"), pt(ctx, "2017-03-10T12:34:56"), pt(ctx, "2017-03-10T03:00:00+03:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5450,7 +5505,7 @@ func TestPgQueryDateComparison(t *testing.T) {
 			json: js(`["2017-03-10", "2017-03-11", "2017-03-09", "12:34:56", "01:02:03+04", "2017-03-10 00:00:00", "2017-03-10 12:34:56", "2017-03-10 01:02:03+04", "2017-03-10 03:00:00+03"]`),
 			path: `$[*].datetime() ? (@ <  "10.03.2017".datetime("dd.mm.yyyy"))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-09"), pt("2017-03-10T01:02:03+04:00")},
+			exp:  []any{pt(ctx, "2017-03-09"), pt(ctx, "2017-03-10T01:02:03+04:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5458,21 +5513,21 @@ func TestPgQueryDateComparison(t *testing.T) {
 			json: js(`["2017-03-10", "2017-03-11", "2017-03-09", "2017-03-10 00:00:00", "2017-03-10 12:34:56", "2017-03-10 01:02:03+04", "2017-03-10 03:00:00+03"]`),
 			path: `$[*].datetime() ? (@ == "2017-03-10".date())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10"), pt("2017-03-10T00:00:00"), pt("2017-03-10T03:00:00+03:00")},
+			exp:  []any{pt(ctx, "2017-03-10"), pt(ctx, "2017-03-10T00:00:00"), pt(ctx, "2017-03-10T03:00:00+03:00")},
 		},
 		{
 			name: "test_8",
 			json: js(`["2017-03-10", "2017-03-11", "2017-03-09", "2017-03-10 00:00:00", "2017-03-10 12:34:56", "2017-03-10 01:02:03+04", "2017-03-10 03:00:00+03"]`),
 			path: `$[*].datetime() ? (@ >= "2017-03-10".date())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10"), pt("2017-03-11"), pt("2017-03-10T00:00:00"), pt("2017-03-10T12:34:56"), pt("2017-03-10T03:00:00+03:00")},
+			exp:  []any{pt(ctx, "2017-03-10"), pt(ctx, "2017-03-11"), pt(ctx, "2017-03-10T00:00:00"), pt(ctx, "2017-03-10T12:34:56"), pt(ctx, "2017-03-10T03:00:00+03:00")},
 		},
 		{
 			name: "test_9",
 			json: js(`["2017-03-10", "2017-03-11", "2017-03-09", "2017-03-10 00:00:00", "2017-03-10 12:34:56", "2017-03-10 01:02:03+04", "2017-03-10 03:00:00+03"]`),
 			path: `$[*].datetime() ? (@ <  "2017-03-10".date())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-09"), pt("2017-03-10T01:02:03+04:00")},
+			exp:  []any{pt(ctx, "2017-03-09"), pt(ctx, "2017-03-10T01:02:03+04:00")},
 		},
 		{
 			name: "test_10",
@@ -5497,26 +5552,26 @@ func TestPgQueryDateComparison(t *testing.T) {
 			json: js(`["2017-03-10", "2017-03-11", "2017-03-09", "2017-03-10 00:00:00", "2017-03-10 12:34:56", "2017-03-10 01:02:03+04", "2017-03-10 03:00:00+03"]`),
 			path: `$[*].date() ? (@ == "2017-03-10".date())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10"), pt("2017-03-10"), pt("2017-03-10"), pt("2017-03-10")},
+			exp:  []any{pt(ctx, "2017-03-10"), pt(ctx, "2017-03-10"), pt(ctx, "2017-03-10"), pt(ctx, "2017-03-10")},
 		},
 		{
 			name: "test_14",
 			json: js(`["2017-03-10", "2017-03-11", "2017-03-09", "2017-03-10 00:00:00", "2017-03-10 12:34:56", "2017-03-10 01:02:03+04", "2017-03-10 03:00:00+03"]`),
 			path: `$[*].date() ? (@ >= "2017-03-10".date())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10"), pt("2017-03-11"), pt("2017-03-10"), pt("2017-03-10"), pt("2017-03-10")},
+			exp:  []any{pt(ctx, "2017-03-10"), pt(ctx, "2017-03-11"), pt(ctx, "2017-03-10"), pt(ctx, "2017-03-10"), pt(ctx, "2017-03-10")},
 		},
 		{
 			name: "test_15",
 			json: js(`["2017-03-10", "2017-03-11", "2017-03-09", "2017-03-10 00:00:00", "2017-03-10 12:34:56", "2017-03-10 01:02:03+04", "2017-03-10 03:00:00+03"]`),
 			path: `$[*].date() ? (@ <  "2017-03-10".date())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-09"), pt("2017-03-09")},
+			exp:  []any{pt(ctx, "2017-03-09"), pt(ctx, "2017-03-09")},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -5525,6 +5580,7 @@ func TestPgQueryTimeComparison(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L830-L882
 	for _, tc := range []queryTestCase{
@@ -5554,7 +5610,7 @@ func TestPgQueryTimeComparison(t *testing.T) {
 			json: js(`["12:34:00", "12:35:00", "12:36:00", "12:35:00+00", "12:35:00+01", "13:35:00+01", "2017-03-10", "2017-03-10 12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].datetime() ? (@ == "12:35".datetime("HH24:MI"))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:35:00"), pt("12:35:00+00:00")},
+			exp:  []any{pt(ctx, "12:35:00"), pt(ctx, "12:35:00+00:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5562,7 +5618,7 @@ func TestPgQueryTimeComparison(t *testing.T) {
 			json: js(`["12:34:00", "12:35:00", "12:36:00", "12:35:00+00", "12:35:00+01", "13:35:00+01", "2017-03-10", "2017-03-10 12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].datetime() ? (@ >= "12:35".datetime("HH24:MI"))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:35:00"), pt("12:36:00"), pt("12:35:00+00:00")},
+			exp:  []any{pt(ctx, "12:35:00"), pt(ctx, "12:36:00"), pt(ctx, "12:35:00+00:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5570,7 +5626,7 @@ func TestPgQueryTimeComparison(t *testing.T) {
 			json: js(`["12:34:00", "12:35:00", "12:36:00", "12:35:00+00", "12:35:00+01", "13:35:00+01", "2017-03-10", "2017-03-10 12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].datetime() ? (@ <  "12:35".datetime("HH24:MI"))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:34:00"), pt("12:35:00+01:00"), pt("13:35:00+01:00")},
+			exp:  []any{pt(ctx, "12:34:00"), pt(ctx, "12:35:00+01:00"), pt(ctx, "13:35:00+01:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5578,21 +5634,21 @@ func TestPgQueryTimeComparison(t *testing.T) {
 			json: js(`["12:34:00", "12:35:00", "12:36:00", "12:35:00+00", "12:35:00+01", "13:35:00+01", "2017-03-10 12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].datetime() ? (@ == "12:35:00".time())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:35:00"), pt("12:35:00+00:00")},
+			exp:  []any{pt(ctx, "12:35:00"), pt(ctx, "12:35:00+00:00")},
 		},
 		{
 			name: "test_8",
 			json: js(`["12:34:00", "12:35:00", "12:36:00", "12:35:00+00", "12:35:00+01", "13:35:00+01", "2017-03-10 12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].datetime() ? (@ >= "12:35:00".time())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:35:00"), pt("12:36:00"), pt("12:35:00+00:00"), pt("13:35:00+01")}, // pg excludes 13:35:00+01
+			exp:  []any{pt(ctx, "12:35:00"), pt(ctx, "12:36:00"), pt(ctx, "12:35:00+00:00")},
 		},
 		{
 			name: "test_9",
 			json: js(`["12:34:00", "12:35:00", "12:36:00", "12:35:00+00", "12:35:00+01", "13:35:00+01", "2017-03-10 12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].datetime() ? (@ <  "12:35:00".time())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:34:00"), pt("12:35:00+01:00")}, // pg: also includes 13:35:00+01:00
+			exp:  []any{pt(ctx, "12:34:00"), pt(ctx, "12:35:00+01:00"), pt(ctx, "13:35:00+01:00")},
 		},
 		{
 			name: "test_10",
@@ -5623,33 +5679,33 @@ func TestPgQueryTimeComparison(t *testing.T) {
 			json: js(`["12:34:00", "12:35:00", "12:36:00", "12:35:00+00", "12:35:00+01", "13:35:00+01", "2017-03-10 12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].time() ? (@ == "12:35:00".time())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:35:00"), pt("12:35:00"), pt("12:35:00"), pt("12:35:00")},
+			exp:  []any{pt(ctx, "12:35:00"), pt(ctx, "12:35:00"), pt(ctx, "12:35:00"), pt(ctx, "12:35:00")},
 		},
 		{
 			name: "test_15",
 			json: js(`["12:34:00", "12:35:00", "12:36:00", "12:35:00+00", "12:35:00+01", "13:35:00+01", "2017-03-10 12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].time() ? (@ >= "12:35:00".time())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:35:00"), pt("12:36:00"), pt("12:35:00"), pt("12:35:00"), pt("13:35:00"), pt("12:35:00")},
+			exp:  []any{pt(ctx, "12:35:00"), pt(ctx, "12:36:00"), pt(ctx, "12:35:00"), pt(ctx, "12:35:00"), pt(ctx, "13:35:00"), pt(ctx, "12:35:00")},
 		},
 		{
 			name: "test_16",
 			json: js(`["12:34:00", "12:35:00", "12:36:00", "12:35:00+00", "12:35:00+01", "13:35:00+01", "2017-03-10 12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].time() ? (@ <  "12:35:00".time())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:34:00"), pt("11:35:00")},
+			exp:  []any{pt(ctx, "12:34:00"), pt(ctx, "11:35:00")},
 		},
 		{
 			name: "test_17",
 			json: js(`["12:34:00.123", "12:35:00.123", "12:36:00.1123", "12:35:00.1123+00", "12:35:00.123+01", "13:35:00.123+01", "2017-03-10 12:35:00.1", "2017-03-10 12:35:00.123+01"]`),
 			path: `$[*].time(2) ? (@ >= "12:35:00.123".time(2))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:35:00.12"), pt("12:36:00.11"), pt("12:35:00.12"), pt("13:35:00.12")},
+			exp:  []any{pt(ctx, "12:35:00.12"), pt(ctx, "12:36:00.11"), pt(ctx, "12:35:00.12"), pt(ctx, "13:35:00.12")},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -5658,6 +5714,7 @@ func TestPgQueryTimeTZComparison(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L885-L937
 	// All ` +1`s replaced with `+01`.
@@ -5688,7 +5745,7 @@ func TestPgQueryTimeTZComparison(t *testing.T) {
 			json: js(`["12:34:00+01", "12:35:00+01", "12:36:00+01", "12:35:00+02", "12:35:00-02", "10:35:00", "11:35:00", "12:35:00", "2017-03-10", "2017-03-10 12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].datetime() ? (@ == "12:35 +1".datetime("HH24:MI TZH"))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:35:00+01:00")},
+			exp:  []any{pt(ctx, "12:35:00+01:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5696,7 +5753,7 @@ func TestPgQueryTimeTZComparison(t *testing.T) {
 			json: js(`["12:34:00+01", "12:35:00+01", "12:36:00+01", "12:35:00+02", "12:35:00-02", "10:35:00", "11:35:00", "12:35:00", "2017-03-10", "2017-03-10 12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].datetime() ? (@ >= "12:35 +1".datetime("HH24:MI TZH"))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:35:00+01:00"), pt("12:36:00+01:00"), pt("12:35:00-02:00"), pt("11:35:00"), pt("12:35:00")},
+			exp:  []any{pt(ctx, "12:35:00+01:00"), pt(ctx, "12:36:00+01:00"), pt(ctx, "12:35:00-02:00"), pt(ctx, "11:35:00"), pt(ctx, "12:35:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5704,7 +5761,7 @@ func TestPgQueryTimeTZComparison(t *testing.T) {
 			json: js(`["12:34:00+01", "12:35:00+01", "12:36:00+01", "12:35:00+02", "12:35:00-02", "10:35:00", "11:35:00", "12:35:00", "2017-03-10", "2017-03-10 12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].datetime() ? (@ <  "12:35 +1".datetime("HH24:MI TZH"))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:34:00+01:00"), pt("12:35:00+02:00"), pt("10:35:00")},
+			exp:  []any{pt(ctx, "12:34:00+01:00"), pt(ctx, "12:35:00+02:00"), pt(ctx, "10:35:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5712,24 +5769,21 @@ func TestPgQueryTimeTZComparison(t *testing.T) {
 			json: js(`["12:34:00+01", "12:35:00+01", "12:36:00+01", "12:35:00+02", "12:35:00-02", "10:35:00", "11:35:00", "12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].datetime() ? (@ == "12:35:00+01".time_tz())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:35:00+01:00")},
+			exp:  []any{pt(ctx, "12:35:00+01:00")},
 		},
 		{
 			name: "test_8",
 			json: js(`["12:34:00+01", "12:35:00+01", "12:36:00+01", "12:35:00+02", "12:35:00-02", "10:35:00", "11:35:00", "12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].datetime() ? (@ >= "12:35:00+01".time_tz())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:35:00+01:00"), pt("12:36:00+01:00"), pt("12:35:00-02:00"), pt("12:35:00")},
-			// pg: has 11:35:00 for fourth item because UTC < +1.
-			// pg: Has fifth item, 12:35:00, because the "2017-03" timestamptz does not preserve the offset.
+			exp:  []any{pt(ctx, "12:35:00+01:00"), pt(ctx, "12:36:00+01:00"), pt(ctx, "12:35:00-02:00"), pt(ctx, "11:35:00"), pt(ctx, "12:35:00")},
 		},
 		{
 			name: "test_9",
 			json: js(`["12:34:00+01", "12:35:00+01", "12:36:00+01", "12:35:00+02", "12:35:00-02", "10:35:00", "11:35:00", "12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].datetime() ? (@ <  "12:35:00+01".time_tz())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:34:00+01:00"), pt("12:35:00+02:00"), pt("10:35:00"), pt("11:35:00")},
-			// pg: does not have 11:35:00
+			exp:  []any{pt(ctx, "12:34:00+01:00"), pt(ctx, "12:35:00+02:00"), pt(ctx, "10:35:00")},
 		},
 		{
 			name: "test_10",
@@ -5760,40 +5814,33 @@ func TestPgQueryTimeTZComparison(t *testing.T) {
 			json: js(`["12:34:00+01", "12:35:00+01", "12:36:00+01", "12:35:00+02", "12:35:00-02", "10:35:00", "11:35:00", "12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].time_tz() ? (@ == "12:35:00+01".time_tz())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:35:00+01:00"), pt("12:35:00+01:00")},
-			// pg: does not include second entry, because `12:35:00+01".time_tz()` preserves the offset and timestamptz (the 2017 value) does not.
+			exp:  []any{pt(ctx, "12:35:00+01:00")},
 		},
 		{
 			name: "test_15",
 			json: js(`["12:34:00+01", "12:35:00+01", "12:36:00+01", "12:35:00+02", "12:35:00-02", "10:35:00", "11:35:00", "12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].time_tz() ? (@ >= "12:35:00+01".time_tz())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:35:00+01:00"), pt("12:36:00+01:00"), pt("12:35:00-02:00"), pt("12:35:00Z"), pt("12:35:00+01:00")},
-			// pg: fourth item is 11:35:00+00:00, removed here because 2:35:00+01".time_tz() preserves the offset so they are not equal
-			// pg: fifth item is "12:35:00+00:00" but we have 12:35:00Z.
-			// pg: sixth item is 11:35:00+00:00 because the does not preserve the offset.
+			exp:  []any{pt(ctx, "12:35:00+01:00"), pt(ctx, "12:36:00+01:00"), pt(ctx, "12:35:00-02:00"), pt(ctx, "11:35:00+00:00"), pt(ctx, "12:35:00+00:00"), pt(ctx, "11:35:00+00:00")},
 		},
 		{
 			name: "test_16",
 			json: js(`["12:34:00+01", "12:35:00+01", "12:36:00+01", "12:35:00+02", "12:35:00-02", "10:35:00", "11:35:00", "12:35:00", "2017-03-10 12:35:00+01"]`),
 			path: `$[*].time_tz() ? (@ <  "12:35:00+01".time_tz())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:34:00+01:00"), pt("12:35:00+02:00"), pt("10:35:00Z"), pt("11:35:00Z")},
-			// pg: does not have third and fourth because "10:35:00" and "11:35:00" are UTC and 12:35:00+01 is not.
+			exp:  []any{pt(ctx, "12:34:00+01:00"), pt(ctx, "12:35:00+02:00"), pt(ctx, "10:35:00+00:00")},
 		},
 		{
 			name: "test_17",
 			json: js(`["12:34:00.123+01", "12:35:00.123+01", "12:36:00.1123+01", "12:35:00.1123+02", "12:35:00.123-02", "10:35:00.123", "11:35:00.1", "12:35:00.123", "2017-03-10 12:35:00.123+01"]`),
 			path: `$[*].time_tz(2) ? (@ >= "12:35:00.123+01".time_tz(2))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("12:35:00.12+01:00"), pt("12:36:00.11+01:00"), pt("12:35:00.12-02:00"), pt("12:35:00.12Z"), pt("12:35:00.12+01:00")},
-			// pg: has 12:35:00.12+00:00 for the fourth item but our display favors Z.
-			// pg: has 11:35:00.12+00:00 for the fifth item because timestamptz does not preserve the time zone but we do.
+			exp:  []any{pt(ctx, "12:35:00.12+01:00"), pt(ctx, "12:36:00.11+01:00"), pt(ctx, "12:35:00.12-02:00"), pt(ctx, "12:35:00.12+00:00"), pt(ctx, "11:35:00.12+00:00")},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -5802,6 +5849,7 @@ func TestPgQueryTimestampComparison(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L939-L991
 	for _, tc := range []queryTestCase{
@@ -5831,7 +5879,7 @@ func TestPgQueryTimestampComparison(t *testing.T) {
 			json: js(`["2017-03-10 12:34:00", "2017-03-10 12:35:00", "2017-03-10 12:36:00", "2017-03-10 12:35:00+01", "2017-03-10 13:35:00+01", "2017-03-10 12:35:00-01", "2017-03-10", "2017-03-11", "12:34:56", "12:34:56+01"]`),
 			path: `$[*].datetime() ? (@ == "10.03.2017 12:35".datetime("dd.mm.yyyy HH24:MI"))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:35:00"), pt("2017-03-10T13:35:00+01:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:35:00"), pt(ctx, "2017-03-10T13:35:00+01:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5839,7 +5887,7 @@ func TestPgQueryTimestampComparison(t *testing.T) {
 			json: js(`["2017-03-10 12:34:00", "2017-03-10 12:35:00", "2017-03-10 12:36:00", "2017-03-10 12:35:00+01", "2017-03-10 13:35:00+01", "2017-03-10 12:35:00-01", "2017-03-10", "2017-03-11", "12:34:56", "12:34:56+01"]`),
 			path: `$[*].datetime() ? (@ >= "10.03.2017 12:35".datetime("dd.mm.yyyy HH24:MI"))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:35:00"), pt("2017-03-10T12:36:00"), pt("2017-03-10T13:35:00+01:00"), pt("2017-03-10T12:35:00-01:00"), pt("2017-03-11")},
+			exp:  []any{pt(ctx, "2017-03-10T12:35:00"), pt(ctx, "2017-03-10T12:36:00"), pt(ctx, "2017-03-10T13:35:00+01:00"), pt(ctx, "2017-03-10T12:35:00-01:00"), pt(ctx, "2017-03-11")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5847,7 +5895,7 @@ func TestPgQueryTimestampComparison(t *testing.T) {
 			json: js(`["2017-03-10 12:34:00", "2017-03-10 12:35:00", "2017-03-10 12:36:00", "2017-03-10 12:35:00+01", "2017-03-10 13:35:00+01", "2017-03-10 12:35:00-01", "2017-03-10", "2017-03-11", "12:34:56", "12:34:56+01"]`),
 			path: `$[*].datetime() ? (@ < "10.03.2017 12:35".datetime("dd.mm.yyyy HH24:MI"))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:34:00"), pt("2017-03-10T12:35:00+01:00"), pt("2017-03-10")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00"), pt(ctx, "2017-03-10T12:35:00+01:00"), pt(ctx, "2017-03-10")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5855,21 +5903,21 @@ func TestPgQueryTimestampComparison(t *testing.T) {
 			json: js(`["2017-03-10 12:34:00", "2017-03-10 12:35:00", "2017-03-10 12:36:00", "2017-03-10 12:35:00+01", "2017-03-10 13:35:00+01", "2017-03-10 12:35:00-01", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].datetime() ? (@ == "2017-03-10 12:35:00".timestamp())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:35:00"), pt("2017-03-10T13:35:00+01:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:35:00"), pt(ctx, "2017-03-10T13:35:00+01:00")},
 		},
 		{
 			name: "test_8",
 			json: js(`["2017-03-10 12:34:00", "2017-03-10 12:35:00", "2017-03-10 12:36:00", "2017-03-10 12:35:00+01", "2017-03-10 13:35:00+01", "2017-03-10 12:35:00-01", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].datetime() ? (@ >= "2017-03-10 12:35:00".timestamp())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:35:00"), pt("2017-03-10T12:36:00"), pt("2017-03-10T13:35:00+01:00"), pt("2017-03-10T12:35:00-01:00"), pt("2017-03-11")},
+			exp:  []any{pt(ctx, "2017-03-10T12:35:00"), pt(ctx, "2017-03-10T12:36:00"), pt(ctx, "2017-03-10T13:35:00+01:00"), pt(ctx, "2017-03-10T12:35:00-01:00"), pt(ctx, "2017-03-11")},
 		},
 		{
 			name: "test_9",
 			json: js(`["2017-03-10 12:34:00", "2017-03-10 12:35:00", "2017-03-10 12:36:00", "2017-03-10 12:35:00+01", "2017-03-10 13:35:00+01", "2017-03-10 12:35:00-01", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].datetime() ? (@ < "2017-03-10 12:35:00".timestamp())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:34:00"), pt("2017-03-10T12:35:00+01:00"), pt("2017-03-10")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00"), pt(ctx, "2017-03-10T12:35:00+01:00"), pt(ctx, "2017-03-10")},
 		},
 		{
 			name: "test_10",
@@ -5900,33 +5948,33 @@ func TestPgQueryTimestampComparison(t *testing.T) {
 			json: js(`["2017-03-10 12:34:00", "2017-03-10 12:35:00", "2017-03-10 12:36:00", "2017-03-10 12:35:00+01", "2017-03-10 13:35:00+01", "2017-03-10 12:35:00-01", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp() ? (@ == "2017-03-10 12:35:00".timestamp())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:35:00"), pt("2017-03-10T12:35:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:35:00"), pt(ctx, "2017-03-10T12:35:00")},
 		},
 		{
 			name: "test_15",
 			json: js(`["2017-03-10 12:34:00", "2017-03-10 12:35:00", "2017-03-10 12:36:00", "2017-03-10 12:35:00+01", "2017-03-10 13:35:00+01", "2017-03-10 12:35:00-01", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp() ? (@ >= "2017-03-10 12:35:00".timestamp())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:35:00"), pt("2017-03-10T12:36:00"), pt("2017-03-10T12:35:00"), pt("2017-03-10T13:35:00"), pt("2017-03-11T00:00:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:35:00"), pt(ctx, "2017-03-10T12:36:00"), pt(ctx, "2017-03-10T12:35:00"), pt(ctx, "2017-03-10T13:35:00"), pt(ctx, "2017-03-11T00:00:00")},
 		},
 		{
 			name: "test_16",
 			json: js(`["2017-03-10 12:34:00", "2017-03-10 12:35:00", "2017-03-10 12:36:00", "2017-03-10 12:35:00+01", "2017-03-10 13:35:00+01", "2017-03-10 12:35:00-01", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp() ? (@ < "2017-03-10 12:35:00".timestamp())`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:34:00"), pt("2017-03-10T11:35:00"), pt("2017-03-10T00:00:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00"), pt(ctx, "2017-03-10T11:35:00"), pt(ctx, "2017-03-10T00:00:00")},
 		},
 		{
 			name: "test_17",
 			json: js(`["2017-03-10 12:34:00.123", "2017-03-10 12:35:00.123", "2017-03-10 12:36:00.1123", "2017-03-10 12:35:00.1123+01", "2017-03-10 13:35:00.123+01", "2017-03-10 12:35:00.1-01", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp(2) ? (@ >= "2017-03-10 12:35:00.123".timestamp(2))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:35:00.12"), pt("2017-03-10T12:36:00.11"), pt("2017-03-10T12:35:00.12"), pt("2017-03-10T13:35:00.1"), pt("2017-03-11T00:00:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:35:00.12"), pt(ctx, "2017-03-10T12:36:00.11"), pt(ctx, "2017-03-10T12:35:00.12"), pt(ctx, "2017-03-10T13:35:00.1"), pt(ctx, "2017-03-11T00:00:00")},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -5935,6 +5983,7 @@ func TestPgQueryTimestampTZComparison(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L993-L1045
 	for _, tc := range []queryTestCase{
@@ -5964,7 +6013,7 @@ func TestPgQueryTimestampTZComparison(t *testing.T) {
 			json: js(`["2017-03-10 12:34:00+01", "2017-03-10 12:35:00+01", "2017-03-10 12:36:00+01", "2017-03-10 12:35:00+02", "2017-03-10 12:35:00-02", "2017-03-10 10:35:00", "2017-03-10 11:35:00", "2017-03-10 12:35:00", "2017-03-10", "2017-03-11", "12:34:56", "12:34:56+01"]`),
 			path: `$[*].datetime() ? (@ == "10.03.2017 12:35 +1".datetime("dd.mm.yyyy HH24:MI TZH"))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:35:00+01:00"), pt("2017-03-10T11:35:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:35:00+01:00"), pt(ctx, "2017-03-10T11:35:00")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5972,7 +6021,7 @@ func TestPgQueryTimestampTZComparison(t *testing.T) {
 			json: js(`["2017-03-10 12:34:00+01", "2017-03-10 12:35:00+01", "2017-03-10 12:36:00+01", "2017-03-10 12:35:00+02", "2017-03-10 12:35:00-02", "2017-03-10 10:35:00", "2017-03-10 11:35:00", "2017-03-10 12:35:00", "2017-03-10", "2017-03-11", "12:34:56", "12:34:56+01"]`),
 			path: `$[*].datetime() ? (@ >= "10.03.2017 12:35 +1".datetime("dd.mm.yyyy HH24:MI TZH"))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:35:00+01:00"), pt("2017-03-10T12:36:00+01:00"), pt("2017-03-10T12:35:00-02:00"), pt("2017-03-10T11:35:00"), pt("2017-03-10T12:35:00"), pt("2017-03-11")},
+			exp:  []any{pt(ctx, "2017-03-10T12:35:00+01:00"), pt(ctx, "2017-03-10T12:36:00+01:00"), pt(ctx, "2017-03-10T12:35:00-02:00"), pt(ctx, "2017-03-10T11:35:00"), pt(ctx, "2017-03-10T12:35:00"), pt(ctx, "2017-03-11")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5980,7 +6029,7 @@ func TestPgQueryTimestampTZComparison(t *testing.T) {
 			json: js(`["2017-03-10 12:34:00+01", "2017-03-10 12:35:00+01", "2017-03-10 12:36:00+01", "2017-03-10 12:35:00+02", "2017-03-10 12:35:00-02", "2017-03-10 10:35:00", "2017-03-10 11:35:00", "2017-03-10 12:35:00", "2017-03-10", "2017-03-11", "12:34:56", "12:34:56+01"]`),
 			path: `$[*].datetime() ? (@ < "10.03.2017 12:35 +1".datetime("dd.mm.yyyy HH24:MI TZH"))`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:34:00+01:00"), pt("2017-03-10T12:35:00+02:00"), pt("2017-03-10T10:35:00"), pt("2017-03-10")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00+01:00"), pt(ctx, "2017-03-10T12:35:00+02:00"), pt(ctx, "2017-03-10T10:35:00"), pt(ctx, "2017-03-10")},
 			err:  `exec: .datetime(template) is not yet supported`,
 		},
 		{
@@ -5988,21 +6037,21 @@ func TestPgQueryTimestampTZComparison(t *testing.T) {
 			json: js(`["2017-03-10 12:34:00+01", "2017-03-10 12:35:00+01", "2017-03-10 12:36:00+01", "2017-03-10 12:35:00+02", "2017-03-10 12:35:00-02", "2017-03-10 10:35:00", "2017-03-10 11:35:00", "2017-03-10 12:35:00", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].datetime() ? (@ == "2017-03-10 12:35:00+01".timestamp_tz())`, // pg: 2017-03-10 12:35:00 +1
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:35:00+01:00"), pt("2017-03-10T11:35:00")},
+			exp:  []any{pt(ctx, "2017-03-10T12:35:00+01:00"), pt(ctx, "2017-03-10T11:35:00")},
 		},
 		{
 			name: "test_8",
 			json: js(`["2017-03-10 12:34:00+01", "2017-03-10 12:35:00+01", "2017-03-10 12:36:00+01", "2017-03-10 12:35:00+02", "2017-03-10 12:35:00-02", "2017-03-10 10:35:00", "2017-03-10 11:35:00", "2017-03-10 12:35:00", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].datetime() ? (@ >= "2017-03-10 12:35:00+01".timestamp_tz())`, // pg: 2017-03-10 12:35:00 +1
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:35:00+01:00"), pt("2017-03-10T12:36:00+01:00"), pt("2017-03-10T12:35:00-02:00"), pt("2017-03-10T11:35:00"), pt("2017-03-10T12:35:00"), pt("2017-03-11")},
+			exp:  []any{pt(ctx, "2017-03-10T12:35:00+01:00"), pt(ctx, "2017-03-10T12:36:00+01:00"), pt(ctx, "2017-03-10T12:35:00-02:00"), pt(ctx, "2017-03-10T11:35:00"), pt(ctx, "2017-03-10T12:35:00"), pt(ctx, "2017-03-11")},
 		},
 		{
 			name: "test_9",
 			json: js(`["2017-03-10 12:34:00+01", "2017-03-10 12:35:00+01", "2017-03-10 12:36:00+01", "2017-03-10 12:35:00+02", "2017-03-10 12:35:00-02", "2017-03-10 10:35:00", "2017-03-10 11:35:00", "2017-03-10 12:35:00", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].datetime() ? (@ < "2017-03-10 12:35:00+01".timestamp_tz())`, // pg: 2017-03-10 12:35:00 +1
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:34:00+01:00"), pt("2017-03-10T12:35:00+02:00"), pt("2017-03-10T10:35:00"), pt("2017-03-10")},
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00+01:00"), pt(ctx, "2017-03-10T12:35:00+02:00"), pt(ctx, "2017-03-10T10:35:00"), pt(ctx, "2017-03-10")},
 		},
 		{
 			name: "test_10",
@@ -6033,33 +6082,33 @@ func TestPgQueryTimestampTZComparison(t *testing.T) {
 			json: js(`["2017-03-10 12:34:00+01", "2017-03-10 12:35:00+01", "2017-03-10 12:36:00+01", "2017-03-10 12:35:00+02", "2017-03-10 12:35:00-02", "2017-03-10 10:35:00", "2017-03-10 11:35:00", "2017-03-10 12:35:00", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp_tz() ? (@ == "2017-03-10 12:35:00+01".timestamp_tz())`, // pg: 2017-03-10 12:35:00 +1
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:35:00+01:00"), pt("2017-03-10T11:35:00Z")}, // pg: +00:00 instead of Z
+			exp:  []any{pt(ctx, "2017-03-10T12:35:00+01:00"), pt(ctx, "2017-03-10T11:35:00+00:00")},
 		},
 		{
 			name: "test_15",
 			json: js(`["2017-03-10 12:34:00+01", "2017-03-10 12:35:00+01", "2017-03-10 12:36:00+01", "2017-03-10 12:35:00+02", "2017-03-10 12:35:00-02", "2017-03-10 10:35:00", "2017-03-10 11:35:00", "2017-03-10 12:35:00", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp_tz() ? (@ >= "2017-03-10 12:35:00+01".timestamp_tz())`, // pg: 2017-03-10 12:35:00 +1
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:35:00+01:00"), pt("2017-03-10T12:36:00+01:00"), pt("2017-03-10T12:35:00-02:00"), pt("2017-03-10T11:35:00Z"), pt("2017-03-10T12:35:00Z"), pt("2017-03-11T00:00:00Z")}, // pg: +00:00 instead of Z
+			exp:  []any{pt(ctx, "2017-03-10T12:35:00+01:00"), pt(ctx, "2017-03-10T12:36:00+01:00"), pt(ctx, "2017-03-10T12:35:00-02:00"), pt(ctx, "2017-03-10T11:35:00+00:00"), pt(ctx, "2017-03-10T12:35:00+00:00"), pt(ctx, "2017-03-11T00:00:00+00:00")},
 		},
 		{
 			name: "test_16",
 			json: js(`["2017-03-10 12:34:00+01", "2017-03-10 12:35:00+01", "2017-03-10 12:36:00+01", "2017-03-10 12:35:00+02", "2017-03-10 12:35:00-02", "2017-03-10 10:35:00", "2017-03-10 11:35:00", "2017-03-10 12:35:00", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp_tz() ? (@ < "2017-03-10 12:35:00+01".timestamp_tz())`, // pg: 2017-03-10 12:35:00 +1
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:34:00+01:00"), pt("2017-03-10T12:35:00+02:00"), pt("2017-03-10T10:35:00Z"), pt("2017-03-10T00:00:00Z")}, // pg: +00:00 instead of Z
+			exp:  []any{pt(ctx, "2017-03-10T12:34:00+01:00"), pt(ctx, "2017-03-10T12:35:00+02:00"), pt(ctx, "2017-03-10T10:35:00+00:00"), pt(ctx, "2017-03-10T00:00:00+00:00")},
 		},
 		{
 			name: "test_17",
 			json: js(`["2017-03-10 12:34:00.123+01", "2017-03-10 12:35:00.123+01", "2017-03-10 12:36:00.1123+01", "2017-03-10 12:35:00.1123+02", "2017-03-10 12:35:00.123-02", "2017-03-10 10:35:00.123", "2017-03-10 11:35:00.1", "2017-03-10 12:35:00.123", "2017-03-10", "2017-03-11"]`),
 			path: `$[*].timestamp_tz(2) ? (@ >= "2017-03-10 12:35:00.123+01".timestamp_tz(2))`, // pg: 2017-03-10 12:35:00.123 +1
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt("2017-03-10T12:35:00.12+01:00"), pt("2017-03-10T12:36:00.11+01:00"), pt("2017-03-10T12:35:00.12-02:00"), pt("2017-03-10T12:35:00.12Z"), pt("2017-03-11T00:00:00Z")}, // pg: +00:00 instead of Z
+			exp:  []any{pt(ctx, "2017-03-10T12:35:00.12+01:00"), pt(ctx, "2017-03-10T12:36:00.11+01:00"), pt(ctx, "2017-03-10T12:35:00.12-02:00"), pt(ctx, "2017-03-10T12:35:00.12+00:00"), pt(ctx, "2017-03-11T00:00:00+00:00")},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -6068,6 +6117,7 @@ func TestPgQueryComparisonOverflow(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1048-L1049
 	for _, tc := range []queryTestCase{
@@ -6080,7 +6130,7 @@ func TestPgQueryComparisonOverflow(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -6089,6 +6139,7 @@ func TestPgQueryOperators(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1053-L1065
 	for _, tc := range []queryTestCase{
@@ -6159,7 +6210,7 @@ func TestPgQueryOperators(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -6168,6 +6219,7 @@ func TestPgFirst(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1067-L1075
 	for _, tc := range []firstTestCase{
@@ -6231,7 +6283,7 @@ func TestPgFirst(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -6240,6 +6292,7 @@ func TestPgAtQuestionOperators(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1077-L1078
 	for _, tc := range []existsTestCase{
@@ -6258,7 +6311,7 @@ func TestPgAtQuestionOperators(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtQuestion(a, r)
+			tc.runAtQuestion(ctx, a, r)
 		})
 	}
 }
@@ -6267,6 +6320,7 @@ func TestPgExistsOperators(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1079-L1083
 	for _, tc := range []existsTestCase{
@@ -6305,7 +6359,7 @@ func TestPgExistsOperators(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -6314,6 +6368,7 @@ func TestPgMatchOperators(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1085-L1101
 	for _, tc := range []matchTestCase{
@@ -6423,7 +6478,7 @@ func TestPgMatchOperators(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.run(a, r)
+			tc.run(ctx, a, r)
 		})
 	}
 }
@@ -6432,6 +6487,7 @@ func TestPgAtAtOperators(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1097-L1098
 	for _, tc := range []matchTestCase{
@@ -6450,7 +6506,7 @@ func TestPgAtAtOperators(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			tc.runAtAt(a, r)
+			tc.runAtAt(ctx, a, r)
 		})
 	}
 }
@@ -6459,6 +6515,7 @@ func TestPgFirstStringComparison(t *testing.T) {
 	t.Parallel()
 	r := require.New(t)
 	a := assert.New(t)
+	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1103-L1117
 	i := 0
@@ -6635,7 +6692,7 @@ func TestPgFirstStringComparison(t *testing.T) {
 					path: "$.s" + opCase.op + " $s",
 					opt:  []Option{WithVars(Vars(tc.obj2))},
 					exp:  opCase.exp,
-				}.run(a, r)
+				}.run(ctx, a, r)
 			})
 		}
 	}

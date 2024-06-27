@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"math"
 	"time"
 )
@@ -13,29 +14,28 @@ import (
 // We also support ISO 8601 format (with "T") for timestamps, because
 // PostgreSQL to_json() and to_jsonb() functions use this format, as do
 // [Timestamp.MarshalJSON] and [TimestampTZ.MarshalJSON].
-func ParseTime(src string, precision int) (DateTime, bool) {
+func ParseTime(ctx context.Context, src string, precision int) (DateTime, bool) {
 	// Date first.
 	value, err := time.Parse("2006-01-02", src)
 	if err == nil {
-		return &Date{value}, true
+		return NewDate(value), true
 	}
 
 	// Time with TZ
 	for _, format := range []string{
 		"15:04:05Z07",
 		"15:04:05Z07:00",
-		"15:04:05Z07:00:00",
 	} {
 		value, err := time.Parse(format, src)
 		if err == nil {
-			return &TimeTZ{adjustPrecision(value, precision)}, true
+			return NewTimeTZ(adjustPrecision(offsetOnlyTimeFor(value), precision)), true
 		}
 	}
 
 	// Time without TZ
 	value, err = time.Parse("15:04:05", src)
 	if err == nil {
-		return &Time{adjustPrecision(value, precision)}, true
+		return NewTime(adjustPrecision(value, precision)), true
 	}
 
 	// Timestamp with tz, with and without "T"
@@ -44,12 +44,10 @@ func ParseTime(src string, precision int) (DateTime, bool) {
 		"2006-01-02 15:04:05Z07",
 		"2006-01-02T15:04:05Z07:00",
 		"2006-01-02 15:04:05Z07:00",
-		"2006-01-02T15:04:05Z07:00:00",
-		"2006-01-02 15:04:05Z07:00:00",
 	} {
 		value, err := time.Parse(format, src)
 		if err == nil {
-			return &TimestampTZ{adjustPrecision(value, precision)}, true
+			return NewTimestampTZ(ctx, adjustPrecision(value, precision)), true
 		}
 	}
 
@@ -60,7 +58,7 @@ func ParseTime(src string, precision int) (DateTime, bool) {
 	} {
 		value, err := time.Parse(format, src)
 		if err == nil {
-			return &Timestamp{adjustPrecision(value, precision)}, true
+			return NewTimestamp(adjustPrecision(value, precision)), true
 		}
 	}
 

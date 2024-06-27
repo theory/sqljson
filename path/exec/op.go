@@ -226,7 +226,7 @@ func (exec *Executor) executeAnyItem(
 
 // executeLikeRegex is the LIKE_REGEX predicate callback.
 // Implements predicateCallback.
-func (exec *Executor) executeLikeRegex(node ast.Node, value, _ any) (predOutcome, error) {
+func (exec *Executor) executeLikeRegex(_ context.Context, node ast.Node, value, _ any) (predOutcome, error) {
 	rn, ok := node.(*ast.RegexNode)
 	if !ok {
 		panic(fmt.Sprintf(
@@ -250,7 +250,7 @@ func (exec *Executor) executeLikeRegex(node ast.Node, value, _ any) (predOutcome
 // predTrue when whole string starts with initial and predFalse if it does
 // not. Returns predUnknown if either whole or initial is not a string.
 // Implements predicateCallback.
-func executeStartsWith(_ ast.Node, whole, initial any) (predOutcome, error) {
+func executeStartsWith(_ context.Context, _ ast.Node, whole, initial any) (predOutcome, error) {
 	if str, ok := whole.(string); ok {
 		if prefix, ok := initial.(string); ok {
 			if strings.HasPrefix(str, prefix) {

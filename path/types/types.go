@@ -7,6 +7,7 @@
 package types
 
 import (
+	"context"
 	"errors"
 	"time"
 )
@@ -14,34 +15,16 @@ import (
 // ErrSQLType wraps errors returned by the types package.
 var ErrSQLType = errors.New("type")
 
-// infinityModifier indicates whether a value is finite or infinite.
-type infinityModifier int8
-
-const (
-	// Infinity is infinite.
-	Infinity infinityModifier = 1
-	// Finite is finite.
-	Finite infinityModifier = 0
-	// NegativeInfinity is infinitely negative.
-	NegativeInfinity infinityModifier = -Infinity
-)
-
-// String returns the string representation of im.
-func (im infinityModifier) String() string {
-	switch im {
-	case Finite:
-		return "finite"
-	case Infinity:
-		return "infinity"
-	case NegativeInfinity:
-		return "-infinity"
-	default:
-		return "invalid"
-	}
-}
+// secondsPerHour contains the number of seconds in an hour (excluding leap
+// seconds).
+const secondsPerHour = 60 * 60
 
 // DateTime defines the interface for all date and time data types.
 type DateTime interface {
 	// GoTime returns the underlying time.Time object.
 	GoTime() time.Time
+
+	// ToString returns the output appropriate for the jsonpath string()
+	// method, where appropriate in the time zone in ctx.
+	ToString(ctx context.Context) string
 }

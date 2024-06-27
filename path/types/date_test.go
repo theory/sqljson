@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -13,12 +14,13 @@ func TestDate(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	r := require.New(t)
+	ctx := context.Background()
 
 	for _, tc := range timestampTestCases(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			// Don't test Time and TimeTZ
-			switch tc.ctor(time.Time{}).(type) {
+			switch tc.ctor(time.Time{}, &time.Location{}).(type) {
 			case *Time, *TimeTZ:
 				return
 			}
@@ -27,20 +29,35 @@ func TestDate(t *testing.T) {
 			exp := tc.time
 			tc.time = time.Date(
 				exp.Year(), exp.Month(), exp.Day(),
-				0, 0, 0, 0, time.UTC,
+				0, 0, 0, 0, offsetZero,
 			)
-			ts := NewDate(tc.time)
-			a.Equal(&Date{Time: tc.time}, ts)
-			a.Equal(tc.time, ts.GoTime())
-			a.Equal(tc.time.Format(dateFormat), ts.String())
+			date := NewDate(tc.time)
+			a.Equal(&Date{Time: tc.time}, date)
+			a.Equal(tc.time, date.GoTime())
+			a.Equal(tc.time.Format(dateFormat), date.String())
+			a.Equal(tc.time.Format(dateFormat), date.ToString(ctx))
 
 			// Check JSON
-			json, err := ts.MarshalJSON()
+			json, err := date.MarshalJSON()
 			r.NoError(err)
-			a.Equal(fmt.Sprintf("%q", ts.String()), string(json))
+			a.Equal(fmt.Sprintf("%q", date.String()), string(json))
 			ts2 := new(Date)
 			r.NoError(ts2.UnmarshalJSON(json))
-			a.Equal(ts, ts2)
+			a.Equal(date, ts2)
+
+			// Test Conversion functions.
+			loc := time.FixedZone("", -3*secondsPerHour)
+			ctx := ContextWithTZ(ctx, loc)
+			a.Equal(NewTimestamp(date.Time), date.ToTimestamp(ctx))
+			a.Equal(
+				NewTimestampTZ(
+					ctx,
+					time.Date(
+						date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, loc,
+					).In(offsetZero),
+				),
+				date.ToTimestampTZ(ctx),
+			)
 		})
 	}
 }

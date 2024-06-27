@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -13,11 +14,11 @@ type Time struct {
 
 // NewTime coerces src into a Time.
 func NewTime(src time.Time) *Time {
-	// Convert result type to Time without time zone (use UTC)
+	// Convert result type to Time without time zone (use offset 0)
 	return &Time{time.Date(
 		0, 1, 1,
 		src.Hour(), src.Minute(), src.Second(), src.Nanosecond(),
-		time.UTC,
+		offsetZero,
 	)}
 }
 
@@ -32,6 +33,20 @@ const timeFormat = "15:04:05.999999999"
 // "15:04:05.999999999".
 func (t *Time) String() string {
 	return t.Time.Format(timeFormat)
+}
+
+// ToString returns the output appropriate for the jsonpath string() method.
+func (t *Time) ToString(context.Context) string {
+	return t.String()
+}
+
+// ToTimeTZ converts t to *TimeTZ in the time zone in ctx.
+func (t *Time) ToTimeTZ(ctx context.Context) *TimeTZ {
+	return NewTimeTZ(time.Date(
+		0, 1, 1,
+		t.Hour(), t.Minute(), t.Second(), t.Nanosecond(),
+		TZFromContext(ctx),
+	))
 }
 
 // Compare compares the time instant t with u. If d is before u, it returns
@@ -61,6 +76,6 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 			ErrSQLType, data, timeFormat,
 		)
 	}
-	*t = Time{Time: tim}
+	*t = *NewTime(tim)
 	return nil
 }

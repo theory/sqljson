@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -13,12 +14,13 @@ func TestTimestamp(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	r := require.New(t)
+	ctx := context.Background()
 
 	for _, tc := range timestampTestCases(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			// Don't test Time and TimeTZ
-			switch tc.ctor(time.Time{}).(type) {
+			switch tc.ctor(time.Time{}, &time.Location{}).(type) {
 			case *Time, *TimeTZ:
 				return
 			}
@@ -27,13 +29,14 @@ func TestTimestamp(t *testing.T) {
 			exp := time.Date(
 				tc.time.Year(), tc.time.Month(), tc.time.Day(),
 				tc.time.Hour(), tc.time.Minute(), tc.time.Second(),
-				tc.time.Nanosecond(), time.UTC,
+				tc.time.Nanosecond(), offsetZero,
 			)
 
 			ts := NewTimestamp(tc.time)
 			a.Equal(&Timestamp{Time: exp}, ts)
 			a.Equal(exp, ts.GoTime())
 			a.Equal(exp.Format(timestampFormat), ts.String())
+			a.Equal(exp.Format(timestampFormat), ts.ToString(ctx))
 
 			// Check JSON
 			json, err := ts.MarshalJSON()
@@ -42,6 +45,11 @@ func TestTimestamp(t *testing.T) {
 			ts2 := new(Timestamp)
 			r.NoError(ts2.UnmarshalJSON(json))
 			a.Equal(ts, ts2)
+
+			// Test Conversion methods.
+			a.Equal(NewDate(ts.Time), ts.ToDate(ctx))
+			a.Equal(NewTime(ts.Time), ts.ToTime(ctx))
+			a.Equal(NewTimestampTZ(ctx, ts.Time), ts.ToTimestampTZ(ctx))
 		})
 	}
 }

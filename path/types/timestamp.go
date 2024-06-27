@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -13,15 +14,12 @@ type Timestamp struct {
 
 // NewTimestamp coerces src into a Timestamp.
 func NewTimestamp(src time.Time) *Timestamp {
-	// Convert result type to timestamp without time zone (use UTC)
-	if src.Location() != time.UTC {
-		src = time.Date(
-			src.Year(), src.Month(), src.Day(),
-			src.Hour(), src.Minute(), src.Second(), src.Nanosecond(),
-			time.UTC,
-		)
-	}
-	return &Timestamp{src}
+	// Convert result type to timestamp without time zone (use offset 0).
+	return &Timestamp{time.Date(
+		src.Year(), src.Month(), src.Day(),
+		src.Hour(), src.Minute(), src.Second(), src.Nanosecond(),
+		offsetZero,
+	)}
 }
 
 // GoTime returns the underlying time.Time object.
@@ -35,6 +33,26 @@ const timestampFormat = "2006-01-02T15:04:05.999999999"
 // "2006-01-02T15:04:05.999999999".
 func (ts *Timestamp) String() string {
 	return ts.Time.Format(timestampFormat)
+}
+
+// ToString returns the output appropriate for the jsonpath string() method.
+func (ts *Timestamp) ToString(context.Context) string {
+	return ts.String()
+}
+
+// ToDate converts ts to *Date.
+func (ts *Timestamp) ToDate(context.Context) *Date {
+	return NewDate(ts.Time)
+}
+
+// ToTime converts ts to *Time.
+func (ts *Timestamp) ToTime(context.Context) *Time {
+	return NewTime(ts.Time)
+}
+
+// ToTimestampTZ converts ts to *TimestampTZ.
+func (ts *Timestamp) ToTimestampTZ(ctx context.Context) *TimestampTZ {
+	return NewTimestampTZ(ctx, contextOffsetZero(ctx, ts.Time))
 }
 
 // Compare compares the time instant ts with u. If ts is before u, it returns
@@ -64,6 +82,6 @@ func (ts *Timestamp) UnmarshalJSON(data []byte) error {
 			ErrSQLType, data, timestampFormat,
 		)
 	}
-	*ts = Timestamp{Time: tim}
+	*ts = *NewTimestamp(tim)
 	return nil
 }

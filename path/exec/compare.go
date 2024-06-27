@@ -1,6 +1,7 @@
 package exec
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -11,7 +12,7 @@ import (
 
 // compareItems compares two SQL/JSON items using comparison operation 'op'.
 // Implements predicateCallback.
-func (exec *Executor) compareItems(node ast.Node, left, right any) (predOutcome, error) {
+func (exec *Executor) compareItems(ctx context.Context, node ast.Node, left, right any) (predOutcome, error) {
 	var cmp int
 	bin, ok := node.(*ast.BinaryNode)
 	if !ok {
@@ -53,7 +54,7 @@ func (exec *Executor) compareItems(node ast.Node, left, right any) (predOutcome,
 		}
 	case *types.Date, *types.Time, *types.TimeTZ, *types.Timestamp, *types.TimestampTZ:
 		var err error
-		cmp, err = compareDatetime(left, right, exec.useTZ)
+		cmp, err = compareDatetime(ctx, left, right, exec.useTZ)
 		if cmp < -1 || err != nil {
 			return predUnknown, err
 		}

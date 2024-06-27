@@ -311,7 +311,10 @@ func TestExecUnaryNode(t *testing.T) {
 			node:  ast.NewUnary(ast.UnaryTimestampTZ, nil),
 			exp:   statusOK,
 			value: "2024-06-14T14:23:54+01",
-			find:  []any{types.NewTimestampTZ(time.Date(2024, 6, 14, 14, 23, 54, 0, time.FixedZone("", 60*60)))},
+			find: []any{types.NewTimestampTZ(
+				ctx,
+				time.Date(2024, 6, 14, 14, 23, 54, 0, time.FixedZone("", 60*60)),
+			)},
 		},
 		{
 			name:  "datetime_array",
@@ -328,8 +331,11 @@ func TestExecUnaryNode(t *testing.T) {
 			value:  []any{"2024-06-14", "2024-06-14T14:23:54+01"},
 			unwrap: true,
 			find: []any{
-				types.NewDate(time.Date(2024, 6, 14, 0, 0, 0, 0, time.UTC)),
-				types.NewTimestampTZ(time.Date(2024, 6, 14, 14, 23, 54, 0, time.FixedZone("", 60*60))),
+				types.NewDate(time.Date(2024, 6, 14, 0, 0, 0, 0, time.FixedZone("", 0))),
+				types.NewTimestampTZ(
+					ctx,
+					time.Date(2024, 6, 14, 14, 23, 54, 0, time.FixedZone("", 60*60)),
+				),
 			},
 		},
 		{
@@ -830,17 +836,18 @@ func TestExecuteLikeRegexErrors(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	r := require.New(t)
+	ctx := context.Background()
 
 	e := newTestExecutor(laxRootPath, nil, true, false)
 	r.PanicsWithValue(
 		"Node *ast.ConstNode passed to executeLikeRegex is not an ast.RegexNode",
-		func() { _, _ = e.executeLikeRegex(ast.NewConst(ast.ConstRoot), nil, nil) },
+		func() { _, _ = e.executeLikeRegex(ctx, ast.NewConst(ast.ConstRoot), nil, nil) },
 	)
 
 	rx, err := ast.NewRegex(ast.NewConst(ast.ConstRoot), ".", "")
 	r.NoError(err)
 
-	res, err := e.executeLikeRegex(rx, true, nil)
+	res, err := e.executeLikeRegex(ctx, rx, true, nil)
 	a.Equal(predUnknown, res)
 	a.NoError(err)
 }
@@ -849,6 +856,7 @@ func TestExecuteStartsWith(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	r := require.New(t)
+	ctx := context.Background()
 
 	for _, tc := range []struct {
 		name   string
@@ -888,7 +896,7 @@ func TestExecuteStartsWith(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			res, err := executeStartsWith(nil, tc.str, tc.prefix)
+			res, err := executeStartsWith(ctx, nil, tc.str, tc.prefix)
 			a.Equal(tc.exp, res)
 			r.NoError(err)
 		})

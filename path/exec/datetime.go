@@ -29,18 +29,18 @@ func unknownDateTime(val any) (int, error) {
 // compareDatetime performs a Cross-type comparison of two datetime SQL/JSON
 // items. Returns <= -1 if items are incomparable. Returns an error if a cast
 // requires timezone useTZ is false.
-func compareDatetime(val1, val2 any, useTZ bool) (int, error) {
+func compareDatetime(ctx context.Context, val1, val2 any, useTZ bool) (int, error) {
 	switch val1 := val1.(type) {
 	case *types.Date:
-		return compareDate(val1, val2, useTZ)
+		return compareDate(ctx, val1, val2, useTZ)
 	case *types.Time:
-		return compareTime(val1, val2, useTZ)
+		return compareTime(ctx, val1, val2, useTZ)
 	case *types.TimeTZ:
-		return compareTimeTZ(val1, val2, useTZ)
+		return compareTimeTZ(ctx, val1, val2, useTZ)
 	case *types.Timestamp:
-		return compareTimestamp(val1, val2, useTZ)
+		return compareTimestamp(ctx, val1, val2, useTZ)
 	case *types.TimestampTZ:
-		return compareTimestampTZ(val1, val2, useTZ)
+		return compareTimestampTZ(ctx, val1, val2, useTZ)
 	default:
 		return unknownDateTime(val1)
 	}
@@ -48,7 +48,7 @@ func compareDatetime(val1, val2 any, useTZ bool) (int, error) {
 
 // compareDate compares val1 to val1. Returns -2 if they're incomparable and
 // an error if a cast requires timezone useTZ is false.
-func compareDate(val1 *types.Date, val2 any, useTZ bool) (int, error) {
+func compareDate(_ context.Context, val1 *types.Date, val2 any, useTZ bool) (int, error) {
 	switch val2 := val2.(type) {
 	case *types.Date:
 		return val1.Compare(val2.Time), nil
@@ -58,7 +58,7 @@ func compareDate(val1 *types.Date, val2 any, useTZ bool) (int, error) {
 		if !useTZ {
 			return 0, tzRequiredCast("date", "timestamptz")
 		}
-		return val1.Compare(val2.Time.UTC()), nil
+		return val1.Compare(val2.Time), nil
 	case *types.Time, *types.TimeTZ:
 		// Incomparable types
 		return -2, nil
@@ -69,7 +69,7 @@ func compareDate(val1 *types.Date, val2 any, useTZ bool) (int, error) {
 
 // compareTime compares val1 to val1. Returns -2 if they're incomparable and
 // an error if a cast requires timezone useTZ is false.
-func compareTime(val1 *types.Time, val2 any, useTZ bool) (int, error) {
+func compareTime(ctx context.Context, val1 *types.Time, val2 any, useTZ bool) (int, error) {
 	switch val2 := val2.(type) {
 	case *types.Time:
 		return val1.Compare(val2.Time), nil
@@ -77,7 +77,11 @@ func compareTime(val1 *types.Time, val2 any, useTZ bool) (int, error) {
 		if !useTZ {
 			return 0, tzRequiredCast("time", "timetz")
 		}
-		return types.NewTimeTZ(val1.Time).Compare(val2.Time), nil
+		// Convert time to timetz context time.
+		ttz := val1.ToTimeTZ(ctx)
+		// There are special comparison rules for TimeTZ, so use its Compare
+		// function and invert the result.
+		return -val2.Compare(ttz.Time), nil
 
 	case *types.Date, *types.Timestamp, *types.TimestampTZ:
 		// Incomparable types
@@ -89,13 +93,14 @@ func compareTime(val1 *types.Time, val2 any, useTZ bool) (int, error) {
 
 // compareTimeTZ compares val1 to val1. Returns -2 if they're incomparable and
 // an error if a cast requires timezone useTZ is false.
-func compareTimeTZ(val1 *types.TimeTZ, val2 any, useTZ bool) (int, error) {
+func compareTimeTZ(ctx context.Context, val1 *types.TimeTZ, val2 any, useTZ bool) (int, error) {
 	switch val2 := val2.(type) {
 	case *types.Time:
 		if !useTZ {
 			return 0, tzRequiredCast("time", "timetz")
 		}
-		return val1.Compare(val2.Time), nil
+		// Convert time to timetz context time.
+		return val1.Compare(val2.ToTimeTZ(ctx).Time), nil
 	case *types.TimeTZ:
 		return val1.Compare(val2.Time), nil
 	case *types.Date, *types.Timestamp, *types.TimestampTZ:
@@ -108,7 +113,7 @@ func compareTimeTZ(val1 *types.TimeTZ, val2 any, useTZ bool) (int, error) {
 
 // compareTimestamp compares val1 to val1. Returns -2 if they're incomparable
 // and an error if a cast requires timezone useTZ is false.
-func compareTimestamp(val1 *types.Timestamp, val2 any, useTZ bool) (int, error) {
+func compareTimestamp(_ context.Context, val1 *types.Timestamp, val2 any, useTZ bool) (int, error) {
 	switch val2 := val2.(type) {
 	case *types.Date:
 		return val1.Compare(val2.Time), nil
@@ -118,7 +123,7 @@ func compareTimestamp(val1 *types.Timestamp, val2 any, useTZ bool) (int, error) 
 		if !useTZ {
 			return 0, tzRequiredCast("timestamp", "timestamptz")
 		}
-		return val1.Compare(val2.Time.UTC()), nil
+		return val1.UTC().Compare(val2.Time), nil
 	case *types.Time, *types.TimeTZ:
 		// Incomparable types
 		return -2, nil
@@ -129,7 +134,7 @@ func compareTimestamp(val1 *types.Timestamp, val2 any, useTZ bool) (int, error) 
 
 // compareTimestampTZ compares val1 to val1. Returns -2 if they're
 // incomparable and an error if a cast requires timezone useTZ is false.
-func compareTimestampTZ(val1 *types.TimestampTZ, val2 any, useTZ bool) (int, error) {
+func compareTimestampTZ(_ context.Context, val1 *types.TimestampTZ, val2 any, useTZ bool) (int, error) {
 	switch val2 := val2.(type) {
 	case *types.Date:
 		if !useTZ {
@@ -188,7 +193,7 @@ func (exec *Executor) executeDateTimeMethod(
 	if op == ast.UnaryDateTime && arg != nil {
 		err = exec.parseDateTimeFormat(datetime, arg)
 	} else {
-		timeVal, err = exec.parseDateTime(op, datetime, arg)
+		timeVal, err = exec.parseDateTime(ctx, op, datetime, arg)
 	}
 	if err != nil {
 		return exec.returnError(err)
@@ -201,15 +206,15 @@ func (exec *Executor) executeDateTimeMethod(
 	case ast.UnaryDateTime:
 		// Nothing to do for DATETIME
 	case ast.UnaryDate:
-		timeVal, err = exec.castDate(timeVal, datetime)
+		timeVal, err = exec.castDate(ctx, timeVal, datetime)
 	case ast.UnaryTime:
-		timeVal, err = exec.castTime(timeVal, datetime)
+		timeVal, err = exec.castTime(ctx, timeVal, datetime)
 	case ast.UnaryTimeTZ:
-		timeVal, err = exec.castTimeTZ(timeVal, datetime)
+		timeVal, err = exec.castTimeTZ(ctx, timeVal, datetime)
 	case ast.UnaryTimestamp:
-		timeVal, err = exec.castTimestamp(timeVal, datetime)
+		timeVal, err = exec.castTimestamp(ctx, timeVal, datetime)
 	case ast.UnaryTimestampTZ:
-		timeVal, err = exec.castTimestampTZ(timeVal, datetime)
+		timeVal, err = exec.castTimestampTZ(ctx, timeVal, datetime)
 	case ast.UnaryExists, ast.UnaryNot, ast.UnaryIsUnknown, ast.UnaryPlus, ast.UnaryMinus, ast.UnaryFilter:
 		return statusFailed, fmt.Errorf("%w: unrecognized jsonpath datetime method: %v", ErrInvalid, op)
 	}
@@ -252,7 +257,12 @@ func (exec *Executor) parseDateTimeFormat(_ string, _ ast.Node) error {
 // parseDateTime extracts an optional precision from arg, if it's not nil, the
 // passes it along with datetime to [types.ParseTime] to parse datetime and
 // apply precision to the resulting [types.DateTime] value.
-func (exec *Executor) parseDateTime(op ast.UnaryOperator, datetime string, arg ast.Node) (types.DateTime, error) {
+func (exec *Executor) parseDateTime(
+	ctx context.Context,
+	op ast.UnaryOperator,
+	datetime string,
+	arg ast.Node,
+) (types.DateTime, error) {
 	// Check for optional precision for methods other than .datetime() and
 	// .date()
 	precision := -1
@@ -278,7 +288,7 @@ func (exec *Executor) parseDateTime(op ast.UnaryOperator, datetime string, arg a
 	}
 
 	// Parse the value.
-	timeVal, ok := types.ParseTime(datetime, precision)
+	timeVal, ok := types.ParseTime(ctx, datetime, precision)
 	if !ok {
 		return nil, fmt.Errorf(
 			`%w: %v format is not recognized: "%v"`,
@@ -300,7 +310,7 @@ func notRecognized(op ast.UnaryOperator, datetime string) error {
 
 // castDate casts timeVal to [types.Date]. The datetime param is used in error
 // messages.
-func (exec *Executor) castDate(timeVal types.DateTime, datetime string) (*types.Date, error) {
+func (exec *Executor) castDate(ctx context.Context, timeVal types.DateTime, datetime string) (*types.Date, error) {
 	// Convert result type to date
 	switch tv := timeVal.(type) {
 	case *types.Date:
@@ -310,12 +320,12 @@ func (exec *Executor) castDate(timeVal types.DateTime, datetime string) (*types.
 		// Incompatible.
 		return nil, notRecognized(ast.UnaryDate, datetime)
 	case *types.Timestamp:
-		return types.NewDate(tv.Time), nil
+		return tv.ToDate(ctx), nil
 	case *types.TimestampTZ:
 		if !exec.useTZ {
 			return nil, tzRequiredCast("timestamptz", "date")
 		}
-		return types.NewDate(tv.Time.UTC()), nil
+		return tv.ToDate(ctx), nil
 	default:
 		return nil, fmt.Errorf("%w: type %T not supported", ErrInvalid, tv)
 	}
@@ -323,7 +333,7 @@ func (exec *Executor) castDate(timeVal types.DateTime, datetime string) (*types.
 
 // castTime casts timeVal to [types.Time]. The datetime param is used in error
 // messages.
-func (exec *Executor) castTime(timeVal types.DateTime, datetime string) (*types.Time, error) {
+func (exec *Executor) castTime(ctx context.Context, timeVal types.DateTime, datetime string) (*types.Time, error) {
 	switch tv := timeVal.(type) {
 	case *types.Date:
 		return nil, notRecognized(ast.UnaryTime, datetime)
@@ -334,14 +344,14 @@ func (exec *Executor) castTime(timeVal types.DateTime, datetime string) (*types.
 		if !exec.useTZ {
 			return nil, tzRequiredCast("timetz", "time")
 		}
-		return types.NewTime(tv.Time), nil
+		return tv.ToTime(ctx), nil
 	case *types.Timestamp:
-		return types.NewTime(tv.Time), nil
+		return tv.ToTime(ctx), nil
 	case *types.TimestampTZ:
 		if !exec.useTZ {
 			return nil, tzRequiredCast("timestamptz", "time")
 		}
-		return types.NewTime(tv.Time.UTC()), nil
+		return tv.ToTime(ctx), nil
 	default:
 		return nil, fmt.Errorf("%w: type %T not supported", ErrInvalid, tv)
 	}
@@ -349,7 +359,7 @@ func (exec *Executor) castTime(timeVal types.DateTime, datetime string) (*types.
 
 // castTimeTZ casts timeVal to [types.TimeTZ]. The datetime param is used in
 // error messages.
-func (exec *Executor) castTimeTZ(timeVal types.DateTime, datetime string) (*types.TimeTZ, error) {
+func (exec *Executor) castTimeTZ(ctx context.Context, timeVal types.DateTime, datetime string) (*types.TimeTZ, error) {
 	switch tv := timeVal.(type) {
 	case *types.Date, *types.Timestamp:
 		return nil, notRecognized(ast.UnaryTimeTZ, datetime)
@@ -357,13 +367,12 @@ func (exec *Executor) castTimeTZ(timeVal types.DateTime, datetime string) (*type
 		if !exec.useTZ {
 			return nil, tzRequiredCast("time", "timetz")
 		}
-		return types.NewTimeTZ(tv.Time.UTC()), nil
+		return tv.ToTimeTZ(ctx), nil
 	case *types.TimeTZ:
 		// Nothing to do for TIMETZ
 		return tv, nil
 	case *types.TimestampTZ:
-		// Retain the offset.
-		return types.NewTimeTZ(tv.Time), nil
+		return tv.ToTimeTZ(ctx), nil
 	default:
 		return nil, fmt.Errorf("%w: type %T not supported", ErrInvalid, tv)
 	}
@@ -371,10 +380,14 @@ func (exec *Executor) castTimeTZ(timeVal types.DateTime, datetime string) (*type
 
 // castTimestamp casts timeVal to [types.Timestamp]. The datetime param is
 // used in error messages.
-func (exec *Executor) castTimestamp(timeVal types.DateTime, datetime string) (*types.Timestamp, error) {
+func (exec *Executor) castTimestamp(
+	ctx context.Context,
+	timeVal types.DateTime,
+	datetime string,
+) (*types.Timestamp, error) {
 	switch tv := timeVal.(type) {
 	case *types.Date:
-		return types.NewTimestamp(tv.Time), nil
+		return tv.ToTimestamp(ctx), nil
 	case *types.Time, *types.TimeTZ:
 		return nil, notRecognized(ast.UnaryTimestamp, datetime)
 	case *types.Timestamp:
@@ -384,7 +397,7 @@ func (exec *Executor) castTimestamp(timeVal types.DateTime, datetime string) (*t
 		if !exec.useTZ {
 			return nil, tzRequiredCast("timestamptz", "timestamp")
 		}
-		return types.NewTimestamp(tv.Time.UTC()), nil
+		return tv.ToTimestamp(ctx), nil
 	default:
 		return nil, fmt.Errorf("%w: type %T not supported", ErrInvalid, tv)
 	}
@@ -392,20 +405,24 @@ func (exec *Executor) castTimestamp(timeVal types.DateTime, datetime string) (*t
 
 // castTimestampTZ casts timeVal to [types.TimestampTZ]. The datetime param is
 // used in error messages.
-func (exec *Executor) castTimestampTZ(timeVal types.DateTime, datetime string) (*types.TimestampTZ, error) {
+func (exec *Executor) castTimestampTZ(
+	ctx context.Context,
+	timeVal types.DateTime,
+	datetime string,
+) (*types.TimestampTZ, error) {
 	switch tv := timeVal.(type) {
 	case *types.Date:
 		if !exec.useTZ {
 			return nil, tzRequiredCast("date", "timestamptz")
 		}
-		return types.NewTimestampTZ(tv.Time), nil
+		return tv.ToTimestampTZ(ctx), nil
 	case *types.Time, *types.TimeTZ:
 		return nil, notRecognized(ast.UnaryTimestampTZ, datetime)
 	case *types.Timestamp:
 		if !exec.useTZ {
 			return nil, tzRequiredCast("timestamp", "timestamptz")
 		}
-		return types.NewTimestampTZ(tv.Time.UTC()), nil
+		return tv.ToTimestampTZ(ctx), nil
 	case *types.TimestampTZ:
 		// Nothing to do for TIMESTAMPTZ
 		return tv, nil

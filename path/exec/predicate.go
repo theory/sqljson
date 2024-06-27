@@ -40,7 +40,7 @@ func predFrom(ok bool) predOutcome {
 
 // predicateCallback defines the interface to carry out a specific type of
 // predicate comparison.
-type predicateCallback func(node ast.Node, left, right any) (predOutcome, error)
+type predicateCallback func(ctx context.Context, node ast.Node, left, right any) (predOutcome, error)
 
 // executePredicate executes a unary or binary predicate.
 //
@@ -82,7 +82,7 @@ func (exec *Executor) executePredicate(
 	for _, lVal := range lSeq.list {
 		// Loop over right arg sequence.
 		for _, rVal := range rSeq.list {
-			res, err := callback(pred, lVal, rVal)
+			res, err := callback(ctx, pred, lVal, rVal)
 			if err != nil {
 				return predUnknown, err
 			}

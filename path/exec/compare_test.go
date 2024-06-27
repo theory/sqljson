@@ -1,6 +1,7 @@
 package exec
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -17,6 +18,7 @@ func TestCompareItems(t *testing.T) {
 	a := assert.New(t)
 	r := require.New(t)
 	now := time.Now()
+	ctx := context.Background()
 
 	for _, tc := range []struct {
 		name  string
@@ -238,7 +240,7 @@ func TestCompareItems(t *testing.T) {
 
 			// Execute compareItems.
 			e := newTestExecutor(path, nil, true, false)
-			res, err := e.compareItems(path.Root(), tc.left, tc.right)
+			res, err := e.compareItems(ctx, path.Root(), tc.left, tc.right)
 			a.Equal(tc.exp, res)
 			if tc.isErr == nil {
 				r.NoError(err)

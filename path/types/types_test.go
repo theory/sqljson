@@ -6,18 +6,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInfinityModifier(t *testing.T) {
+func TestDateTime(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
+
 	for _, tc := range []struct {
 		name string
-		mod  infinityModifier
+		obj  any
 	}{
-		{"infinity", Infinity},
-		{"finite", Finite},
-		{"-infinity", NegativeInfinity},
-		{"invalid", infinityModifier(-99)},
+		{"date", &Date{}},
+		{"time", &Time{}},
+		{"timetz", &TimeTZ{}},
+		{"timestamp", &Timestamp{}},
+		{"timestamptz", &TimestampTZ{}},
 	} {
-		a.Equal(tc.name, tc.mod.String())
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			a.Implements((*DateTime)(nil), tc.obj)
+		})
 	}
 }

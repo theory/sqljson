@@ -1052,62 +1052,67 @@ func TestExecuteUnaryPlusMinus(t *testing.T) {
 
 func TestExecuteDateTime(t *testing.T) {
 	t.Parallel()
+	offsetZero := time.FixedZone("", 0)
+	ctx := context.Background()
+
 	for _, tc := range []execTestCase{
 		{
 			name: "date",
 			path: `$.x.date()`,
 			json: map[string]any{"x": "2009-10-03"},
-			exp: []any{&types.Date{
-				Time: time.Date(2009, 10, 3, 0, 0, 0, 0, time.UTC),
-			}},
+			exp: []any{types.NewDate(
+				time.Date(2009, 10, 3, 0, 0, 0, 0, offsetZero),
+			)},
 		},
 		{
 			name: "time",
 			path: `$.x.time()`,
 			json: map[string]any{"x": "20:59:19.79142"},
-			exp: []any{&types.Time{
-				Time: time.Date(0, 1, 1, 20, 59, 19, 791420000, time.UTC),
-			}},
+			exp: []any{types.NewTime(
+				time.Date(0, 1, 1, 20, 59, 19, 791420000, offsetZero),
+			)},
 		},
 		{
 			name: "time_tz",
 			path: `$.x.time_tz()`,
 			json: map[string]any{"x": "20:59:19.79142-04"},
-			exp: []any{&types.TimeTZ{
-				Time: time.Date(0, 1, 1, 20, 59, 19, 791420000, time.FixedZone("", -4*60*60)),
-			}},
+			exp: []any{types.NewTimeTZ(
+				time.Date(0, 1, 1, 20, 59, 19, 791420000, time.FixedZone("", -4*60*60)),
+			)},
 		},
 		{
 			name: "timestamp_T",
 			path: `$.x.timestamp()`,
 			json: map[string]any{"x": "2024-05-05T20:59:19.79142"},
-			exp: []any{&types.Timestamp{
-				Time: time.Date(2024, 5, 5, 20, 59, 19, 791420000, time.UTC),
-			}},
+			exp: []any{types.NewTimestamp(
+				time.Date(2024, 5, 5, 20, 59, 19, 791420000, offsetZero),
+			)},
 		},
 		{
 			name: "timestamp_space",
 			path: `$.x.timestamp()`,
 			json: map[string]any{"x": "2024-05-05 20:59:19.79142"},
-			exp: []any{&types.Timestamp{
-				Time: time.Date(2024, 5, 5, 20, 59, 19, 791420000, time.UTC),
-			}},
+			exp: []any{types.NewTimestamp(
+				time.Date(2024, 5, 5, 20, 59, 19, 791420000, offsetZero),
+			)},
 		},
 		{
 			name: "timestamp_T_tz",
 			path: `$.x.timestamp_tz()`,
 			json: map[string]any{"x": "2024-05-05T20:59:19.79142-05"},
-			exp: []any{&types.TimestampTZ{
-				Time: time.Date(2024, 5, 5, 20, 59, 19, 791420000, time.FixedZone("", -5*60*60)),
-			}},
+			exp: []any{types.NewTimestampTZ(
+				ctx,
+				time.Date(2024, 5, 5, 20, 59, 19, 791420000, time.FixedZone("", -5*60*60)),
+			)},
 		},
 		{
 			name: "timestamp_space_tz",
 			path: `$.x.timestamp_tz()`,
 			json: map[string]any{"x": "2024-05-05 20:59:19.79142-05"},
-			exp: []any{&types.TimestampTZ{
-				Time: time.Date(2024, 5, 5, 20, 59, 19, 791420000, time.FixedZone("", -5*60*60)),
-			}},
+			exp: []any{types.NewTimestampTZ(
+				ctx,
+				time.Date(2024, 5, 5, 20, 59, 19, 791420000, time.FixedZone("", -5*60*60)),
+			)},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1160,23 +1165,26 @@ const tzHint = " HINT: Use WithTZ() option for time zone support"
 
 func TestExecuteDateTimeCast(t *testing.T) {
 	t.Parallel()
+	offsetZero := time.FixedZone("", 0)
+	ctx := context.Background()
+
 	for _, tc := range []execTestCase{
 		// Cast to date
 		{
 			name: "date_to_date",
 			path: `$.x.date()`,
 			json: map[string]any{"x": "2009-10-03"},
-			exp: []any{&types.Date{
-				Time: time.Date(2009, 10, 3, 0, 0, 0, 0, time.UTC),
-			}},
+			exp: []any{types.NewDate(
+				time.Date(2009, 10, 3, 0, 0, 0, 0, offsetZero),
+			)},
 		},
 		{
 			name: "timestamp_to_date",
 			path: `$.x.date()`,
 			json: map[string]any{"x": "2009-10-03 20:59:19.79142"},
-			exp: []any{&types.Date{
-				Time: time.Date(2009, 10, 3, 0, 0, 0, 0, time.UTC),
-			}},
+			exp: []any{types.NewDate(
+				time.Date(2009, 10, 3, 0, 0, 0, 0, offsetZero),
+			)},
 		},
 		{
 			name: "timestamp_tz_to_date",
@@ -1189,9 +1197,9 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			path:  `$.x.date()`,
 			useTZ: true,
 			json:  map[string]any{"x": "2009-10-03 20:59:19.79142-01"},
-			exp: []any{&types.Date{
-				Time: time.Date(2009, 10, 3, 0, 0, 0, 0, time.UTC),
-			}},
+			exp: []any{types.NewDate(
+				time.Date(2009, 10, 3, 0, 0, 0, 0, offsetZero),
+			)},
 		},
 		{
 			name: "time_to_date",
@@ -1216,9 +1224,9 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			name: "time_to_time",
 			path: `$.x.time()`,
 			json: map[string]any{"x": "20:59:19.79142"},
-			exp: []any{&types.Time{
-				Time: time.Date(0, 1, 1, 20, 59, 19, 791420000, time.UTC),
-			}},
+			exp: []any{types.NewTime(
+				time.Date(0, 1, 1, 20, 59, 19, 791420000, offsetZero),
+			)},
 		},
 		{
 			name: "time_tz_to_time",
@@ -1231,17 +1239,17 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			path:  `$.x.time()`,
 			useTZ: true,
 			json:  map[string]any{"x": "20:59:19.79142-01"},
-			exp: []any{&types.Time{
-				Time: time.Date(0, 1, 1, 20, 59, 19, 791420000, time.UTC),
-			}},
+			exp: []any{types.NewTime(
+				time.Date(0, 1, 1, 20, 59, 19, 791420000, offsetZero),
+			)},
 		},
 		{
 			name: "timestamp_to_time",
 			path: `$.x.time()`,
 			json: map[string]any{"x": "2009-10-03 20:59:19.79142"},
-			exp: []any{&types.Time{
-				Time: time.Date(0, 1, 1, 20, 59, 19, 791420000, time.UTC),
-			}},
+			exp: []any{types.NewTime(
+				time.Date(0, 1, 1, 20, 59, 19, 791420000, offsetZero),
+			)},
 		},
 		{
 			name: "timestamp_tz_to_time",
@@ -1254,9 +1262,10 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			path:  `$.x.time()`,
 			useTZ: true,
 			json:  map[string]any{"x": "2009-10-03 20:59:19.79142+01"},
-			exp: []any{&types.Time{
-				Time: time.Date(0, 1, 1, 19, 59, 19, 791420000, time.UTC),
-			}},
+			exp: []any{types.NewTime(types.NewTimestampTZ(
+				ctx,
+				time.Date(2009, 10, 3, 20, 59, 19, 791420000, time.FixedZone("", 3600)),
+			).In(offsetZero))},
 		},
 		// Cast to timetz
 		{
@@ -1276,17 +1285,15 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			path:  `$.x.time_tz()`,
 			useTZ: true,
 			json:  map[string]any{"x": "20:59:19.79142"},
-			exp: []any{&types.TimeTZ{
-				Time: time.Date(0, 1, 1, 20, 59, 19, 791420000, time.UTC),
-			}},
+			exp: []any{types.NewTimeTZ(
+				time.Date(0, 1, 1, 20, 59, 19, 791420000, offsetZero),
+			)},
 		},
 		{
 			name: "timetz_to_timetz",
 			path: `$.x.time_tz()`,
 			json: map[string]any{"x": "20:59:19.79142Z"},
-			exp: []any{&types.TimeTZ{
-				Time: time.Date(0, 1, 1, 20, 59, 19, 791420000, time.UTC),
-			}},
+			exp:  []any{types.NewTimeTZ(time.Date(0, 1, 1, 20, 59, 19, 791420000, offsetZero))},
 		},
 		{
 			name: "timestamp_to_timetz",
@@ -1298,18 +1305,17 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			name: "timestamp_tz_to_timetz",
 			path: `$.x.time_tz()`,
 			json: map[string]any{"x": "2009-10-03 20:59:19.79142Z"},
-			exp: []any{&types.TimeTZ{
-				Time: time.Date(0, 1, 1, 20, 59, 19, 791420000, time.UTC),
-			}},
+			exp: []any{types.NewTimestampTZ(
+				ctx,
+				time.Date(2009, 10, 3, 20, 59, 19, 791420000, offsetZero),
+			).ToTimeTZ(ctx)},
 		},
 		// Cast to timestamp
 		{
 			name: "date_to_timestamp",
 			path: `$.x.timestamp()`,
 			json: map[string]any{"x": "2009-10-03"},
-			exp: []any{&types.Timestamp{
-				Time: time.Date(2009, 10, 3, 0, 0, 0, 0, time.UTC),
-			}},
+			exp:  []any{types.NewTimestamp(time.Date(2009, 10, 3, 0, 0, 0, 0, offsetZero))},
 		},
 		{
 			name: "time_to_timestamp",
@@ -1327,9 +1333,7 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			name: "timestamp_to_timestamp",
 			path: `$.x.timestamp()`,
 			json: map[string]any{"x": "2009-10-03 20:59:19.79142"},
-			exp: []any{&types.Timestamp{
-				Time: time.Date(2009, 10, 3, 20, 59, 19, 791420000, time.UTC),
-			}},
+			exp:  []any{types.NewTimestamp(time.Date(2009, 10, 3, 20, 59, 19, 791420000, offsetZero))},
 		},
 		{
 			name: "timestamp_tz_to_timestamp",
@@ -1342,9 +1346,9 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			path:  `$.x.timestamp()`,
 			useTZ: true,
 			json:  map[string]any{"x": "2009-10-03 20:59:19.79142Z"},
-			exp: []any{&types.Timestamp{
-				Time: time.Date(2009, 10, 3, 20, 59, 19, 791420000, time.UTC),
-			}},
+			exp: []any{types.NewTimestamp(
+				time.Date(2009, 10, 3, 20, 59, 19, 791420000, offsetZero),
+			)},
 		},
 		// Cast to timestamptz
 		{
@@ -1358,9 +1362,9 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			path:  `$.x.timestamp_tz()`,
 			useTZ: true,
 			json:  map[string]any{"x": "2009-10-03"},
-			exp: []any{&types.TimestampTZ{
-				Time: time.Date(2009, 10, 3, 0, 0, 0, 0, time.UTC),
-			}},
+			exp: []any{types.NewDate(
+				time.Date(2009, 10, 3, 0, 0, 0, 0, offsetZero),
+			).ToTimestampTZ(ctx)},
 		},
 		{
 			name: "time_to_timestamptz",
@@ -1385,17 +1389,19 @@ func TestExecuteDateTimeCast(t *testing.T) {
 			path:  `$.x.timestamp_tz()`,
 			useTZ: true,
 			json:  map[string]any{"x": "2009-10-03 20:59:19.79142"},
-			exp: []any{&types.TimestampTZ{
-				Time: time.Date(2009, 10, 3, 20, 59, 19, 791420000, time.UTC),
-			}},
+			exp: []any{types.NewTimestampTZ(
+				ctx,
+				time.Date(2009, 10, 3, 20, 59, 19, 791420000, offsetZero),
+			)},
 		},
 		{
 			name: "timestamp_tz_to_timestamptz",
 			path: `$.x.timestamp_tz()`,
 			json: map[string]any{"x": "2009-10-03 20:59:19.79142Z"},
-			exp: []any{&types.TimestampTZ{
-				Time: time.Date(2009, 10, 3, 20, 59, 19, 791420000, time.UTC),
-			}},
+			exp: []any{types.NewTimestampTZ(
+				ctx,
+				time.Date(2009, 10, 3, 20, 59, 19, 791420000, offsetZero),
+			)},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1407,38 +1413,37 @@ func TestExecuteDateTimeCast(t *testing.T) {
 
 func TestExecuteTimePrecision(t *testing.T) {
 	t.Parallel()
+	offsetZero := time.FixedZone("", 0)
+
 	for _, tc := range []execTestCase{
 		{
 			name: "time_precision",
 			path: `$.x.time(3)`,
 			json: map[string]any{"x": "20:59:19.79142"},
-			exp: []any{&types.Time{
-				Time: time.Date(0, 1, 1, 20, 59, 19, 791000000, time.UTC),
-			}},
+			exp:  []any{types.NewTime(time.Date(0, 1, 1, 20, 59, 19, 791000000, offsetZero))},
 		},
 		{
 			name: "time_tz_precision",
 			path: `$.x.time_tz(4)`,
 			json: map[string]any{"x": "20:59:19.79142+01"},
-			exp: []any{&types.TimeTZ{
-				Time: time.Date(0, 1, 1, 20, 59, 19, 791400000, time.FixedZone("", 1*60*60)),
-			}},
+			exp: []any{types.NewTimeTZ(
+				time.Date(0, 1, 1, 20, 59, 19, 791400000, time.FixedZone("", 1*60*60)),
+			)},
 		},
 		{
 			name: "timestamp_precision",
 			path: `$.x.timestamp(2)`,
 			json: map[string]any{"x": "2024-05-05T20:59:19.791423"},
-			exp: []any{&types.Timestamp{
-				Time: time.Date(2024, 5, 5, 20, 59, 19, 790000000, time.UTC),
-			}},
+			exp:  []any{types.NewTimestamp(time.Date(2024, 5, 5, 20, 59, 19, 790000000, offsetZero))},
 		},
 		{
 			name: "timestamp_tz_precision",
 			path: `$.x.timestamp_tz(5)`,
 			json: map[string]any{"x": "2024-05-05T20:59:19.791423+02:30"},
-			exp: []any{&types.TimestampTZ{
-				Time: time.Date(2024, 5, 5, 20, 59, 19, 791420000, time.FixedZone("", 2*60*60+30*60)),
-			}},
+			exp: []any{types.NewTimestampTZ(
+				context.Background(),
+				time.Date(2024, 5, 5, 20, 59, 19, 791420000, time.FixedZone("", 2*60*60+30*60)),
+			)},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -2089,7 +2094,7 @@ func TestExecuteStringMethod(t *testing.T) {
 			name: "time_tz_string",
 			path: `$.x.time_tz().string()`,
 			json: map[string]any{"x": "12:34:56Z"},
-			exp:  []any{"12:34:56Z"},
+			exp:  []any{"12:34:56+00"},
 		},
 		{
 			name: "timestamp_string",
@@ -2097,12 +2102,11 @@ func TestExecuteStringMethod(t *testing.T) {
 			json: map[string]any{"x": "2024-05-05 12:34:56"},
 			exp:  []any{"2024-05-05T12:34:56"},
 		},
-		//nolint:forcetypeassert
 		{
 			name: "timestamp_tz_string",
 			path: `$.x.timestamp_tz().string()`,
 			json: map[string]any{"x": "2024-05-05 12:34:56Z"},
-			exp:  []any{pt("2024-05-05 12:34:56Z").(fmt.Stringer).String()},
+			exp:  []any{pt(context.Background(), "2024-05-05 12:34:56Z").ToString(context.Background())},
 		},
 		{
 			name: "json_number_string",

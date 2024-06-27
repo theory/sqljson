@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -14,7 +15,7 @@ type Date struct {
 func NewDate(src time.Time) *Date {
 	// Convert result type to a date
 	return &Date{
-		time.Date(src.Year(), src.Month(), src.Day(), 0, 0, 0, 0, time.UTC),
+		time.Date(src.Year(), src.Month(), src.Day(), 0, 0, 0, 0, offsetZero),
 	}
 }
 
@@ -27,6 +28,27 @@ const dateFormat = "2006-01-02"
 // String returns the string representation of d.
 func (d *Date) String() string {
 	return d.Time.Format(dateFormat)
+}
+
+// ToString returns the output appropriate for the jsonpath string() method.
+func (d *Date) ToString(context.Context) string {
+	return d.String()
+}
+
+// ToTimestamp converts ts to *Timestamp.
+func (d *Date) ToTimestamp(context.Context) *Timestamp {
+	return NewTimestamp(d.Time)
+}
+
+// ToTimestampTZ converts d to TimestampTZ in the time zone in ctx.
+func (d *Date) ToTimestampTZ(ctx context.Context) *TimestampTZ {
+	t := d.Time
+	return NewTimestampTZ(
+		ctx,
+		time.Date(
+			t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, TZFromContext(ctx),
+		).In(offsetZero),
+	)
 }
 
 // Compare compares the time instant d with u. If d is before u, it returns
@@ -53,6 +75,6 @@ func (d *Date) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return fmt.Errorf("%w: Cannot parse %s as %q", ErrSQLType, data, dateFormat)
 	}
-	*d = Date{Time: tim}
+	*d = *NewDate(tim)
 	return nil
 }

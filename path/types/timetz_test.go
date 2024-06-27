@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -10,16 +11,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestTimeTZCompareIss(t *testing.T) {
+	t.Parallel()
+	t1 := NewTimeTZ(time.Date(0, 1, 1, 11, 35, 0, 0, offsetZero))
+	t2 := NewTimeTZ(time.Date(0, 1, 1, 12, 35, 0, 0, time.FixedZone("", 3600)))
+	assert.Equal(t, 1, t1.Compare(t2.Time))
+}
+
 func TestTimeTZ(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	r := require.New(t)
+	ctx := context.Background()
 
 	for _, tc := range timestampTestCases(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			// Only test Time and TimeTZ
-			switch tc.ctor(time.Time{}).(type) {
+			switch tc.ctor(time.Time{}, &time.Location{}).(type) {
 			case *Timestamp, *TimestampTZ, *Date:
 				return
 			}
@@ -34,7 +43,12 @@ func TestTimeTZ(t *testing.T) {
 			ts := NewTimeTZ(tc.time)
 			a.Equal(&TimeTZ{Time: exp}, ts)
 			a.Equal(exp, ts.GoTime())
-			a.Equal(exp.Format(timeTZSecondFormat), ts.String())
+			a.Equal(exp.Format(timeTZOutputFormat), ts.String())
+			if _, off := exp.Zone(); off%secondsPerHour != 0 {
+				a.Equal(exp.Format(timeTZOutputFormat), ts.ToString(ctx))
+			} else {
+				a.Equal(exp.Format(timeTZOffHourOutputFormat), ts.ToString(ctx))
+			}
 
 			// Check JSON
 			json, err := ts.MarshalJSON()
@@ -42,7 +56,10 @@ func TestTimeTZ(t *testing.T) {
 			a.Equal(fmt.Sprintf("%q", ts.String()), string(json))
 			ts2 := new(TimeTZ)
 			r.NoError(ts2.UnmarshalJSON(json))
-			a.Equal(ts, ts2)
+			a.Equal(exp, ts2.In(exp.Location()))
+
+			// Test ToTime.
+			a.Equal(NewTime(ts.Time), ts.ToTime(ctx))
 		})
 	}
 }
@@ -95,7 +112,7 @@ func TestTimeTZCompare(t *testing.T) {
 	a.Equal(0, ts.Compare(now.Add(0)))
 
 	// Same time but different offsets are not equal
-	a.Equal(-1, ts.Compare(now.UTC()))
+	a.Equal(1, ts.Compare(now.UTC()))
 	utc := &TimeTZ{Time: now.UTC()}
-	a.Equal(1, utc.Compare(now))
+	a.Equal(-1, utc.Compare(now))
 }

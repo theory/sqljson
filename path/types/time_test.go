@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -13,12 +14,14 @@ func TestTime(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
 	r := require.New(t)
+	loc := time.FixedZone("", 10*secondsPerHour+secondsPerHour/2)
+	ctx := ContextWithTZ(context.Background(), loc)
 
 	for _, tc := range timestampTestCases(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			// Only test Time and TimeTZ
-			switch tc.ctor(time.Time{}).(type) {
+			switch tc.ctor(time.Time{}, &time.Location{}).(type) {
 			case *Timestamp, *TimestampTZ, *Date:
 				return
 			}
@@ -27,13 +30,14 @@ func TestTime(t *testing.T) {
 			exp := time.Date(
 				0, 1, 1,
 				tc.time.Hour(), tc.time.Minute(), tc.time.Second(),
-				tc.time.Nanosecond(), time.UTC,
+				tc.time.Nanosecond(), offsetZero,
 			)
 
 			ts := NewTime(tc.time)
 			a.Equal(&Time{Time: exp}, ts)
 			a.Equal(exp, ts.GoTime())
 			a.Equal(exp.Format(timeFormat), ts.String())
+			a.Equal(exp.Format(timeFormat), ts.ToString(ctx))
 
 			// Check JSON
 			json, err := ts.MarshalJSON()
@@ -42,6 +46,16 @@ func TestTime(t *testing.T) {
 			ts2 := new(Time)
 			r.NoError(ts2.UnmarshalJSON(json))
 			a.Equal(ts, ts2)
+
+			// Test ToTimeTZ.
+			a.Equal(
+				NewTimeTZ(time.Date(
+					0, 1, 1,
+					ts.Hour(), ts.Minute(), ts.Second(), ts.Nanosecond(),
+					loc,
+				)),
+				ts.ToTimeTZ(ctx),
+			)
 		})
 	}
 }
