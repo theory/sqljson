@@ -49,14 +49,14 @@ func TestRegexFlags(t *testing.T) {
 		{
 			name: "empty",
 			exp:  regexFlags(0),
-			syn:  syntax.OneLine,
+			syn:  syntax.OneLine | syntax.ClassNL | syntax.PerlX,
 		},
 		{
 			name: "i",
 			expr: "i",
 			exp:  regexFlags(regexICase),
 			str:  ` flag "i"`,
-			syn:  syntax.OneLine | syntax.FoldCase,
+			syn:  syntax.OneLine | syntax.ClassNL | syntax.PerlX | syntax.FoldCase,
 			ref:  "(?i)",
 		},
 		{
@@ -64,7 +64,7 @@ func TestRegexFlags(t *testing.T) {
 			expr: "s",
 			exp:  regexFlags(regexDotAll),
 			str:  ` flag "s"`,
-			syn:  syntax.OneLine | syntax.DotNL,
+			syn:  syntax.OneLine | syntax.ClassNL | syntax.PerlX | syntax.DotNL,
 			ref:  "(?s)",
 		},
 		{
@@ -72,6 +72,7 @@ func TestRegexFlags(t *testing.T) {
 			expr: "m",
 			exp:  regexFlags(regexMLine),
 			str:  ` flag "m"`,
+			syn:  syntax.ClassNL | syntax.PerlX,
 			ref:  "(?m)",
 		},
 		{
@@ -84,14 +85,14 @@ func TestRegexFlags(t *testing.T) {
 			expr: "q",
 			exp:  regexFlags(regexQuote),
 			str:  ` flag "q"`,
-			syn:  syntax.OneLine | syntax.Literal,
+			syn:  syntax.OneLine | syntax.ClassNL | syntax.PerlX | syntax.Literal,
 		},
 		{
 			name: "q",
 			expr: "q",
 			exp:  regexFlags(regexQuote),
 			str:  ` flag "q"`,
-			syn:  syntax.OneLine | syntax.Literal,
+			syn:  syntax.OneLine | syntax.ClassNL | syntax.PerlX | syntax.Literal,
 		},
 		{
 			name: "unknown",
@@ -103,14 +104,14 @@ func TestRegexFlags(t *testing.T) {
 			expr: "qx",
 			exp:  regexFlags(regexQuote | regexWSpace),
 			str:  ` flag "xq"`,
-			syn:  syntax.OneLine | syntax.Literal,
+			syn:  syntax.OneLine | syntax.ClassNL | syntax.PerlX | syntax.Literal,
 		},
 		{
 			name: "qi",
 			expr: "qi",
 			exp:  regexFlags(regexQuote | regexICase),
 			str:  ` flag "iq"`,
-			syn:  syntax.OneLine | syntax.FoldCase | syntax.Literal,
+			syn:  syntax.OneLine | syntax.ClassNL | syntax.PerlX | syntax.FoldCase | syntax.Literal,
 			ref:  "(?i)",
 		},
 		{
@@ -118,14 +119,14 @@ func TestRegexFlags(t *testing.T) {
 			expr: "qmsx",
 			exp:  regexFlags(regexQuote | regexMLine | regexDotAll | regexWSpace),
 			str:  ` flag "smxq"`,
-			syn:  syntax.OneLine | syntax.Literal,
+			syn:  syntax.OneLine | syntax.ClassNL | syntax.PerlX | syntax.Literal,
 		},
 		{
 			name: "msi",
 			expr: "msi",
 			exp:  regexFlags(regexICase | regexDotAll | regexMLine),
 			str:  ` flag "ism"`,
-			syn:  syntax.FoldCase | syntax.DotNL,
+			syn:  syntax.FoldCase | syntax.ClassNL | syntax.PerlX | syntax.DotNL,
 			ref:  "(?ism)",
 		},
 		{
@@ -133,7 +134,7 @@ func TestRegexFlags(t *testing.T) {
 			expr: "msmm",
 			exp:  regexFlags(regexMLine | regexDotAll),
 			str:  ` flag "sm"`,
-			syn:  syntax.DotNL,
+			syn:  syntax.DotNL | syntax.ClassNL | syntax.PerlX,
 			ref:  "(?sm)",
 		},
 	} {
@@ -173,6 +174,10 @@ func TestValidateRegex(t *testing.T) {
 			name:  "case_insensitive",
 			re:    "[abc]",
 			flags: regexFlags(regexICase),
+		},
+		{
+			name: "digits",
+			re:   `\d+`,
 		},
 		{
 			name:  "all_flags_but_x",

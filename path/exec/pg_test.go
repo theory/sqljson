@@ -4208,7 +4208,7 @@ func TestPgQueryStringMethod(t *testing.T) {
 			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +5:30
 			path: `$.timestamp().string()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{"2023-08-15T00:04:56"}, // should work
+			exp:  []any{"2023-08-15 00:04:56"}, // should work
 			// Tue Aug 15 00:04:56 2023
 		},
 		// pg: tests 17 & 18 use jsonb_path_query_array but our Query() always
@@ -4851,7 +4851,9 @@ func TestPgQueryTimestampTZMethod(t *testing.T) {
 			json: js(`"2023-08-15"`),
 			path: `$.timestamp_tz()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt(ctx, "2023-08-15T07:00:00+00:00")}, // should work
+			exp:  []any{pt(ctx, "2023-08-15T00:00:00-07:00")}, // should work
+			// pg: Difference in cast value formatting thread:
+			// https://www.postgresql.org/message-id/flat/7DE080CE-6D8C-4794-9BD1-7D9699172FAB%40justatheory.com
 		},
 		{
 			name: "test_13",
@@ -5172,7 +5174,9 @@ func TestPgQueryDateTimeMethodsPlus10(t *testing.T) {
 			json: js(`"2023-08-15 12:34:56"`),
 			path: `$.timestamp_tz()`,
 			opt:  []Option{WithTZ()},
-			exp:  []any{pt(ctx, "2023-08-15T02:34:56+00:00")}, // should work
+			exp:  []any{pt(ctx, "2023-08-15T12:34:56+10:00")}, // should work
+			// pg: Difference in cast value formatting thread:
+			// https://www.postgresql.org/message-id/flat/7DE080CE-6D8C-4794-9BD1-7D9699172FAB%40justatheory.com
 		},
 		{
 			name: "test_8",

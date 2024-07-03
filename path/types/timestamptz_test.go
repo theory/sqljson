@@ -29,12 +29,12 @@ func TestTimestampTZ(t *testing.T) {
 			ts := NewTimestampTZ(ctx, tc.time)
 			a.Equal(&TimestampTZ{Time: tc.time, tz: tz}, ts)
 			a.Equal(tc.time, ts.GoTime())
+			a.Equal(tc.time.Format(timestampTZOutputFormat), ts.String())
 			loc := tc.time.In(tz)
-			a.Equal(loc.Format(timestampTZOutputFormat), ts.String())
 			if _, off := loc.Zone(); off%secondsPerHour != 0 {
-				a.Equal(loc.Format(timestampTZOutputFormat), ts.ToString(ctx))
+				a.Equal(loc.Format(timestampTZToStringFormat), ts.ToString(ctx))
 			} else {
-				a.Equal(loc.Format(timestampTZOffHourOutputFormat), ts.ToString(ctx))
+				a.Equal(loc.Format(timestampTZOffHourToStringFormat), ts.ToString(ctx))
 			}
 
 			// Check JSON
@@ -85,9 +85,9 @@ func TestTimestampTZToString(t *testing.T) {
 					ts := NewTimestampTZ(ctx, tc.time)
 					loc := tc.time.In(tz)
 					if zc.withMins {
-						a.Equal(loc.Format(timestampTZOutputFormat), ts.ToString(ctx))
+						a.Equal(loc.Format(timestampTZToStringFormat), ts.ToString(ctx))
 					} else {
-						a.Equal(loc.Format(timestampTZOffHourOutputFormat), ts.ToString(ctx))
+						a.Equal(loc.Format(timestampTZOffHourToStringFormat), ts.ToString(ctx))
 					}
 				})
 			}

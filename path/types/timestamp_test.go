@@ -36,7 +36,7 @@ func TestTimestamp(t *testing.T) {
 			a.Equal(&Timestamp{Time: exp}, ts)
 			a.Equal(exp, ts.GoTime())
 			a.Equal(exp.Format(timestampFormat), ts.String())
-			a.Equal(exp.Format(timestampFormat), ts.ToString(ctx))
+			a.Equal(exp.Format(timestampToStringFormat), ts.ToString(ctx))
 
 			// Check JSON
 			json, err := ts.MarshalJSON()

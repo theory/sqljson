@@ -95,7 +95,7 @@ func (f regexFlags) syntaxFlags() syntax.Flags {
 // _syntaxFlags converts from XQuery regex flags to those recognized by
 // regexp/syntax. Returns an error for unsupported use of the 'x' flag.
 func (f regexFlags) _syntaxFlags() (syntax.Flags, error) {
-	cFlags := syntax.OneLine
+	cFlags := syntax.OneLine | syntax.ClassNL | syntax.PerlX
 	bitMask := regexFlag(f)
 
 	// Ignore case.

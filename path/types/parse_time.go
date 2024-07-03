@@ -12,8 +12,7 @@ import (
 // cannot be parsed by any of the formats.
 //
 // We also support ISO 8601 format (with "T") for timestamps, because
-// PostgreSQL to_json() and to_jsonb() functions use this format, as do
-// [Timestamp.MarshalJSON] and [TimestampTZ.MarshalJSON].
+// PostgreSQL to_json() and to_jsonb() functions use this format.
 func ParseTime(ctx context.Context, src string, precision int) (DateTime, bool) {
 	// Date first.
 	value, err := time.Parse("2006-01-02", src)

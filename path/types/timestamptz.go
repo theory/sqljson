@@ -15,7 +15,7 @@ type TimestampTZ struct {
 }
 
 // NewTimestampTZ creates a timestamp with time zone with src. The ctx param
-// is used solely to determine the time zone used by [String].
+// is used solely to determine the time zone used by [TimestampTZ.String].
 func NewTimestampTZ(ctx context.Context, src time.Time) *TimestampTZ {
 	return &TimestampTZ{
 		tz: TZFromContext(ctx),
@@ -40,27 +40,35 @@ const (
 	timestampTZHourFormat = "2006-01-02T15:04:05.999999999Z07"
 	// timestampTZOutputFormat is the main output format.
 	timestampTZOutputFormat = "2006-01-02T15:04:05.999999999-07:00"
-	// timestampTZOffHourOutputFormat is the ToString output format when the
-	// offset does not include minutes.
-	timestampTZOffHourOutputFormat = "2006-01-02T15:04:05.999999999-07"
+
+	// timestampTZOutputFormat is the output format used by
+	// [TimestampTZ.ToString]. Like the [Postgres ISO format], it uses a space
+	// between the date and time, rather than a "T".
+	//
+	// [Postgres ISO format]: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-DATETIME-OUTPUT
+	timestampTZToStringFormat = "2006-01-02 15:04:05.999999999-07:00"
+
+	// timestampTZOffHourToStringFormat is the [TimestampTZ.ToString] output
+	// format when the offset does not include minutes.
+	timestampTZOffHourToStringFormat = "2006-01-02T15:04:05.999999999-07"
 )
 
 // String returns the string representation of ts in the time zone in the
 // Context passed to NewTimestampTZ, using the format
 // "2006-01-02T15:04:05.999999999-07:00".
 func (ts *TimestampTZ) String() string {
-	return ts.Time.In(ts.tz).Format(timestampTZOutputFormat)
+	return ts.Time.Format(timestampTZOutputFormat)
 }
 
 // ToString returns the jsonpath string() method format of ts in the time zone
-// in ctx and using the format "2006-01-02T15:04:05.999999999-07" or
-// "2006-01-02T15:04:05.999999999-07:00".
+// in ctx and using the format "2006-01-02 15:04:05.999999999-07" or
+// "2006-01-02 15:04:05.999999999-07:00".
 func (ts *TimestampTZ) ToString(ctx context.Context) string {
 	loc := ts.Time.In(TZFromContext(ctx))
 	if _, off := loc.Zone(); off%secondsPerHour == 0 {
-		return loc.Format(timestampTZOffHourOutputFormat)
+		return loc.Format(timestampTZOffHourToStringFormat)
 	}
-	return loc.Format(timestampTZOutputFormat)
+	return loc.Format(timestampTZToStringFormat)
 }
 
 // ToDate converts ts to *Date in the time zone in ctx.

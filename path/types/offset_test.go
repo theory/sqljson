@@ -63,10 +63,6 @@ func TestOffsetLocationForAndOnlyTimeFor(t *testing.T) {
 			name, off = ts.Zone()
 			a.Empty(name)
 			a.Equal(tc.offset, off)
-
-			// Test contextOffsetZero.
-			ctx := ContextWithTZ(context.Background(), tc.loc)
-			a.Equal(ts.In(offsetZero), contextOffsetZero(ctx, ts))
 		})
 	}
 }

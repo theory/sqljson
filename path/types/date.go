@@ -47,7 +47,7 @@ func (d *Date) ToTimestampTZ(ctx context.Context) *TimestampTZ {
 		ctx,
 		time.Date(
 			t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, TZFromContext(ctx),
-		).In(offsetZero),
+		),
 	)
 }
 

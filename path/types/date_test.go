@@ -54,7 +54,7 @@ func TestDate(t *testing.T) {
 					ctx,
 					time.Date(
 						date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, loc,
-					).In(offsetZero),
+					),
 				),
 				date.ToTimestampTZ(ctx),
 			)

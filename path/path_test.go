@@ -32,25 +32,41 @@ func TestPath(t *testing.T) {
 		a.Equal(path.AST.IsPredicate(), path.IsPredicate())
 		a.Equal(tc.op, path.PgIndexOperator())
 
-		ok, err := path.Exists(ctx, tc.json, exec.WithSilent())
-		r.NoError(err)
-		a.True(ok)
-
+		// Test Query
 		res, err := path.Query(ctx, tc.json)
 		r.NoError(err)
 		a.Equal(tc.exp, res)
+
+		// Test MustQuery.
 		a.NotPanics(func() { res = path.MustQuery(ctx, tc.json) })
 		a.Equal(tc.exp, res)
 
+		// Test static MustQuery.
+		//nolint:contextcheck
+		a.NotPanics(func() { res = MustQuery(tc.path, tc.json) })
+		a.Equal(tc.exp, res)
+
+		// Test First.
 		res, err = path.First(ctx, tc.json)
 		r.NoError(err)
 		a.Equal(tc.exp[0], res)
 
+		// Tests Exists.
+		ok, err := path.Exists(ctx, tc.json, exec.WithSilent())
+		r.NoError(err)
+		a.True(ok)
+
 		if _, ok := tc.exp[0].(bool); ok {
+			// Tests Match.
 			res, err = path.Match(ctx, tc.json)
 			r.NoError(err)
 			a.Equal(true, res)
 		}
+
+		// Tests ExistsOrMatch.
+		ok, err = path.ExistsOrMatch(ctx, tc.json, exec.WithSilent())
+		r.NoError(err)
+		a.True(ok)
 	}
 
 	for _, tc := range []testCase{
@@ -173,6 +189,11 @@ func TestQueryErrors(t *testing.T) {
 				path.MustQuery(context.Background(), tc.json)
 			})
 
+			// Test static MustQuery
+			a.PanicsWithError(tc.err, func() {
+				MustQuery(tc.path, tc.json)
+			})
+
 			// Test Match
 			ok, err := path.Match(context.Background(), tc.json)
 			r.EqualError(err, tc.err)
@@ -180,6 +201,12 @@ func TestQueryErrors(t *testing.T) {
 			a.False(ok)
 
 			// Test Exists
+			ok, err = path.Exists(context.Background(), tc.json)
+			r.EqualError(err, tc.err)
+			r.ErrorIs(err, exec.ErrExecution)
+			a.False(ok)
+
+			// Test ExistsOrMatch
 			ok, err = path.Exists(context.Background(), tc.json)
 			r.EqualError(err, tc.err)
 			r.ErrorIs(err, exec.ErrExecution)

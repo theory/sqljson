@@ -25,9 +25,18 @@ func NewTimestamp(src time.Time) *Timestamp {
 // GoTime returns the underlying time.Time object.
 func (ts *Timestamp) GoTime() time.Time { return ts.Time }
 
-// timestampFormat represents the canonical string format for Timestamp
-// values.
-const timestampFormat = "2006-01-02T15:04:05.999999999"
+const (
+	// timestampFormat represents the canonical string format for Timestamp
+	// values.
+	timestampFormat = "2006-01-02T15:04:05.999999999"
+
+	// timestampToStringFormat represents the format used by
+	// [Timestamp.ToString]. Like the [Postgres ISO format], it uses a space
+	// between the date and time, rather than a "T".
+	//
+	// [Postgres ISO format]: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-DATETIME-OUTPUT
+	timestampToStringFormat = "2006-01-02 15:04:05.999999999"
+)
 
 // String returns the string representation of ts using the format
 // "2006-01-02T15:04:05.999999999".
@@ -36,8 +45,9 @@ func (ts *Timestamp) String() string {
 }
 
 // ToString returns the output appropriate for the jsonpath string() method.
+// It uses the format "2006-01-02 15:04:05.999999999".
 func (ts *Timestamp) ToString(context.Context) string {
-	return ts.String()
+	return ts.Time.Format(timestampToStringFormat)
 }
 
 // ToDate converts ts to *Date.
@@ -52,7 +62,12 @@ func (ts *Timestamp) ToTime(context.Context) *Time {
 
 // ToTimestampTZ converts ts to *TimestampTZ.
 func (ts *Timestamp) ToTimestampTZ(ctx context.Context) *TimestampTZ {
-	return NewTimestampTZ(ctx, contextOffsetZero(ctx, ts.Time))
+	t := ts.Time
+	return NewTimestampTZ(ctx, time.Date(
+		t.Year(), t.Month(), t.Day(),
+		t.Hour(), t.Minute(), t.Second(), t.Nanosecond(),
+		TZFromContext(ctx),
+	))
 }
 
 // Compare compares the time instant ts with u. If ts is before u, it returns

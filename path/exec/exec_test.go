@@ -2100,7 +2100,7 @@ func TestExecuteStringMethod(t *testing.T) {
 			name: "timestamp_string",
 			path: `$.x.timestamp().string()`,
 			json: map[string]any{"x": "2024-05-05 12:34:56"},
-			exp:  []any{"2024-05-05T12:34:56"},
+			exp:  []any{"2024-05-05 12:34:56"},
 		},
 		{
 			name: "timestamp_tz_string",

@@ -23,19 +23,6 @@ func offsetOnlyTimeFor(t time.Time) time.Time {
 	return t
 }
 
-// contextOffsetZero sets val's time zone to the context time zone then
-// converts it to offsetZero. Used to convert from timestamp to timestamptz.
-func contextOffsetZero(ctx context.Context, val time.Time) time.Time {
-	if tz := TZFromContext(ctx); tz != offsetZero {
-		return time.Date(
-			val.Year(), val.Month(), val.Day(),
-			val.Hour(), val.Minute(), val.Second(), val.Nanosecond(),
-			TZFromContext(ctx),
-		).In(offsetZero)
-	}
-	return val
-}
-
 // key is an unexported type for keys defined in this package. This prevents
 // collisions with keys defined in other packages.
 type key int

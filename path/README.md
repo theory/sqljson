@@ -3,18 +3,16 @@ Go SQL/JSON Path
 
 The path package ports the SQL/JSON Path data type from PostgreSQL to Go. It
 supports both SQL-standard path expressions and PostgreSQL-specific predicate
-check expressions. The following is ported from the [PostgreSQL docs].
+check expressions.
 
-**WARNING:** Path execution has not yet been implemented: the `MustQuery` and
-`Query` methods currently return the JSON value passed to them, and `Exists`
-always returns true. The examples below demonstrate the expected behavior, but
-are subject to change once the method has been properly implemented.
+## The SQL/JSON Path Language
 
-The SQL/JSON Path Language
---------------------------
+> This section was ported from the [PostgreSQL docs].
+
+<!-- See ./tests/example_test.go for runnable versions of all the examples. -->
 
 SQL/JSON Path is a query language for JSON values. A path expression applied
-to a JSON value, a query argument, produces a JSON result.
+to a JSON value produces a JSON result.
 
 SQL/JSON path expressions specify item(s) to be retrieved from a JSON value,
 similarly to XPath expressions used for access to XML content. In Go, path
@@ -24,10 +22,10 @@ described [below](#syntax).
 ### Syntax
 
 The path package implements support for the SQL/JSON path language in Go to
-efficiently query JSON data. It provides a binary representation of the parsed
-SQL/JSON path expression that specifies the items to be retrieved by the path
-engine from the JSON data for further processing with the SQL/JSON query
-functions.
+efficiently query JSON data. It provides an abstract syntax tree  of the
+parsed SQL/JSON path expression that specifies the items to be retrieved by
+the path engine from the JSON data for further processing with the SQL/JSON
+query functions.
 
 The semantics of SQL/JSON path predicates and operators generally follow SQL.
 At the same time, to provide a natural way of working with JSON data, SQL/JSON
@@ -41,11 +39,12 @@ path syntax uses some JavaScript conventions:
     arrays, which start from 1.
 
 Numeric literals in SQL/JSON path expressions follow JavaScript rules, which
-are different from Go, SQL, JSON in some minor details. For example, SQL/JSON
-path allows `.1` and `1.`, which are invalid in JSON. Non-decimal integer literals
-and underscore separators are supported, for example, `1_000_000`, `0x1EEE_FFFF`,
-`0o273`, `0b100101`. In SQL/JSON path (and in JavaScript, but not in SQL or Go),
-there must not be an underscore separator directly after the radix prefix.
+are different from Go, SQL, and JSON in some minor details. For example,
+SQL/JSON path allows `.1` and `1.`, which are invalid in JSON. Non-decimal
+integer literals and underscore separators are supported, for example,
+`1_000_000`, `0x1EEE_FFFF`, `0o273`, `0b100101`. In SQL/JSON path (and in
+JavaScript, but not in SQL or Go), there must not be an underscore separator
+directly after the radix prefix.
 
 An SQL/JSON path expression is typically written as a Go string literal, so it
 must be enclosed in back quotes or double quotes --- and with the latter any
@@ -55,57 +54,55 @@ Some forms of path expressions require string literals within them. These
 embedded string literals follow JavaScript/ECMAScript conventions: they must
 be surrounded by double quotes, and backslash escapes may be used within them
 to represent otherwise-hard-to-type characters. In particular, the way to
-write a double quote within an embedded string literal is `\"`, and to write a
-backslash itself, you must write `\\`. Other special backslash sequences
-include those recognized in JSON strings: `\b`, `\f`, `\n`, `\r`, `\t`, `\v`
-for various ASCII control characters, and `\uNNNN` for a Unicode character
-identified by its 4-hex-digit code point. The backslash syntax also includes
-two cases not allowed by JSON: `\xNN` for a character code written with only
-two hex digits, and `\u{N...}` for a character code written with 1 to 6 hex
-digits.
+write a double quote within a double-quoted string literal is `\"`, and to
+write a backslash itself, you must write `\\`. Other special backslash
+sequences include those recognized in JSON strings: `\b`, `\f`, `\n`, `\r`,
+`\t`, `\v` for various ASCII control characters, and `\uNNNN` for a Unicode
+character identified by its 4-hex-digit code point. The backslash syntax also
+includes two cases not allowed by JSON: `\xNN` for a character code written
+with only two hex digits, and `\u{N...}` for a character code written with 1
+to 6 hex digits.
 
 A path expression consists of a sequence of path elements, which can be any of
 the following:
 
-*   Path literals of JSON primitive types: Unicode text, numeric, true, false, or null.
-
-*   Path variables listed in Table 8.24.
-
-*   Accessor operators listed in Table 8.25.
-
-*   JSON path operators and methods listed in Section 9.16.2.3.
-
+*   Path literals of JSON primitive types: Unicode text, numeric, `true`,
+    `false`, or `null`
+*   Path variables listed in the [Path Variables table](#path-variables)
+*   Accessor operators listed in the [Path Accessors table](#path-accessors)
+*   JSON path operators and methods listed[SQL/JSON Path Operators And
+    Methods](#sql-json-path-operators-and-methods)
 *   Parentheses, which can be used to provide filter expressions or define the
-    order of path evaluation.
+    order of path evaluation
 
 For details on using JSON path expressions with SQL/JSON query functions, see
-[below](#operation).
+[Operation](#operation).
 
 #### Path Variables
 
 | Variable   | Description
 | ---------- | ------------------------------------------------------------------------------------------------- |
 | `$`        | A variable representing the JSON value being queried (the context item).                          |
-| `$varname` | A named variable. Its value can be set by the parameter vars of several JSON processing functions |
+| `$varname` | A named variable. Its value can be set by the `exec.WithVars` option of Path processing functions |
 | `@`        | A variable representing the result of path evaluation in filter expressions.                      |
 
 #### Path Accessors
 
-| Accessor Operator | Description
-| ----------------- | ------------------------------------------------------------------------------------------------- |
+| Accessor Operator     | Description
+| --------------------- | ------------------------------------------------------------------------------------------------- |
 | `.key`, `."$varname"` | Member accessor that returns an object member with the specified key. If the key name matches some named variable starting with `$` or does not meet the JavaScript rules for an identifier, it must be enclosed in double quotes to make it a string literal.
 | `.*`                  | Wildcard member accessor that returns the values of all members located at the top level of the current object.
 | `.**`                 | Recursive wildcard member accessor that processes all levels of the JSON hierarchy of the current object and returns all the member values, regardless of their nesting level. This is a PostgreSQL extension of the SQL/JSON standard.
 | `.**{level}`, `.**{start_level to end_level}` | Like `.**`, but selects only the specified levels of the JSON hierarchy. Nesting levels are specified as integers. Level zero corresponds to the current object. To access the lowest nesting level, you can use the `last` keyword. This is a PostgreSQL extension of the SQL/JSON standard.
-| `[subscript, ...]`                            | Array element accessor. subscript can be given in two forms: `index` or `start_index` to `end_index`. The first form returns a single array element by its index. The second form returns an array slice by the range of indexes, including the elements that correspond to the provided `start_index` and `end_index`.<br/><br/>The specified index can be an integer, as well as an expression returning a single numeric value, which is automatically cast to integer. Index zero corresponds to the first array element. You can also use the `last` keyword to denote the last array element, which is useful for handling arrays of unknown length.
-| `[*]`                  | Wildcard array element accessor that returns all array elements.
+| `[subscript, ...]`                            | Array element accessor. `subscript` can be given in two forms: `index` or `start_index` to `end_index`. The first form returns a single array element by its index. The second form returns an array slice by the range of indexes, including the elements that correspond to the provided `start_index` and `end_index`.<br/><br/>The specified index can be an integer, as well as an expression returning a single numeric value, which is automatically cast to integer. Index zero corresponds to the first array element. You can also use the `last` keyword to denote the last array element, which is useful for handling arrays of unknown length.
+| `[*]`                 | Wildcard array element accessor that returns all array elements.
 
 ### Operation
 
-JSON query functions and operators pass the provided path expression to the
-path engine for evaluation. If the expression matches the queried JSON data,
-the corresponding JSON item, or set of items, is returned. If there is no
-match, the result will be `NULL`, `false`, or an error, depending on the
+Path query functions pass the provided path expression to the path engine for
+evaluation. If the expression matches the queried JSON data, the corresponding
+set of JSON items, is returned as an `[]any` slice. If there is no match, the
+result will be an empty slice, `NULL`, `false`, or an error, depending on the
 function. Path expressions are written in the SQL/JSON path language and can
 include arithmetic expressions and functions.
 
@@ -113,7 +110,7 @@ A path expression consists of a sequence of elements allowed by the SQL/JSON
 path language. The path expression is normally evaluated from left to right,
 but you can use parentheses to change the order of operations. If the
 evaluation is successful, a sequence of JSON items is produced, and the
-evaluation result is returned to the JSON query function that completes the
+evaluation result is returned to the Path query function that completes the
 specified computation.
 
 To refer to the JSON value being queried (the context item), use the `$`
@@ -127,7 +124,7 @@ For example, suppose you have some JSON data from a GPS tracker that you would
 like to parse, such as:
 
 ``` go
-src := `{
+var src = []byte(`{
   "track": {
     "segments": [
       {
@@ -142,20 +139,20 @@ src := `{
       }
     ]
   }
-}`
+}`)
 ```
 
-The [path] package expects JSON to be decoded into a Go value, one of
-`string`, `float64`, [json.Number], `map[string]any`, or `[]any` — which are
-the values produced by unmarshaling data into an `any` value. For the above
-JSON, unmarshal it like so:
+The path package expects JSON to be decoded into a Go value, one of `string`,
+`float64`, [`json.Number`], `map[string]any`, or `[]any` — which are the
+values produced by unmarshaling data into an `any` value. For the above JSON,
+unmarshal it like so:
 
 ``` go
-var jsonValue any
-if err := json.Unmarshal(src, &jsonValue); err != nil {
+var value any
+if err := json.Unmarshal(src, &value); err != nil {
     log.Fatal(err)
 }
-fmt.Printf("%T\n", jsonValue)
+fmt.Printf("%T\n", value)
 ```
 
 The output shows the parsed data type:
@@ -164,30 +161,49 @@ The output shows the parsed data type:
 map[string]interface {}
 ```
 
-Note that examples below use `any` rather than `interface {}` for legibility.
+Note that examples below encode results as JSON for legibility using a
+function like this:
+
+``` go
+func pp(val any) {
+	js, err := json.Marshal(val)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(string(js))
+}
+```
 
 To retrieve the available track segments, you need to use the `.key` accessor
 operator to descend through surrounding JSON objects, for example:
 
 ``` go
-fmt.Printf(path.MustQuery("$.track.segments", jsonValue))
+pp(path.MustQuery("$.track.segments", value))
 ```
 
-And the output (reformatted for legibility):
+And the output (indented for legibility):
 
-``` go
-[]any{
-    map[string]any{
-        "HR":73,
-        "location":[]any{47.763, 13.4034},
-        "start time":"2018-10-14 10:05:14",
+``` json
+[
+  [
+    {
+      "HR": 73,
+      "location": [
+        47.763,
+        13.4034
+      ],
+      "start time": "2018-10-14 10:05:14"
     },
-    map[string]any{
-        "HR":135,
-        "location":[]any{47.706, 13.2635},
-        "start time":"2018-10-14 10:39:21",
-    },
-}
+    {
+      "HR": 135,
+      "location": [
+        47.706,
+        13.2635
+      ],
+      "start time": "2018-10-14 10:39:21"
+    }
+  ]
+]
 ```
 
 To retrieve the contents of an array, you typically use the `[*]` operator. The
@@ -195,11 +211,11 @@ following example will return the location coordinates for all the available
 track segments:
 
 ``` go
-fmt.Printf(path.MustQuery("$.track.segments[*].location", jsonValue))
+pp(path.MustQuery("$.track.segments[*].location", value))
 ```
 
-``` go
-[]any{[]any{47.763, 13.4034}, []any{47.706, 13.2635}}
+``` json
+[[47.763,13.4034],[47.706,13.2635]]
 ```
 
 Here we started with the whole JSON input value (`$`), then the `.track`
@@ -217,11 +233,11 @@ corresponding subscript in the `[]` accessor operator. Recall that JSON array
 indexes are 0-relative:
 
 ```go
-fmt.Printf(path.MustQuery("$.track.segments[0].location", jsonValue))
+pp(path.MustQuery("$.track.segments[0].location", value))
 ```
 
-``` go
-[]any{47.763, 13.4034}
+``` json
+[[47.763,13.4034]]
 ```
 
 The result of each path evaluation step can be processed by one or more of the
@@ -230,16 +246,15 @@ Each method name must be preceded by a dot. For example, you can get the size
 of an array:
 
 ```go
-fmt.Printf(path.MustQuery("$.track.segments.size()", jsonValue))
+pp(path.MustQuery("$.track.segments.size()", value))
 ```
 
-``` go
-2
+``` json
+[2]
 ```
 
 More examples of using jsonpath operators and methods within path expressions
 appear [below](#sqljson-path-operators-and-methods).
-
 
 A path can also contain *filter* expressions that work similarly to the `WHERE`
 clause in SQL. A filter expression begins with a question mark and provides a
@@ -267,11 +282,11 @@ For example, suppose you would like to retrieve all heart rate values higher
 than 130. You can achieve this as follows:
 
 ```go
-fmt.Printf(path.MustQuery("$.track.segments[*].HR ? (@ > 130)", jsonValue))
+pp(path.MustQuery("$.track.segments[*].HR ? (@ > 130)", value))
 ```
 
-``` go
-135
+``` json
+[135]
 ```
 
 To get the start times of segments with such values, you have to filter out
@@ -280,14 +295,14 @@ is applied to the previous step, and the path used in the condition is
 different:
 
 ```go
-fmt.Printf(path.MustQuery(
+pp(path.MustQuery(
     `$.track.segments[*] ? (@.HR > 130)."start time"`,
-    jsonValue,
+    value,
 ))
 ```
 
-``` go
-"2018-10-14 10:39:21"
+``` json
+["2018-10-14 10:39:21"]
 ```
 
 You can use several filter expressions in sequence, if required. The following
@@ -295,14 +310,14 @@ example selects start times of all segments that contain locations with
 relevant coordinates and high heart rate values:
 
 ```go
-fmt.Printf(path.MustQuery(
+pp(path.MustQuery(
     `$.track.segments[*] ? (@.location[1] < 13.4) ? (@.HR > 130)."start time"`,
-    jsonValue,
+    value,
 ))
 ```
 
-```go
-"2018-10-14 10:39:21"
+```json
+["2018-10-14 10:39:21"]
 ```
 
 Using filter expressions at different nesting levels is also allowed. The
@@ -310,14 +325,14 @@ following example first filters all segments by location, and then returns
 high heart rate values for these segments, if available:
 
 ```go
-fmt.Printf(path.MustQuery(
+pp(path.MustQuery(
     `$.track.segments[*] ? (@.location[1] < 13.4).HR ? (@ > 130)`,
-    jsonValue,
+    value,
 ))
 ```
 
-```go
-135
+```json
+[135]
 ```
 
 You can also nest filter expressions within each other. This example returns
@@ -325,14 +340,14 @@ the size of the track if it contains any segments with high heart rate values,
 or an empty sequence otherwise:
 
 ```go
-fmt.Printf(path.MustQuery(
+pp(path.MustQuery(
     `$.track ? (exists(@.segments[*] ? (@.HR > 130))).segments.size()`,
-    jsonValue,
+    value,
 ))
 ```
 
 ```go
-2
+[2]
 ```
 
 ### Deviations From The SQL Standard
@@ -351,28 +366,24 @@ three-valued result of the predicate: `true`, `false`, or `unknown`. For
 example, we could write this SQL-standard filter expression:
 
 ```go
-fmt.Printf(path.MustQuery("$.track.segments ?(@[*].HR > 130)", jsonValue))
+pp(path.MustQuery("$.track.segments ?(@[*].HR > 130)", value))
 ```
 
-The result (reformatted for legibility):
+The result:
 
-```go
-map[string]any{
-    "HR":135,
-    "location":[]any{47.706, 13.2635},
-    "start time":"2018-10-14 10:39:21",
-}
+```json
+[{"HR":135,"location":[47.706,13.2635],"start time":"2018-10-14 10:39:21"}]
 ```
 
 The similar predicate check expression simply returns `true`, indicating that a
 match exists:
 
 ```go
-fmt.Printf(path.MustQuery("$.track.segments[*].HR > 130", jsonValue))
+pp(path.MustQuery("$.track.segments[*].HR > 130", value))
 ```
 
 ```go
-true
+[true]
 ```
 
 **Note:** PostgreSQL predicate check expressions require the `@@` operator,
@@ -392,20 +403,20 @@ data structure. An attempt to access a non-existent member of an object or
 element of an array is defined as a structural error. SQL/JSON path
 expressions have two modes of handling structural errors:
 
-*   lax (default) — the path engine implicitly adapts the queried data to the
-    specified path. Any structural errors that cannot be fixed as described
-    below are suppressed, producing no match.
+*   lax (default) — the path engine implicitly adapts the queried data to
+    the specified path. Any structural errors that cannot be fixed as
+    described below are suppressed, producing no match.
 
-*   `strict` — if a structural error occurs, an error is raised.
+*   strict — if a structural error occurs, an error is raised.
 
 Lax mode facilitates matching of a JSON document and path expression when the
 JSON data does not conform to the expected schema. If an operand does not
 match the requirements of a particular operation, it can be automatically
 wrapped as an SQL/JSON array, or unwrapped by converting its elements into an
 SQL/JSON sequence before performing the operation. Also, comparison operators
-automatically unwrap their operands in lax mode, so you can compare SQL/JSON
-arrays out-of-the-box. An array of size 1 is considered equal to its sole
-element. Automatic unwrapping is not performed when:
+and most methods automatically unwrap their operands in lax mode, so you can
+compare SQL/JSON arrays out-of-the-box. An array of size 1 is considered equal
+to its sole element. Automatic unwrapping is not performed when:
 
 *   The path expression contains `type()` or `size()` methods that return the
     type and the number of elements in the array, respectively.
@@ -419,46 +430,45 @@ For example, when querying the GPS data listed above, you can abstract from
 the fact that it stores an array of segments when using lax mode:
 
 ```go
-fmt.Printf(path.MustQuery("lax $.track.segments.location", jsonValue))
+pp(path.MustQuery("lax $.track.segments.location", value))
 ```
 
-``` go
-[]any{[]any{47.763, 13.4034}, []any{47.706, 13.2635}}
+``` json
+[[47.763,13.4034],[47.706,13.2635]]
 ```
 
 In strict mode, the specified path must exactly match the structure of the
 queried JSON document, so using this path expression will cause an error:
 
 ```go
-fmt.Printf(path.MustQuery("strict $.track.segments.location", jsonValue))
+pp(path.MustQuery("strict $.track.segments.location", value))
 ```
 
 ``` text
-panic: path: member accessor can only be applied to an object
+panic: exec: jsonpath member accessor can only be applied to an object
 ```
 
 To get the same result as in lax mode, you have to explicitly unwrap the
 segments array:
 
 ```go
-fmt.Printf(path.MustQuery("strict $.track.segments[*].location", jsonValue))
+pp(path.MustQuery("strict $.track.segments[*].location", value))
 ```
 
-``` go
-[]any{[]any{47.763, 13.4034}, []any{47.706, 13.2635}}
+``` json
+[[47.763,13.4034],[47.706,13.2635]]
 ```
 
 The unwrapping behavior of lax mode can lead to surprising results. For
 instance, the following query using the `.**` accessor selects every `HR` value
 twice:
 
-
 ```go
-fmt.Printf(path.MustQuery("lax $.**.HR", jsonValue))
+pp(path.MustQuery("lax $.**.HR", value))
 ```
 
 ``` go
-[]any{73, 135, 73, 135}
+[73,135,73,135]
 ```
 
 This happens because the `.**` accessor selects both the segments array and
@@ -468,22 +478,22 @@ accessor only in strict mode. The following query selects each `HR` value just
 once:
 
 ```go
-fmt.Printf(path.MustQuery("strict $.**.HR", jsonValue))
+pp(path.MustQuery("strict $.**.HR", value))
 ```
 
-``` go
-[]any{73, 135}
+``` json
+[73,135]
 ```
 
 The unwrapping of arrays can also lead to unexpected results. Consider this
 example, which selects all the location arrays:
 
 ```go
-fmt.Printf(path.MustQuery("lax $.track.segments[*].location", jsonValue))
+pp(path.MustQuery("lax $.track.segments[*].location", value))
 ```
 
-``` go
-[]any{[]any{47.763, 13.4034}, []any{47.706, 13.2635}}
+``` json
+[[47.763,13.4034],[47.706,13.2635]]
 ```
 
 As expected it returns the full arrays. But applying a filter expression
@@ -491,28 +501,28 @@ causes the arrays to be unwrapped to evaluate each item, returning only the
 items that match the expression:
 
 ```go
-fmt.Printf(path.MustQuery(
+pp(path.MustQuery(
     "lax $.track.segments[*].location ?(@[*] > 15)",
-    jsonValue,
+    value,
 ))
 ```
 
-``` go
-[]any{47.763, 47.706}
+``` json
+[47.763,47.706]
 ```
 
 This despite the fact that the full arrays are selected by the path
 expression. Use strict mode to restore selecting the arrays:
 
 ```go
-fmt.Printf(path.MustQuery(
+pp(path.MustQuery(
     "strict $.track.segments[*].location ?(@[*] > 15)",
-    jsonValue,
+    value,
 ))
 ```
 
-``` go
-[]any{[]any{47.763, 13.4034}, []any{47.706, 13.2635}}
+``` json
+[[47.763,13.4034],[47.706,13.2635]]
 ```
 
 ### SQL/JSON Path Operators And Methods
@@ -522,12 +532,25 @@ that while the unary operators and methods can be applied to multiple values
 resulting from a preceding path step, the binary operators (addition etc.) can
 only be applied to single values.
 
+**Note:** The examples below use this utility function to marshall JSON
+arguments:
+
+``` go
+func val(src string) any {
+	var value any
+	if err := json.Unmarshal([]byte(src), &value); err != nil {
+		log.Fatal(err)
+	}
+	return value
+}
+```
+
 #### `number + number → number`
 
 Addition.
 
 ``` go
-fmt.Println(path.MustQuery([]any{2}, "$[0] + 3")) // → 5
+pp(path.MustQuery("$[0] + 3", val("2"))) // → [5]
 ```
 
 #### `+ number → number`
@@ -536,8 +559,7 @@ Unary plus (no operation); unlike addition, this can iterate over multiple
 values.
 
 ``` go
-arg := map[string]any{"x": []any{2,3,4}}
-fmt.Println(path.MustQuery(arg, "+ $.x")) // → [2, 3, 4]
+pp(path.MustQuery("+ $.x", val(`{"x": [2,3,4]}`))) // → [2, 3, 4]
 ```
 
 #### `number - number → number`
@@ -545,7 +567,7 @@ fmt.Println(path.MustQuery(arg, "+ $.x")) // → [2, 3, 4]
 Subtraction.
 
 ``` go
-fmt.Println(path.MustQuery([]any{2}, "7 - $[0]")) // → 5
+pp(path.MustQuery("7 - $[0]", val("[2]"))) // → [5]
 ```
 
 #### `- number → number`
@@ -553,8 +575,7 @@ fmt.Println(path.MustQuery([]any{2}, "7 - $[0]")) // → 5
 Negation; unlike subtraction, this can iterate over multiple values.
 
 ``` go
-arg := map[string]any{"x": []any{2,3,4}}
-fmt.Println(path.MustQuery(arg, "- $.x")) // → [-2, -3, -4]
+pp(path.MustQuery("- $.x", val(`{"x": [2,3,4]}`))) // → [-2,-3,-4]
 ```
 
 #### `number * number → number`
@@ -562,14 +583,14 @@ fmt.Println(path.MustQuery(arg, "- $.x")) // → [-2, -3, -4]
 Multiplication.
 
 ``` go
-fmt.Println(path.MustQueryJSON([]any{3}, "2 * $[0]")) // → 8
+pp(path.MustQuery("2 * $[0]", val("4"))) // → [8]
 ```
 #### `number / number → number`
 
 Division.
 
 ``` go
-fmt.Println(path.MustQuery([]any{8.5}, "$[0] / 2")) // → 4.25
+pp(path.MustQuery("$[0] / 2", val("[8.5]"))) // → [4.25]
 ```
 
 #### `number % number → number`
@@ -577,7 +598,7 @@ fmt.Println(path.MustQuery([]any{8.5}, "$[0] / 2")) // → 4.25
 Modulo (remainder).
 
 ``` go
-fmt.Println(path.MustQuery([]any{32}, "$[0] % 10")) // → 2
+pp(path.MustQuery("$[0] % 10", val("[32]"))) // → [2]
 ```
 
 #### `value . type() → string`
@@ -585,8 +606,7 @@ fmt.Println(path.MustQuery([]any{32}, "$[0] % 10")) // → 2
 Type of the JSON item.
 
 ``` go
-arg := []any{1, "2", map[string]any{}}
-fmt.Println(path.MustQuery(arg, "$[*].type()")) // → []any{"number", "string", "object"}
+pp(path.MustQuery("$[*].type()", val(`[1, "2", {}]`))) // → ["number","string","object"]
 ```
 
 #### `value . size() → number`
@@ -594,8 +614,7 @@ fmt.Println(path.MustQuery(arg, "$[*].type()")) // → []any{"number", "string",
 Size of the JSON item (number of array elements, or 1 if not an array)
 
 ``` go
-arg := map[string]any{"m": []any{11, 15}}
-fmt.Println(path.MustQuery(arg, "$.m.size()")) // → 2
+pp(path.MustQuery("$.m.size()", val(`{"m": [11, 15]}`))) // → [2]
 ```
 
 #### `value . boolean() → boolean`
@@ -603,8 +622,7 @@ fmt.Println(path.MustQuery(arg, "$.m.size()")) // → 2
 Boolean value converted from a JSON boolean, number, or string.
 
 ``` go
-arg := []any{1, "yes", false}
-fmt.Println(path.MustQuery(arg, "$[*].boolean()")) // → [true, true, false]
+pp(path.MustQuery("$[*].boolean()", val(`[1, "yes", false]`))) // → [true,true,false]
 ```
 
 #### `value . string() → string`
@@ -612,11 +630,8 @@ fmt.Println(path.MustQuery(arg, "$[*].boolean()")) // → [true, true, false]
 String value converted from a JSON boolean, number, string, or datetime.
 
 ``` go
-arg := []any{1.23, "xyz", false}
-fmt.Println(path.MustQuery(arg, "$[*].string()")) // → ["1.23", "xyz", "false"]
-
-arg = "2023-08-15"
-fmt.Println(path.MustQuery(arg, "$.datetime().string()")) // → "2023-08-15"
+	pp(path.MustQuery("$[*].string()", val(`[1.23, "xyz", false]`))) // → ["1.23","xyz","false"]
+	pp(path.MustQuery("$.datetime().string()", "2023-08-15"))        // → ["2023-08-15"]
 ```
 
 #### `value . double() → number`
@@ -624,8 +639,7 @@ fmt.Println(path.MustQuery(arg, "$.datetime().string()")) // → "2023-08-15"
 Approximate floating-point number converted from a JSON number or string.
 
 ``` go
-arg := map[string]any{"len": "1.9"}
-fmt.Println(path.MustQuery(arg, "$.len.double() * 2")) // → 3.8
+pp(path.MustQuery("$.len.double() * 2", val(`{"len": "1.9"}`))) // → [3.8]
 ```
 
 #### `number . ceiling() → number`
@@ -633,7 +647,7 @@ fmt.Println(path.MustQuery(arg, "$.len.double() * 2")) // → 3.8
 Nearest integer greater than or equal to the given number.
 
 ``` go
-fmt.Println(path.MustQuery(map[string]any{"h": 1.3}, "$.h.ceiling()")) // → 2
+pp(path.MustQuery("$.h.ceiling()", val(`{"h": 1.3}`))) // → [2]
 ```
 
 #### `number . floor() → number`
@@ -641,7 +655,7 @@ fmt.Println(path.MustQuery(map[string]any{"h": 1.3}, "$.h.ceiling()")) // → 2
 Nearest integer less than or equal to the given number.
 
 ``` go
-fmt.Println(path.MustQuery(map[string]any{"h": 1.7}, "$.h.floor()")) // → 1
+pp(path.MustQuery("$.h.floor()", val(`{"h": 1.7}`))) // → [1]
 ```
 
 #### `number . abs() → number`
@@ -649,7 +663,7 @@ fmt.Println(path.MustQuery(map[string]any{"h": 1.7}, "$.h.floor()")) // → 1
 Absolute value of the given number.
 
 ``` go
-fmt.Println(path.MustQuery(map[string]any{"z": -0.3}, "$.z.abs()")) // → 0.3
+pp(path.MustQuery("$.z.abs()", val(`{"z": -0.3}`))) // → [0.3]
 ```
 
 #### `value . bigint() → bigint`
@@ -657,8 +671,7 @@ fmt.Println(path.MustQuery(map[string]any{"z": -0.3}, "$.z.abs()")) // → 0.3
 Big integer value converted from a JSON number or string.
 
 ``` go
-arg := map[string]{"len": "9876543219"}
-fmt.Println(path.MustQuery(arg, "$.len.bigint()")) // → 9876543219
+pp(path.MustQuery("$.len.bigint()", val(`{"len": "9876543219"}`))) // → [9876543219]
 ```
 
 #### `value . decimal( [ precision [ , scale ] ] ) → decimal`
@@ -667,7 +680,7 @@ Rounded decimal value converted from a JSON number or string. Precision and
 scale must be integer values.
 
 ``` go
-fmt.Println(path.MustQuery("1234.5678", "$.decimal(6, 2)")) // → 1234.57
+pp(path.MustQuery("$.decimal(6, 2)", val("1234.5678"))) // → [1234.57]
 ```
 
 #### `value . integer() → integer`
@@ -675,8 +688,7 @@ fmt.Println(path.MustQuery("1234.5678", "$.decimal(6, 2)")) // → 1234.57
 Integer value converted from a JSON number or string.
 
 ``` go
-arg := map[string]any{"len": "12345"}
-fmt.Println(path.MustQuery(arg, "$.len.integer()")) // → 12345
+pp(path.MustQuery("$.len.integer()", val(`{"len": "12345"}`))) // → [12345]
 ```
 
 #### `value . number() → numeric`
@@ -684,117 +696,110 @@ fmt.Println(path.MustQuery(arg, "$.len.integer()")) // → 12345
 Numeric value converted from a JSON number or string.
 
 ``` go
-arg := map[string]any{"len": "123.45"}
-fmt.Println(path.MustQuery(arg, "$.len.number()")) // → 123.45
+pp(path.MustQuery("$.len.number()", val(`{"len": "123.45"}`))) // → [123.45]
 ```
 
-#### `string . datetime() → time.Time`
+#### `string . datetime() → types.DateTime`
 
 Date/time value converted from a string.
 
 ``` go
-fmt.Println(path.MustQuery(
-    []any{"2015-8-1", "2015-08-12"},
-    `$[*] ? (@.datetime() < "2015-08-2".datetime())`,
-)) // → "2015-8-1"
+pp(path.MustQuery(
+    `$[*] ? (@.datetime() < "2015-08-02".datetime())`,
+    val(`["2015-08-01", "2015-08-12"]`),
+)) // → ["2015-8-01"]
 ```
 
-#### `string . datetime(template) → datetime_type`
+#### `string . datetime(template) → types.DateTime`
 
 Date/time value converted from a string using the specified to_timestamp
 template.
 
+**NOTE:** Currently unimplemented, raises an error.
+
 ``` go
-fmt.Println(path.MustQuery(
-    []any{"12:30", "18:40"},
-    `$[*].datetime("HH24:MI")`,
-)) // → ["12:30:00", "18:40:00"]
+pp(path.MustQuery(
+    `$[*].datetime("HH24:MI")`, val(`["12:30", "18:40"]`),
+)) // → panic: exec: .datetime(template) is not yet supported
 ```
 
-#### `string . date() → date`
+#### `string . date() → types.Date`
 
 Date value converted from a string.
 
 ``` go
-fmt.Println(path.MustQuery("2023-08-15", "$.date()")) // → "2023-08-15"
+pp(path.MustQuery("$.date()", "2023-08-15")) // → ["2023-08-15"]
 ```
 
-#### `string . time() → time.Time`
+#### `string . time() → types.Time`
 
 Time without time zone value converted from a string.
 
 ``` go
-fmt.Println(path.MustQuery("12:34:56", "$.time()")) // → "12:34:56"
+pp(path.MustQuery("$.time()", "12:34:56")) // → ["12:34:56"]
 ```
 
-#### `string . time(precision) → time.Time`
+#### `string . time(precision) → types.Time`
 
 Time without time zone value converted from a string, with fractional seconds
 adjusted to the given precision.
 
 ``` go
-fmt.Println(path.MustQuery("12:34:56.789", "$.time(2)")) // → "12:34:56.79"
+pp(path.MustQuery("$.time(2)", "12:34:56.789")) // → ["12:34:56.79"]
 ```
 
-#### `string . time_tz() → time/.Time`
+#### `string . time_tz() → types.TimeTZ`
 
 Time with time zone value converted from a string.
 
 ``` go
-arg := "12:34:56 +05:30"
-fmt.Println(path.MustQuery(arg, "$.time_tz()")) // → "12:34:56+05:30"
+pp(path.MustQuery("$.time_tz()", "12:34:56+05:30")) // → ["12:34:56+05:30"]
 ```
 
-#### `string . time_tz(precision) → time.Time`
+#### `string . time_tz(precision) → types.TimeTZ`
 
 Time with time zone value converted from a string, with fractional seconds
 adjusted to the given precision.
 
 ``` go
-arg := "12:34:56.789 +05:30"
-fmt.Println(path.MustQuery(arg, "$.time_tz(2)")) // → "12:34:56.79+05:30"
+pp(path.MustQuery("$.time_tz(2)", "12:34:56.789+05:30")) // → ["12:34:56.79+05:30"]
 ```
 
-#### `string . timestamp() → time.Time`
+#### `string . timestamp() → types.Timestamp`
 
 Timestamp without time zone value converted from a string.
 
 ``` go
-arg := "2023-08-15 12:34:56"
-fmt.Println(path.MustQuery(arg, "$.timestamp()")) // → "2023-08-15T12:34:56"
+pp(path.MustQuery("$.timestamp()", "2023-08-15 12:34:56")) // → ["2023-08-15T12:34:56"]
 ```
 
-#### `string . timestamp(precision) → time.Time`
+#### `string . timestamp(precision) → types.Timestamp`
 
 Timestamp without time zone value converted from a string, with fractional
 seconds adjusted to the given precision.
 
 ``` go
 arg := "2023-08-15 12:34:56.789"
-fmt.Println(path.MustQuery(arg, "$.timestamp(2)")) // → "2023-08-15T12:34:56.79"
+pp(path.MustQuery("$.timestamp(2)", arg)) // → ["2023-08-15T12:34:56.79"]
 ```
 
-#### `string . timestamp_tz() → time.Time`
+#### `string . timestamp_tz() → types.TimestampTZ`
 
 Timestamp with time zone value converted from a string.
 
 ``` go
-fmt.Println(path.MustQuery(
-    "2023-08-15 12:34:56 +05:30",
-    "$.timestamp_tz()",
-)) // → "2023-08-15T12:34:56+05:30"
+arg := "2023-08-15 12:34:56+05:30"
+pp(path.MustQuery("$.timestamp_tz()", arg)) // → ["2023-08-15T12:34:56+05:30"]
 ```
 
-#### `string . timestamp_tz(precision) → time.Time`
+#### `string . timestamp_tz(precision) → types.TimestampTZ`
 
 Timestamp with time zone value converted from a string, with fractional
 seconds adjusted to the given precision.
 
 ``` go
-fmt.Println(path.MustQuery(
-    "2023-08-15 12:34:56.789 +05:30",
-    "$.timestamp_tz(2)",
-)) // → "2023-08-15T12:34:56.79+05:30"
+arg := "2023-08-15 12:34:56.789+05:30"
+pp(path.MustQuery("$.timestamp_tz(2)", arg)) // → ["2023-08-15T12:34:56.79+05:30"]
 ```
 
 #### `object . keyvalue() → []map[string]any`
@@ -804,9 +809,8 @@ three fields: "key", "value", and "id"; "id" is a unique identifier of the
 object the key-value pair belongs to
 
 ``` go
-arg := map[string]any{"x": "20", "y": 32}
-fmt.Println(path.MustQuery(arg, "$.keyvalue()"))
-// → [{"id": 0, "key": "x", "value": "20"}, {"id": 0, "key": "y", "value": 32}]
+pp(path.MustQuery("$.keyvalue()", val(`{"x": "20", "y": 32}`)))
+// → [{"id":0,"key":"x","value":"20"},{"id":0,"key":"y","value":32}]
 ```
 
 ### Filter Expression Elements
@@ -819,8 +823,8 @@ Equality comparison (this, and the other comparison operators, work on all
 JSON scalar values).
 
 ``` go
-fmt.Println(path.MustQuery([]any{1, "a", 1, 3}, "$[*] ? (@ == 1)")) // → [1, 1]
-fmt.Println(path.MustQuery([]any{1, "a", 1, 3}, `$[*] ? (@ == "a"`)) // → ["a"]
+pp(path.MustQuery("$[*] ? (@ == 1)", val(`[1, "a", 1, 3]`)))   // → [1,1]
+pp(path.MustQuery(`$[*] ? (@ == "a")`, val(`[1, "a", 1, 3]`))) // → ["a"]
 ```
 
 #### `value != value → boolean`
@@ -830,11 +834,8 @@ fmt.Println(path.MustQuery([]any{1, "a", 1, 3}, `$[*] ? (@ == "a"`)) // → ["a"
 Non-equality comparison.
 
 ``` go
-arg := []any{1, 2, 1, 3}
-fmt.Println(path.MustQuery(arg, "$[*] ? (@ != 1)")) // → [2, 3]
-
-arg = []any{"a", "b", "c"}
-fmt.Println(path.MustQuery(arg, `'$[*] ? (@ <> "b")`)) // → ["a", "c"]
+pp(path.MustQuery("$[*] ? (@ != 1)", val(`[1, 2, 1, 3]`)))      // → [2,3]
+pp(path.MustQuery(`$[*] ? (@ <> "b")`, val(`["a", "b", "c"]`))) // → ["a","c"]
 ```
 
 #### `value < value → boolean`
@@ -842,7 +843,7 @@ fmt.Println(path.MustQuery(arg, `'$[*] ? (@ <> "b")`)) // → ["a", "c"]
 Less-than comparison.
 
 ``` go
-fmt.Println(path.MustQuery([]any{1, 2, 3}, "$[*] ? (@ < 2)")) // → [1]
+pp(path.MustQuery("$[*] ? (@ < 2)", val(`[1, 2, 3]`))) // → [1]
 ```
 
 #### `value <= value → boolean`
@@ -850,8 +851,7 @@ fmt.Println(path.MustQuery([]any{1, 2, 3}, "$[*] ? (@ < 2)")) // → [1]
 Less-than-or-equal-to comparison.
 
 ``` go
-arg := []any{"a", "b", "c"}
-fmt.Println(path.MustQuery(arg, `$[*] ? (@ <= "b")`)) // → ["a", "b"]
+pp(path.MustQuery(`$[*] ? (@ <= "b")`, val(`["a", "b", "c"]`))) // → ["a","b"]
 ```
 
 #### `value > value → boolean`
@@ -859,7 +859,7 @@ fmt.Println(path.MustQuery(arg, `$[*] ? (@ <= "b")`)) // → ["a", "b"]
 Greater-than comparison
 
 ``` go
-fmt.Println(path.MustQuery([]any{1, 2, 3}, "$[*] ? (@ > 2)")) // → [3]
+pp(path.MustQuery("$[*] ? (@ > 2)", val(`[1, 2, 3]`))) // → [3]
 ```
 
 #### `value >= value → boolean`
@@ -867,7 +867,7 @@ fmt.Println(path.MustQuery([]any{1, 2, 3}, "$[*] ? (@ > 2)")) // → [3]
 Greater-than-or-equal-to comparison.
 
 ``` go
-fmt.Println(path.MustQuery([]any{1, 2, 3}, "$[*] ? (@ >= 2)")) // → [2, 3]
+pp(path.MustQuery("$[*] ? (@ >= 2)", val(`[1, 2, 3]`))) // → [2,3]
 ```
 
 #### `true → boolean`
@@ -875,13 +875,11 @@ fmt.Println(path.MustQuery([]any{1, 2, 3}, "$[*] ? (@ >= 2)")) // → [2, 3]
 JSON constant true.
 
 ``` go
-arg := []map[string]any{
+arg := val(`[
     {"name": "John", "parent": false},
-    {"name": "Chris", "parent": true},
-}
-fmt.Println(path.MustQuery(
-    arg, "$[*] ? (@.parent == true)",
-)) // → {"name": "Chris", "parent": true}
+    {"name": "Chris", "parent": true}
+]`)
+pp(path.MustQuery("$[*] ? (@.parent == true)", arg)) // → [{"name":"Chris","parent":true}]
 ```
 
 #### `false → boolean`
@@ -889,13 +887,11 @@ fmt.Println(path.MustQuery(
 JSON constant false.
 
 ``` go
-arg := []map[string]any{
+arg := val(`[
     {"name": "John", "parent": false},
-    {"name": "Chris", "parent": true},
-}
-fmt.Println(path.MustQuery(
-    arg, "$[*] ? (@.parent == false)",
-)) // → {"name": "John", "parent": false}
+    {"name": "Chris", "parent": true}
+]`)
+pp(path.MustQuery("$[*] ? (@.parent == false)", arg)) // → [{"name":"John","parent":false}]
 ```
 
 #### `null → value`
@@ -904,11 +900,11 @@ JSON constant null (note that, unlike in SQL, comparison to null works
 normally).
 
 ``` go
-arg := []map[string]any{
+arg := val(`[
     {"name": "Mary", "job": null},
-    {"name": "Michael", "job": "driver"},
-}
-fmt.Println(path.MustQuery(arg, "$[*] ? (@.job == null) .name")) // → "Mary"
+    {"name": "Michael", "job": "driver"}
+]`)
+pp(path.MustQuery("$[*] ? (@.job == null) .name", arg)) // → ["Mary"]
 ```
 
 #### `boolean && boolean → boolean`
@@ -916,7 +912,7 @@ fmt.Println(path.MustQuery(arg, "$[*] ? (@.job == null) .name")) // → "Mary"
 Boolean `AND`.
 
 ``` go
-fmt.Println(path.MustQuery([]any{1, 3, 7}, "$[*] ? (@ > 1 && @ < 5)")) // → 3
+pp(path.MustQuery("$[*] ? (@ > 1 && @ < 5)", val(`[1, 3, 7]`))) // → [3]
 ```
 
 #### `boolean || boolean → boolean`
@@ -924,7 +920,7 @@ fmt.Println(path.MustQuery([]any{1, 3, 7}, "$[*] ? (@ > 1 && @ < 5)")) // → 3
 Boolean `OR`.
 
 ``` go
-fmt.Println(path.MustQuery([]any{1, 3, 7}, "$[*] ? (@ < 1 || @ > 5)")) // → 7
+pp(path.MustQuery("$[*] ? (@ < 1 || @ > 5)", val(`[1, 3, 7]`))) // → [7]
 ```
 
 #### `! boolean → boolean`
@@ -932,7 +928,7 @@ fmt.Println(path.MustQuery([]any{1, 3, 7}, "$[*] ? (@ < 1 || @ > 5)")) // → 7
 Boolean `NOT`.
 
 ``` go
-fmt.Println(path.MustQuery([]any{1, 3, 7}, "$[*] ? (!(@ < 5))")) // → 7
+pp(path.MustQuery("$[*] ? (!(@ < 5))", val(`[1, 3, 7]`))) // → [7]
 ```
 
 #### `boolean is unknown → boolean`
@@ -940,8 +936,7 @@ fmt.Println(path.MustQuery([]any{1, 3, 7}, "$[*] ? (!(@ < 5))")) // → 7
 Tests whether a Boolean condition is unknown.
 
 ``` go
-arg := []any{-1, 2, 7, "foo"}
-fmt.Println(path.MustQuery(arg, "$[*] ? ((@ > 0) is unknown)")) // → "foo"
+pp(path.MustQuery("$[*] ? ((@ > 0) is unknown)", val(`[-1, 2, 7, "foo"]`))) // → ["foo"]
 ```
 
 #### `string like_regex string [ flag string ] → boolean`
@@ -951,14 +946,9 @@ second operand, optionally with modifications described by a string of flag
 characters (see [SQL/JSON Regular Expressions](#sqljson-regular-expressions)).
 
 ``` go
-arg := []any{"abc", "abd", "aBdC", "abdacb", "babc"}
-fmt.Println(path.MustQuery(
-    arg, `$[*] ? (@ like_regex "^ab.*c")`,
-)) // → ["abc", "abdacb"]
-
-fmt.Println(path.MustQuery(
-    arg, `$[*] ? (@ like_regex "^ab.*c" flag "i"`,
-)) // → ["abc", "aBdC", "abdacb"]
+arg := val(`["abc", "abd", "aBdC", "abdacb", "babc"]`)
+pp(path.MustQuery(`$[*] ? (@ like_regex "^ab.*c")`, arg))          // → ["abc","abdacb"]
+pp(path.MustQuery(`$[*] ? (@ like_regex "^ab.*c" flag "i")`, arg)) // → ["abc","aBdC","abdacb"]
 ```
 
 #### `string starts with string → boolean`
@@ -966,8 +956,8 @@ fmt.Println(path.MustQuery(
 Tests whether the second operand is an initial substring of the first operand.
 
 ``` go
-arg := []any{"John Smith", "Mary Stone", "Bob Johnson"}
-fmt.Println(path.MustQuery(arg, `$[*] ? (@ starts with "John")`)) // → "John Smith"
+arg := val(`["John Smith", "Mary Stone", "Bob Johnson"]`)
+pp(path.MustQuery(`$[*] ? (@ starts with "John")`, arg)) // → ["John Smith"]
 ```
 
 #### `exists ( path_expression ) → boolean`
@@ -977,11 +967,9 @@ unknown if the path expression would result in an error; the second example
 uses this to avoid a no-such-key error in strict mode.
 
 ``` go
-arg := map[string]any{"x": []any{1, 2}, "y": []any{2, 4}}
-fmt.Println(path.MustQuery(arg, "strict $.* ? (exists (@ ? (@[*] > 2)))")) // → [2, 4]
-
-arg = map[string]any{"value": 41}
-fmt.Println(path.MustQuery(arg, "strict $ ? (exists (@.name)) .name") // → []
+arg := val(`{"x": [1, 2], "y": [2, 4]}`)
+pp(path.MustQuery("strict $.* ? (exists (@ ? (@[*] > 2)))", arg))              // → [[2,4]]
+pp(path.MustQuery("strict $ ? (exists (@.name)) .name", val(`{"value": 42}`))) // → []
 ```
 
 ### SQL/JSON Regular Expressions
@@ -1002,30 +990,177 @@ behavior to a simple substring match).
 
 The SQL/JSON standard borrows its definition for regular expressions from the
 `LIKE_REGEX` operator, which in turn uses the XQuery standard. The path
-package follows the example of PostgreSQL, using the [regexp] regular
-expression engine to implement `like_regex`. This leads to various minor
-discrepancies from standard SQL/JSON behavior, which are cataloged in [TBD].
-Note, however, that the flag-letter incompatibilities described there do not
-apply to SQL/JSON, as it translates the XQuery flag letters to match what
-[regxp] expects.
+package follows the example of PostgreSQL, using the [regexp] package to
+implement `like_regex`. This leads to various minor discrepancies from
+standard SQL/JSON behavior, which are cataloged in [Differences From SQL
+Standard And XQuery]. Note, however, that the flag-letter incompatibilities
+described there do not apply to SQL/JSON, as it translates the XQuery flag
+letters to match what the [regexp] package expects.
+
+There are also variations between PostgreSQL regular expression syntax and go
+regular expression syntax, cataloged [below](#compatibility).
 
 Keep in mind that the pattern argument of `like_regex` is a JSON path string
 literal, written according to the rules given [above](#syntax). This means in
-particular that any backslashes you want to use in the regular expression must
-be doubled. For example, to match string values of the root document that
-contain only digits:
-
-``` jsonpath
-$.* ? (@ like_regex "^\\d+$")
-```
-
-We therefor recommend using Go literal strings to compose path expressions
-with double quotes or backslashes, both of which are common in `like_regex`
-expressions:
+particular that any backslashes in the regular expression must be doubled in
+double-quoted strings. For example, to match string values of the root
+document that contain only digits:
 
 ``` go
-p := MustCompile(`$.* ? (@ like_regex "^\\d+$")`)
+p := path.MustParse("$.* ?(@ like_regex \"^\\\\d+$\")")
+pp(p.MustQuery(context.Background(), val(`{"x": "42", "y": "no"}`))) // → ["42"]
 ```
+
+This doubling upon doubling is required to escape backslashes once for go
+parsing and a second time for JSON path string parsing.
+
+We therefore recommend using raw [string literals] (backtick strings) to
+compose path expressions with double quotes or backslashes, both of which are
+common in `like_regex` expressions. Raw strings require double backslashes in
+regular expressions only once, for the path string parsing:
+
+``` go
+p := path.MustParse(`$.* ?(@ like_regex "^\\d+$")`)
+pp(p.MustQuery(context.Background(), val(`{"x": "42", "y": "no"}`))) // → ["42"]
+```
+
+## Compatibility
+
+As a direct port from the Postgres source, the path package strives to
+maintain the highest level of compatibility. Still, there remain some
+unavoidable differences and to-dos. These include:
+
+*   Numbers. The Postgres [JSONB] type implements numbers as [arbitrary
+    precision numbers]. This contrasts with Go JSON parsing, which by default
+    parses numbers into `float64` values. Decimal numbers outside the range of
+    `float64` are not supported and will trigger an error. For numbers within
+    `float64` range, warnings about the precision of [floating point math]
+    apply.
+
+    For [json.Number]s, however, the path package first attempts to treat them
+    as `int64` values and falls back on `float64` only if all the values in an
+    expression cannot be parsed as integers. This increases precision for
+    integer-only expressions. We therefore recommend parsing JSON with
+    [json.Decoder.UseNumber].
+
+    This incompatibility may be addressed in the future, perhaps by using
+    [decimal] for all numeric operations.
+
+*   `datetime(template)`. The `datetime()` method has been implemented, but
+    `datetime(template)` has not. Use of the template parameter will raise an
+    error. This issue will likely be addressed in a future release.
+
+*   Date and time parsing. The path package relies uses the [time] packages's
+    [layouts] to parse values in the datetime methods (`datetime()`,
+    `timestamp()`, `timestamp_tz()`, etc.). These layouts are stricter about
+    the formats they'll parse than [Postgres date/time formatting].
+
+    As a result, some values parsed by the Postgres datetime methods will not
+    be parsed by this package. Examples include values with extra spaces
+    between the time and time zone, and missing leading zeros on the day and
+    month.
+
+    This issue will likely be addressed when the `datetime(template)` method
+    is implemented, as it will require adopting the full Postgres date/time
+    formatting language.
+
+*   Date and time `string()` output. The output of the `.string()` method
+    chained after one of datetime methods (`datetime()`, `timestamp()`,
+    `timestamp_tz()`, etc.) is determined by the [DateStyle] configuration
+    parameter, just like the [output format] of the PostgreSQL types. The path
+    package's `string()` function formats dates and times only in the ISO
+    8601/SQL standard format, which is the Postgres default. Like the Postgres
+   ISO format, it includes no `T` between the date and time. An example:
+    `1997-12-17 07:37:16-08`.
+
+*   Time zones. Postgres operates on time and time values in the context of
+    the in the time zone defined by the [TimeZone GUC] or the server's system
+    time zone. The path package does not rely on such global configuration. It
+    instead uses the time zone configured in the context passed by the path
+    queries, an defaults to UTC if it's not set:
+
+    ```go
+    p := path.MustParse("$.timestamp_tz().string()")
+    arg := "2023-08-15 12:34:56+05:30"
+    // Stringifies to UTC by default.
+    pp(p.MustQuery(context.Background(), arg)) // → ["2023-08-15T07:04:56+00"]
+    ```
+
+    To operate in a the context of a different time zone, use
+    `types.ContextWithTZ` to add it to the context.:
+
+    ``` go
+    tz, err := time.LoadLocation("America/New_York")
+    if err != nil {
+        log.Fatal(err)
+    }
+    ctx := types.ContextWithTZ(context.Background(), tz)
+
+    // Now stringifies to America/New_York.
+    pp(p.MustQuery(ctx, arg)) // → ["2023-08-15T03:04:56-04"]
+    ```
+
+*   Identifiers. Postgres jsonpath parsing is quite liberal in what it allows
+    in unquoted identifiers. The allowed characters are defined by the
+    [ECMAScript standard] are stricter, and this package hews closer to the
+    standard.
+
+    The upshot is that expressions allowed by Postgres, such as `x.🎉`, are
+    better written as `x."🎉"` for compatibility with the standard and to work
+    with both this package and Postgres.
+
+*   Regular expressions. Whereas the Postgres implementation of the `like_regex`
+    expression relies on its [POSIX regular expression engine], the Go version
+    relies on the [regexp] package. We have attempted to configure things for
+    full compatibility with the Postgres implementation (including the same
+    diversions from XQuery regular expressions), but some variation is likely.
+
+    Notably, a number of escapes and character classes vary:
+
+    | Escape       | PostgresSQL                           | Go                                    |
+    | ------------ | ------------------------------------- | ------------------------------------- |
+    | `\a`         | alert (bell) character                | alert (bell) character                |
+    | `\A`         | at beginning of text                  | at beginning of text                  |
+    | `\b`         | backspace                             | at ASCII word boundary                |
+    | `\B`         | synonym for backslash (`\`)           | not at ASCII word boundary            |
+    | `\cX`        | low-order 5 bits comparison           | N/A                                   |
+    | `\d`         | digit                                 | digit                                 |
+    | `\D`         | non-digit                             | non-digit                             |
+    | `\e`         | `ESC` or octal `033`                  | N/A                                   |
+    | `\f`         | form feed                             | form feed                             |
+    | `\m`         | beginning of a word                   | N/A                                   |
+    | `\M`         | end of a word                         | N/A                                   |
+    | `\n`         | newline                               | newline                               |
+    | `\Q...\E`    | N/A                                   | literal `...`                         |
+    | `\r`         | carriage return                       | carriage return                       |
+    | `\s`         | whitespace character                  | whitespace character                  |
+    | `\S`         | non-whitespace character              | non-whitespace character              |
+    | `\t`         | horizontal tab                        | horizontal tab                        |
+    | `\uwxyz`     | character with hex value `0xwxyz`     | N/A (see `\x{}`)                      |
+    | `\Ustuvwxyz` | character with hex value `0xstuvwxyz` | N/A (see `\x{}`)                      |
+    | `\v`         | vertical tab                          | vertical tab                          |
+    | `\w`         | word character                        | word character                        |
+    | `\W`         | non-word character                    | non-word character                    |
+    | `\xhhh`      | character with hex value `0xhhh`      | character with hex value `0xhhh`      |
+    | `\xy`        | character with octal value `0xy`      | N/A                                   |
+    | `\x{10FFFF}` | N/A (see `\U`)                        | hex character code                    |
+    | `\y`         | beginning or end of a word            | N/A (see `\b`)                        |
+    | `\Y`         | not the beginning or end of a word    | N/A (see `\B`)                        |
+    | `\z`         | N/A (see `\Z`)                        | end of text                           |
+    | `\Z`         | end of text                           | N/A (see `\z`)                        |
+    | `\0`         | the null byte                         | N/A                                   |
+    | `\*`         | literal punctuation character `*`     | literal `*` punctuation character `*` |
+
+*   `keyvalue()` IDs. Postgres creates IDs for the output of the `keyvalue()`
+    method by comparing memory addresses between JSONB values. This works well
+    for JSONB because it has a highly-structured, well-ordered layout. The
+    path package follows this pattern.
+
+    However, The addresses of nested `map[string]any` and `[]any` values in Go
+    are less stable. Ids will therefore sometimes vary between executions —
+    especially for slices. However, the IDs determined for a single object or
+    array should be stable through repeated query executions and calls to
+    `keyvalue()`.
 
 ## Copyright
 
@@ -1033,5 +1168,25 @@ Copyright © 1996-2024 The PostgreSQL Global Development Group
 
   [PostgreSQL docs]: https://www.postgresql.org/docs/devel/functions-json.html#FUNCTIONS-SQLJSON-PATH
     "PostgreSQL Documentation: “The SQL/JSON Path Language”"
+  [`json.Number`]: https://pkg.go.dev/encoding/json#Number
   [string literals]: https://go.dev/ref/spec#String_literals
     "Go Language Spec: String literals"
+  [regexp]: https://pkg.go.dev/regexp "Go Standard Library: regexp"
+  [Differences From SQL Standard And XQuery]: https://www.postgresql.org/docs/devel/functions-matching.html#POSIX-VS-XQUERY
+    "PostgreSQL Documentation: “Differences From SQL Standard And XQuery”"
+  [JSONB]: https://www.postgresql.org/docs/current/datatype-json.html
+  [arbitrary precision numbers]: https://www.postgresql.org/docs/current/datatype-numeric.html#DATATYPE-NUMERIC-DECIMAL
+  [floating point math]: https://en.wikipedia.org/wiki/Floating-point_arithmetic
+  [json.Number]: https://pkg.go.dev/encoding/json#Number
+  [json.Decoder.UseNumber]: https://pkg.go.dev/encoding/json#Decoder.UseNumber
+  [decimal]: https://pkg.go.dev/github.com/shopspring/decimal
+  [time]: https://pkg.go.dev/time
+  [layouts]: https://pkg.go.dev/time#pkg-constants
+  [Postgres date/time formatting]: https://www.postgresql.org/docs/current/functions-formatting.html
+  [ECMAScript standard]: https://262.ecma-international.org/#sec-identifier-names
+  [POSIX regular expression engine]: https://www.postgresql.org/docs/devel/functions-matching.html#FUNCTIONS-POSIX-REGEXP
+  [regexp]: https://pkg.go.dev/regexp
+  [backspace character]: https://en.wikipedia.org/wiki/Backspace
+  [DateStyle]: https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-DATESTYLE
+  [TimeZone GUC]: https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-TIMEZONE
+  [output format]: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-DATETIME-OUTPUT

@@ -40,10 +40,12 @@ func (t *Time) ToString(context.Context) string {
 	return t.String()
 }
 
-// ToTimeTZ converts t to *TimeTZ in the time zone in ctx.
+// ToTimeTZ converts t to *TimeTZ in the time zone in ctx. It works relative
+// the current date.
 func (t *Time) ToTimeTZ(ctx context.Context) *TimeTZ {
+	now := time.Now()
 	return NewTimeTZ(time.Date(
-		0, 1, 1,
+		now.Year(), now.Month(), now.Day(),
 		t.Hour(), t.Minute(), t.Second(), t.Nanosecond(),
 		TZFromContext(ctx),
 	))
