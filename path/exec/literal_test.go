@@ -148,6 +148,21 @@ func TestExecVariable(t *testing.T) {
 			// Check the error and list.
 			if tc.isErr == nil {
 				r.NoError(err)
+				if tc.name == "var_exists_next_keyvalue" {
+					// The keyvalue ID can vary, so extract it and verify it.
+					a.Len(list.list, 1)
+					found, ok := list.list[0].(map[string]any)
+					a.True(ok)
+					id, ok := found["id"].(int64)
+					a.True(ok)
+
+					// Compare the ID to the expected and add it to expected.
+					find, ok := tc.find.(map[string]any)
+					a.True(ok)
+					a.GreaterOrEqual(id, find["id"])
+					find["id"] = id
+					tc.find = find
+				}
 				a.Equal([]any{tc.find}, list.list)
 			} else {
 				r.EqualError(err, tc.err)

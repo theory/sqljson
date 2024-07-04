@@ -141,7 +141,6 @@ func compareNumeric(left, right any) int {
 				// This should not happen.
 				panic(err)
 			}
-		default:
 		}
 	case float64:
 		switch right := right.(type) {

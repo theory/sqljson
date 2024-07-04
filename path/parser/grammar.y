@@ -219,7 +219,7 @@ accessor_op:
 			case 2:
 				$$ = ast.NewBinary(ast.BinaryDecimal, $4[0], $4[1])
 			default:
-				panic("invalid input syntax: .decimal() can only have an optional precision[,scale]")
+				pathlex.Error("invalid input syntax: .decimal() can only have an optional precision[,scale]")
 			}
 		}
 	| '.' DATE_P '(' ')' { $$ = ast.NewUnary(ast.UnaryDate, nil) }

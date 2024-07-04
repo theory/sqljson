@@ -15,17 +15,6 @@ repos:
 
   - repo: local
     hooks:
-      - id: hadolint
-        name: Dockerfile linting
-        entry: hadolint
-        language: system
-        types: [dockerfile]
-      - id: shfmt
-        name: Shell formatting
-        language: system
-        entry: shfmt -w
-        types: [shell]
-        exclude: wait-for-it\.sh$
       - id: go-mod-tidy
         name: Go mod tidy
         language: system
@@ -38,13 +27,6 @@ repos:
         entry: golangci-lint run --fix --timeout=5m
         pass_filenames: false
         types: [go]
-
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.6
-    hooks:
-      - id: shellcheck
-        name: Shell linting
-        entry: shellcheck -x
 
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.1.0

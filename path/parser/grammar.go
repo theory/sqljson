@@ -1133,7 +1133,7 @@ pathdefault:
 			case 2:
 				pathVAL.value = ast.NewBinary(ast.BinaryDecimal, pathDollar[4].elems[0], pathDollar[4].elems[1])
 			default:
-				panic("invalid input syntax: .decimal() can only have an optional precision[,scale]")
+				pathlex.Error("invalid input syntax: .decimal() can only have an optional precision[,scale]")
 			}
 		}
 	case 68:

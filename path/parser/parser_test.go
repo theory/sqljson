@@ -550,6 +550,46 @@ func TestJSONPathMethodString(t *testing.T) {
 	}
 }
 
+func TestJSONPathDecimal(t *testing.T) {
+	t.Parallel()
+
+	//nolint:paralleltest
+	for _, tc := range []testCase{
+		{
+			name: "decimal",
+			path: `$.decimal()`,
+			exp:  `$.decimal()`,
+		},
+		{
+			name: "decimal_p",
+			path: `$.decimal(4)`,
+			exp:  `$.decimal(4)`,
+		},
+		{
+			name: "decimal_plus_p",
+			path: `$.decimal(+4)`,
+			exp:  `$.decimal(4)`,
+		},
+		{
+			name: "decimal_minus_p",
+			path: `$.decimal(-4)`,
+			exp:  `$.decimal(-4)`,
+		},
+		{
+			name: "decimal_p_s",
+			path: `$.decimal(4,2)`,
+			exp:  `$.decimal(4,2)`,
+		},
+		{
+			name: "decimal_p_s_err",
+			path: `$.decimal(4,2,1)`,
+			err:  "parser: invalid input syntax: .decimal() can only have an optional precision[,scale] at 1:17",
+		},
+	} {
+		t.Run(tc.name, tc.run)
+	}
+}
+
 func TestJSONPathStartsWithString(t *testing.T) {
 	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonpath.sql#L90-L91
 	t.Parallel()
