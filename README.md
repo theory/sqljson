@@ -12,44 +12,44 @@ functionality in Go. For now that means [jsonpath](path/). An example:
 
 ``` go
 func main() {
-	src := []byte(`{
-	  "track": {
-	    "segments": [
-	      {
-	        "location":   [ 47.763, 13.4034 ],
-	        "start time": "2018-10-14 10:05:14",
-	        "HR": 73
-	      },
-	      {
-	        "location":   [ 47.706, 13.2635 ],
-	        "start time": "2018-10-14 10:39:21",
-	        "HR": 135
-	      }
-	    ]
-	  }
-	}`)
+    src := []byte(`{
+      "track": {
+        "segments": [
+          {
+            "location":   [ 47.763, 13.4034 ],
+            "start time": "2018-10-14 10:05:14",
+            "HR": 73
+          },
+          {
+            "location":   [ 47.706, 13.2635 ],
+            "start time": "2018-10-14 10:39:21",
+            "HR": 135
+          }
+        ]
+      }
+    }`)
 
-	// Parse the JSON.
-	var value any
-	if err := json.Unmarshal(src, &value); err != nil {
-		log.Fatal(err)
-	}
+    // Parse the JSON.
+    var value any
+    if err := json.Unmarshal(src, &value); err != nil {
+        log.Fatal(err)
+    }
 
-	// Parse the SQL-standard jsonpath query.
-	p, err := path.Parse(`$.track.segments[*] ? (@.HR > 130)."start time"`)
-	if err != nil {
-		log.Fatal(err)
-	}
+    // Parse the SQL-standard jsonpath query.
+    p, err := path.Parse(`$.track.segments[*] ? (@.HR > 130)."start time"`)
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	// Execute the query against the JSON.
-	items, err := p.Query(context.Background(), value)
-	if err != nil {
-		log.Fatal(err)
-	}
+    // Execute the query against the JSON.
+    items, err := p.Query(context.Background(), value)
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	// Print the results.
-	fmt.Printf("%v\n", items)
-	// Output: [2018-10-14 10:39:21]
+    // Print the results.
+    fmt.Printf("%v\n", items)
+    // Output: [2018-10-14 10:39:21]
 }
 ```
 

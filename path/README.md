@@ -166,11 +166,11 @@ function like this:
 
 ``` go
 func pp(val any) {
-	js, err := json.Marshal(val)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(string(js))
+    js, err := json.Marshal(val)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(string(js))
 }
 ```
 
@@ -537,11 +537,11 @@ arguments:
 
 ``` go
 func val(src string) any {
-	var value any
-	if err := json.Unmarshal([]byte(src), &value); err != nil {
-		log.Fatal(err)
-	}
-	return value
+    var value any
+    if err := json.Unmarshal([]byte(src), &value); err != nil {
+        log.Fatal(err)
+    }
+    return value
 }
 ```
 
@@ -630,8 +630,8 @@ pp(path.MustQuery("$[*].boolean()", val(`[1, "yes", false]`))) // → [true,true
 String value converted from a JSON boolean, number, string, or datetime.
 
 ``` go
-	pp(path.MustQuery("$[*].string()", val(`[1.23, "xyz", false]`))) // → ["1.23","xyz","false"]
-	pp(path.MustQuery("$.datetime().string()", "2023-08-15"))        // → ["2023-08-15"]
+pp(path.MustQuery("$[*].string()", val(`[1.23, "xyz", false]`))) // → ["1.23","xyz","false"]
+pp(path.MustQuery("$.datetime().string()", "2023-08-15"))        // → ["2023-08-15"]
 ```
 
 #### `value . double() → number`
