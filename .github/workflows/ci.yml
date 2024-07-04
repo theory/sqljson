@@ -1,4 +1,4 @@
-name: 🧪 Test and Lint
+name: Test and Lint
 on:
   push:
     branches-ignore: [wip/**]
@@ -18,7 +18,7 @@ jobs:
       - name: Run Tests
         run: make test
   lint:
-    name: 🔎 Lint Code
+    name: 📊 Lint and Cover
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Harpo
@@ -30,3 +30,10 @@ jobs:
         run: make debian-lint-depends
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
+      - name: Run Test Coverage
+        run: go test -race -coverprofile coverage.txt -covermode atomic ./...
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: cover.out

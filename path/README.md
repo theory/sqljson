@@ -1166,6 +1166,8 @@ unavoidable differences and to-dos. These include:
 
 Copyright © 1996-2024 The PostgreSQL Global Development Group
 
+Copyright © 2024 David E. Wheeler
+
   [PostgreSQL docs]: https://www.postgresql.org/docs/devel/functions-json.html#FUNCTIONS-SQLJSON-PATH
     "PostgreSQL Documentation: “The SQL/JSON Path Language”"
   [`json.Number`]: https://pkg.go.dev/encoding/json#Number

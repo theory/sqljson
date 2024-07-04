@@ -8,7 +8,6 @@ test:
 cover: $(shell find . -name \*.go)
 	$(GO) test -v -coverprofile=cover.out -covermode=count ./...
 	@$(GO) tool cover -html=cover.out
-	@rm cover.out
 
 .PHONY: lint # Lint the project
 lint: .golangci.yaml
@@ -17,6 +16,7 @@ lint: .golangci.yaml
 .PHONY: clean # Remove generated files
 clean:
 	$(GO) clean
+	@rm -rf cover.out
 
 ############################################################################
 # Utilities.
