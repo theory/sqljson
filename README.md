@@ -56,10 +56,14 @@ func main() {
 See the [path README](./path/README.md) for a complete description of the
 SQL/JSON path language, and the [Go doc] for usage and examples.
 
-[Go doc]: https://pkg.go.dev/github.com/theory/sqljson/path
+Or take the [Playground] for a spin. Implemented as a single-page stateless
+JavaScript and Go WebAssembly app.
 
 ## Copyright
 
 Copyright © 1996-2024 The PostgreSQL Global Development Group
 
 Copyright © 2024 David E. Wheeler
+
+  [Go doc]: https://pkg.go.dev/github.com/theory/sqljson/path
+  [Playground]: https://theory.github.io/sqljson/playground
