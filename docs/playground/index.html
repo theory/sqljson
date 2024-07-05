@@ -72,6 +72,11 @@
       permalinkElm.className = "";
     }
 
+    const fit = function(elem) {
+      elem.style.height = "";
+      elem.style.height = elem.scrollHeight + 3 + "px"
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
       if(isMobile || isSlowConn) {
         if(!confirm("This page uses WASM modules. Size is approximately 5MB. Are you sure to load?")) {
@@ -93,17 +98,23 @@
 
         let i = 0;
         if(u.searchParams.has("p")) {
-          $("path").value = decodeURIComponent(u.searchParams.get("p"));
+          const elem = $("path");
+          elem.value = decodeURIComponent(u.searchParams.get("p"));
+          fit(elem);
           i++;
         }
 
         if(u.searchParams.has("j")) {
-          $("json").value = decodeURIComponent(u.searchParams.get("j"));
+          const elem = $("json");
+          elem.value = decodeURIComponent(u.searchParams.get("j"));
+          fit(elem);
           i++;
         }
 
         if(u.searchParams.has("a")) {
-          $("vars").value = decodeURIComponent(u.searchParams.get("a"));
+          const elem = $("vars");
+          elem.value = decodeURIComponent(u.searchParams.get("a"));
+          fit(elem);
         }
 
         if (i == 2) { execute() }
@@ -167,15 +178,15 @@
       </div>
       <div>
         <label for="path">Path</label><br />
-        <textarea id="path" placeholder="$.a[*] ? (@ >= $min && @ <= $max)" rows="2"></textarea>
+        <textarea id="path" placeholder="$.a[*] ? (@ >= $min && @ <= $max)" rows="2" oninput="fit(this);"></textarea>
       </div>
       <div>
         <label for="vars">Variables</label><br />
-        <textarea id="vars" placeholder="{&quot;min&quot;:2, &quot;max&quot;:4}" rows="2"></textarea>
+        <textarea id="vars" placeholder="{&quot;min&quot;:2, &quot;max&quot;:4}" rows="2" oninput="fit(this);"></textarea>
       </div>
       <div>
         <label for="json">JSON</label><br />
-        <textarea id="json" placeholder="{&quot;a&quot;:[1,2,3,4,5]}" rows="8"></textarea>
+        <textarea id="json" placeholder="{&quot;a&quot;:[1,2,3,4,5]}" rows="8" oninput="fit(this);"></textarea>
       </div>
       <div>
         <button onClick="execute();" id="query-json" disabled>Execute</button>
