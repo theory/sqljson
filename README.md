@@ -2,7 +2,7 @@ Go SQL/JSON Path Playground
 ===========================
 
 The source for the [Go SQL/JSON Path Playground], a stateless single-page web
-site for experimenting with the [Go SQL/JSON Path] package. Compiled 
+site for experimenting with the [Go SQL/JSON Path] package. Compiled
 via [Go WebAssembly] into a ca. 5MB [Wasm] file and loaded directly into the
 page. All functionality implemented in JavaScript and Go, heavily borrowed
 from the [Goldmark Playground].

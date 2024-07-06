@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"syscall/js"
 	"time"
+
+	//nolint
+	"syscall/js"
 
 	"github.com/theory/sqljson/path"
 	"github.com/theory/sqljson/path/exec"
@@ -28,6 +30,7 @@ func query(_ js.Value, args []js.Value) any {
 	vars := args[2].String()
 	tz := args[3].String()
 	opts := args[4].Int()
+
 	return execute(query, target, vars, tz, opts)
 }
 
@@ -68,20 +71,9 @@ func execute(query, target, vars, tz string, opts int) string {
 	}
 
 	// Assemble the options.
-	options := []exec.Option{}
-	if opts&optSilent == optSilent {
-		options = append(options, exec.WithSilent())
-	}
-	if opts&optTZ == optTZ {
-		options = append(options, exec.WithTZ())
-	}
-
-	if vars != "" {
-		var varsMap map[string]any
-		if err := json.Unmarshal([]byte(vars), &varsMap); err != nil {
-			return fmt.Sprintf("Error parsing variables: %v", err)
-		}
-		options = append(options, exec.WithVars(varsMap))
+	options, msg := assembleOptions(opts, vars)
+	if msg != "" {
+		return msg
 	}
 
 	// Execute the query against the JSON.
@@ -116,4 +108,26 @@ func execute(query, target, vars, tz string, opts int) string {
 	}
 
 	return string(js)
+}
+
+func assembleOptions(opts int, vars string) ([]exec.Option, string) {
+	options := []exec.Option{}
+	if opts&optSilent == optSilent {
+		options = append(options, exec.WithSilent())
+	}
+
+	if opts&optTZ == optTZ {
+		options = append(options, exec.WithTZ())
+	}
+
+	if vars != "" {
+		var varsMap map[string]any
+		if err := json.Unmarshal([]byte(vars), &varsMap); err != nil {
+			return nil, fmt.Sprintf("Error parsing variables: %v", err)
+		}
+
+		options = append(options, exec.WithVars(varsMap))
+	}
+
+	return options, ""
 }
