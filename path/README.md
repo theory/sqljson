@@ -8,7 +8,7 @@ check expressions.
 > 💡 Use the [🛝 Playground] to experiment with jsonpath execution with the
 > package, or to run any of the examples in this document. The Go SQL/JSON
 > Path Playground is a single-page stateless JavaScript and Go WebAssembly
-> app. Includes permalink support to share examples, like [this one]:
+> app. Includes permalink support to share examples, like [this one].
 
 ## The SQL/JSON Path Language
 
@@ -186,7 +186,7 @@ operator to descend through surrounding JSON objects, for example:
 pp(path.MustQuery("$.track.segments", value))
 ```
 
-And the output (indented for legibility):
+And the output (indented for legibility; [playground][play01]):
 
 ``` json
 [
@@ -213,7 +213,7 @@ And the output (indented for legibility):
 
 To retrieve the contents of an array, you typically use the `[*]` operator. The
 following example will return the location coordinates for all the available
-track segments:
+track segments ([playground][play02]):
 
 ``` go
 pp(path.MustQuery("$.track.segments[*].location", value))
@@ -235,7 +235,7 @@ have simply produced no output for that input item.
 
 To return the coordinates of the first segment only, you can specify the
 corresponding subscript in the `[]` accessor operator. Recall that JSON array
-indexes are 0-relative:
+indexes are 0-relative ([playground][play03]):
 
 ```go
 pp(path.MustQuery("$.track.segments[0].location", value))
@@ -248,7 +248,7 @@ pp(path.MustQuery("$.track.segments[0].location", value))
 The result of each path evaluation step can be processed by one or more of the
 json path operators and methods listed [below](#sqljson-path-operators-and-methods).
 Each method name must be preceded by a dot. For example, you can get the size
-of an array:
+of an array ([playground][play04]):
 
 ```go
 pp(path.MustQuery("$.track.segments.size()", value))
@@ -284,7 +284,7 @@ path step). You can write accessor operators after `@` to retrieve component
 items.
 
 For example, suppose you would like to retrieve all heart rate values higher
-than 130. You can achieve this as follows:
+than 130. You can achieve this as follows ([playground][play05]):
 
 ```go
 pp(path.MustQuery("$.track.segments[*].HR ? (@ > 130)", value))
@@ -297,7 +297,7 @@ pp(path.MustQuery("$.track.segments[*].HR ? (@ > 130)", value))
 To get the start times of segments with such values, you have to filter out
 irrelevant segments before selecting the start times, so the filter expression
 is applied to the previous step, and the path used in the condition is
-different:
+different ([playground][play06]):
 
 ```go
 pp(path.MustQuery(
@@ -312,7 +312,7 @@ pp(path.MustQuery(
 
 You can use several filter expressions in sequence, if required. The following
 example selects start times of all segments that contain locations with
-relevant coordinates and high heart rate values:
+relevant coordinates and high heart rate values ([playground][play07]):
 
 ```go
 pp(path.MustQuery(
@@ -327,7 +327,7 @@ pp(path.MustQuery(
 
 Using filter expressions at different nesting levels is also allowed. The
 following example first filters all segments by location, and then returns
-high heart rate values for these segments, if available:
+high heart rate values for these segments, if available ([playground][play08]):
 
 ```go
 pp(path.MustQuery(
@@ -342,7 +342,7 @@ pp(path.MustQuery(
 
 You can also nest filter expressions within each other. This example returns
 the size of the track if it contains any segments with high heart rate values,
-or an empty sequence otherwise:
+or an empty sequence otherwise ([playground][play09]):
 
 ```go
 pp(path.MustQuery(
@@ -368,7 +368,8 @@ Boolean predicate, whereas the SQL standard allows predicates only within
 filters. While SQL-standard path expressions return the relevant element(s) of
 the queried JSON value, predicate check expressions return the single
 three-valued result of the predicate: `true`, `false`, or `unknown`. For
-example, we could write this SQL-standard filter expression:
+example, we could write this SQL-standard filter expression
+([playground][play10]):
 
 ```go
 pp(path.MustQuery("$.track.segments ?(@[*].HR > 130)", value))
@@ -381,7 +382,7 @@ The result:
 ```
 
 The similar predicate check expression simply returns `true`, indicating that a
-match exists:
+match exists ([playground][play11]):
 
 ```go
 pp(path.MustQuery("$.track.segments[*].HR > 130", value))
@@ -432,7 +433,8 @@ to its sole element. Automatic unwrapping is not performed when:
     evaluation step.
 
 For example, when querying the GPS data listed above, you can abstract from
-the fact that it stores an array of segments when using lax mode:
+the fact that it stores an array of segments when using lax mode
+([playground][play12]):
 
 ```go
 pp(path.MustQuery("lax $.track.segments.location", value))
@@ -443,7 +445,8 @@ pp(path.MustQuery("lax $.track.segments.location", value))
 ```
 
 In strict mode, the specified path must exactly match the structure of the
-queried JSON document, so using this path expression will cause an error:
+queried JSON document, so using this path expression will cause an error
+([playground][play13]):
 
 ```go
 pp(path.MustQuery("strict $.track.segments.location", value))
@@ -454,7 +457,7 @@ panic: exec: jsonpath member accessor can only be applied to an object
 ```
 
 To get the same result as in lax mode, you have to explicitly unwrap the
-segments array:
+segments array ([playground][play14]):
 
 ```go
 pp(path.MustQuery("strict $.track.segments[*].location", value))
@@ -466,7 +469,7 @@ pp(path.MustQuery("strict $.track.segments[*].location", value))
 
 The unwrapping behavior of lax mode can lead to surprising results. For
 instance, the following query using the `.**` accessor selects every `HR` value
-twice:
+twice ([playground][play15]):
 
 ```go
 pp(path.MustQuery("lax $.**.HR", value))
@@ -480,7 +483,7 @@ This happens because the `.**` accessor selects both the segments array and
 each of its elements, while the `.HR` accessor automatically unwraps arrays
 when using lax mode. To avoid surprising results, we recommend using the `.**`
 accessor only in strict mode. The following query selects each `HR` value just
-once:
+once ([playground][play16]):
 
 ```go
 pp(path.MustQuery("strict $.**.HR", value))
@@ -491,7 +494,7 @@ pp(path.MustQuery("strict $.**.HR", value))
 ```
 
 The unwrapping of arrays can also lead to unexpected results. Consider this
-example, which selects all the location arrays:
+example, which selects all the location arrays ([playground][play17]):
 
 ```go
 pp(path.MustQuery("lax $.track.segments[*].location", value))
@@ -503,7 +506,7 @@ pp(path.MustQuery("lax $.track.segments[*].location", value))
 
 As expected it returns the full arrays. But applying a filter expression
 causes the arrays to be unwrapped to evaluate each item, returning only the
-items that match the expression:
+items that match the expression ([playground][play18]):
 
 ```go
 pp(path.MustQuery(
@@ -517,7 +520,8 @@ pp(path.MustQuery(
 ```
 
 This despite the fact that the full arrays are selected by the path
-expression. Use strict mode to restore selecting the arrays:
+expression. Use strict mode to restore selecting the arrays
+([playground][play19]):
 
 ```go
 pp(path.MustQuery(
@@ -552,7 +556,7 @@ func val(src string) any {
 
 #### `number + number → number`
 
-Addition.
+Addition ([playground][play20]):
 
 ``` go
 pp(path.MustQuery("$[0] + 3", val("2"))) // → [5]
@@ -561,7 +565,7 @@ pp(path.MustQuery("$[0] + 3", val("2"))) // → [5]
 #### `+ number → number`
 
 Unary plus (no operation); unlike addition, this can iterate over multiple
-values.
+values ([playground][play21]):
 
 ``` go
 pp(path.MustQuery("+ $.x", val(`{"x": [2,3,4]}`))) // → [2, 3, 4]
@@ -569,7 +573,7 @@ pp(path.MustQuery("+ $.x", val(`{"x": [2,3,4]}`))) // → [2, 3, 4]
 
 #### `number - number → number`
 
-Subtraction.
+Subtraction ([playground][play22]):
 
 ``` go
 pp(path.MustQuery("7 - $[0]", val("[2]"))) // → [5]
@@ -577,7 +581,8 @@ pp(path.MustQuery("7 - $[0]", val("[2]"))) // → [5]
 
 #### `- number → number`
 
-Negation; unlike subtraction, this can iterate over multiple values.
+Negation; unlike subtraction, this can iterate over multiple values
+([playground][play23]):
 
 ``` go
 pp(path.MustQuery("- $.x", val(`{"x": [2,3,4]}`))) // → [-2,-3,-4]
@@ -585,14 +590,14 @@ pp(path.MustQuery("- $.x", val(`{"x": [2,3,4]}`))) // → [-2,-3,-4]
 
 #### `number * number → number`
 
-Multiplication.
+Multiplication ([playground][play24]):
 
 ``` go
 pp(path.MustQuery("2 * $[0]", val("4"))) // → [8]
 ```
 #### `number / number → number`
 
-Division.
+Division ([playground][play25]):
 
 ``` go
 pp(path.MustQuery("$[0] / 2", val("[8.5]"))) // → [4.25]
@@ -600,7 +605,7 @@ pp(path.MustQuery("$[0] / 2", val("[8.5]"))) // → [4.25]
 
 #### `number % number → number`
 
-Modulo (remainder).
+Modulo (remainder) ([playground][play26]):
 
 ``` go
 pp(path.MustQuery("$[0] % 10", val("[32]"))) // → [2]
@@ -608,7 +613,7 @@ pp(path.MustQuery("$[0] % 10", val("[32]"))) // → [2]
 
 #### `value . type() → string`
 
-Type of the JSON item.
+Type of the JSON item ([playground][play27]):
 
 ``` go
 pp(path.MustQuery("$[*].type()", val(`[1, "2", {}]`))) // → ["number","string","object"]
@@ -616,7 +621,8 @@ pp(path.MustQuery("$[*].type()", val(`[1, "2", {}]`))) // → ["number","string"
 
 #### `value . size() → number`
 
-Size of the JSON item (number of array elements, or 1 if not an array)
+Size of the JSON item (number of array elements, or 1 if not an array;
+[playground][play28]):
 
 ``` go
 pp(path.MustQuery("$.m.size()", val(`{"m": [11, 15]}`))) // → [2]
@@ -624,7 +630,8 @@ pp(path.MustQuery("$.m.size()", val(`{"m": [11, 15]}`))) // → [2]
 
 #### `value . boolean() → boolean`
 
-Boolean value converted from a JSON boolean, number, or string.
+Boolean value converted from a JSON boolean, number, or string
+([playground][play29]):
 
 ``` go
 pp(path.MustQuery("$[*].boolean()", val(`[1, "yes", false]`))) // → [true,true,false]
@@ -632,7 +639,8 @@ pp(path.MustQuery("$[*].boolean()", val(`[1, "yes", false]`))) // → [true,true
 
 #### `value . string() → string`
 
-String value converted from a JSON boolean, number, string, or datetime.
+String value converted from a JSON boolean, number, string, or datetime
+([playground][play30], [playground][play31]):
 
 ``` go
 pp(path.MustQuery("$[*].string()", val(`[1.23, "xyz", false]`))) // → ["1.23","xyz","false"]
@@ -641,15 +649,17 @@ pp(path.MustQuery("$.datetime().string()", "2023-08-15"))        // → ["2023-0
 
 #### `value . double() → number`
 
-Approximate floating-point number converted from a JSON number or string.
+Approximate floating-point number converted from a JSON number or string
+([playground][play32]):
 
 ``` go
-pp(path.MustQuery("$.len.double() * 2", val(`{"len": "1.9"}`))) // → [3.8]
+pp(path.MustQuery(" ", val(`{"len": "1.9"}`))) // → [3.8]
 ```
 
 #### `number . ceiling() → number`
 
-Nearest integer greater than or equal to the given number.
+Nearest integer greater than or equal to the given number
+([playground][play33]):
 
 ``` go
 pp(path.MustQuery("$.h.ceiling()", val(`{"h": 1.3}`))) // → [2]
@@ -657,7 +667,7 @@ pp(path.MustQuery("$.h.ceiling()", val(`{"h": 1.3}`))) // → [2]
 
 #### `number . floor() → number`
 
-Nearest integer less than or equal to the given number.
+Nearest integer less than or equal to the given number ([playground][play34]):
 
 ``` go
 pp(path.MustQuery("$.h.floor()", val(`{"h": 1.7}`))) // → [1]
@@ -665,7 +675,7 @@ pp(path.MustQuery("$.h.floor()", val(`{"h": 1.7}`))) // → [1]
 
 #### `number . abs() → number`
 
-Absolute value of the given number.
+Absolute value of the given number ([playground][play35]):
 
 ``` go
 pp(path.MustQuery("$.z.abs()", val(`{"z": -0.3}`))) // → [0.3]
@@ -673,7 +683,8 @@ pp(path.MustQuery("$.z.abs()", val(`{"z": -0.3}`))) // → [0.3]
 
 #### `value . bigint() → bigint`
 
-Big integer value converted from a JSON number or string.
+Big integer value converted from a JSON number or string
+([playground][play36]):
 
 ``` go
 pp(path.MustQuery("$.len.bigint()", val(`{"len": "9876543219"}`))) // → [9876543219]
@@ -682,7 +693,7 @@ pp(path.MustQuery("$.len.bigint()", val(`{"len": "9876543219"}`))) // → [98765
 #### `value . decimal( [ precision [ , scale ] ] ) → decimal`
 
 Rounded decimal value converted from a JSON number or string. Precision and
-scale must be integer values.
+scale must be integer values ([playground][play37]):
 
 ``` go
 pp(path.MustQuery("$.decimal(6, 2)", val("1234.5678"))) // → [1234.57]
@@ -690,7 +701,7 @@ pp(path.MustQuery("$.decimal(6, 2)", val("1234.5678"))) // → [1234.57]
 
 #### `value . integer() → integer`
 
-Integer value converted from a JSON number or string.
+Integer value converted from a JSON number or string ([playground][play38]):
 
 ``` go
 pp(path.MustQuery("$.len.integer()", val(`{"len": "12345"}`))) // → [12345]
@@ -698,7 +709,7 @@ pp(path.MustQuery("$.len.integer()", val(`{"len": "12345"}`))) // → [12345]
 
 #### `value . number() → numeric`
 
-Numeric value converted from a JSON number or string.
+Numeric value converted from a JSON number or string ([playground][play39]):
 
 ``` go
 pp(path.MustQuery("$.len.number()", val(`{"len": "123.45"}`))) // → [123.45]
@@ -706,7 +717,7 @@ pp(path.MustQuery("$.len.number()", val(`{"len": "123.45"}`))) // → [123.45]
 
 #### `string . datetime() → types.DateTime`
 
-Date/time value converted from a string.
+Date/time value converted from a string ([playground][play40]):
 
 ``` go
 pp(path.MustQuery(
@@ -720,7 +731,7 @@ pp(path.MustQuery(
 Date/time value converted from a string using the specified to_timestamp
 template.
 
-**NOTE:** Currently unimplemented, raises an error.
+**NOTE:** Currently unimplemented, raises an error ([playground][play41]):
 
 ``` go
 pp(path.MustQuery(
@@ -730,7 +741,7 @@ pp(path.MustQuery(
 
 #### `string . date() → types.Date`
 
-Date value converted from a string.
+Date value converted from a string ([playground][play42]):
 
 ``` go
 pp(path.MustQuery("$.date()", "2023-08-15")) // → ["2023-08-15"]
@@ -738,7 +749,7 @@ pp(path.MustQuery("$.date()", "2023-08-15")) // → ["2023-08-15"]
 
 #### `string . time() → types.Time`
 
-Time without time zone value converted from a string.
+Time without time zone value converted from a string ([playground][play43]):
 
 ``` go
 pp(path.MustQuery("$.time()", "12:34:56")) // → ["12:34:56"]
@@ -747,7 +758,7 @@ pp(path.MustQuery("$.time()", "12:34:56")) // → ["12:34:56"]
 #### `string . time(precision) → types.Time`
 
 Time without time zone value converted from a string, with fractional seconds
-adjusted to the given precision.
+adjusted to the given precision ([playground][play44]):
 
 ``` go
 pp(path.MustQuery("$.time(2)", "12:34:56.789")) // → ["12:34:56.79"]
@@ -755,7 +766,7 @@ pp(path.MustQuery("$.time(2)", "12:34:56.789")) // → ["12:34:56.79"]
 
 #### `string . time_tz() → types.TimeTZ`
 
-Time with time zone value converted from a string.
+Time with time zone value converted from a string ([playground][play45]):
 
 ``` go
 pp(path.MustQuery("$.time_tz()", "12:34:56+05:30")) // → ["12:34:56+05:30"]
@@ -764,7 +775,7 @@ pp(path.MustQuery("$.time_tz()", "12:34:56+05:30")) // → ["12:34:56+05:30"]
 #### `string . time_tz(precision) → types.TimeTZ`
 
 Time with time zone value converted from a string, with fractional seconds
-adjusted to the given precision.
+adjusted to the given precision ([playground][play46]):
 
 ``` go
 pp(path.MustQuery("$.time_tz(2)", "12:34:56.789+05:30")) // → ["12:34:56.79+05:30"]
@@ -772,7 +783,7 @@ pp(path.MustQuery("$.time_tz(2)", "12:34:56.789+05:30")) // → ["12:34:56.79+05
 
 #### `string . timestamp() → types.Timestamp`
 
-Timestamp without time zone value converted from a string.
+Timestamp without time zone value converted from a string ([playground][play47]):
 
 ``` go
 pp(path.MustQuery("$.timestamp()", "2023-08-15 12:34:56")) // → ["2023-08-15T12:34:56"]
@@ -781,7 +792,7 @@ pp(path.MustQuery("$.timestamp()", "2023-08-15 12:34:56")) // → ["2023-08-15T1
 #### `string . timestamp(precision) → types.Timestamp`
 
 Timestamp without time zone value converted from a string, with fractional
-seconds adjusted to the given precision.
+seconds adjusted to the given precision ([playground][play48]):
 
 ``` go
 arg := "2023-08-15 12:34:56.789"
@@ -790,7 +801,7 @@ pp(path.MustQuery("$.timestamp(2)", arg)) // → ["2023-08-15T12:34:56.79"]
 
 #### `string . timestamp_tz() → types.TimestampTZ`
 
-Timestamp with time zone value converted from a string.
+Timestamp with time zone value converted from a string ([playground][play49]):
 
 ``` go
 arg := "2023-08-15 12:34:56+05:30"
@@ -800,7 +811,7 @@ pp(path.MustQuery("$.timestamp_tz()", arg)) // → ["2023-08-15T12:34:56+05:30"]
 #### `string . timestamp_tz(precision) → types.TimestampTZ`
 
 Timestamp with time zone value converted from a string, with fractional
-seconds adjusted to the given precision.
+seconds adjusted to the given precision ([playground][play50]):
 
 ``` go
 arg := "2023-08-15 12:34:56.789+05:30"
@@ -811,7 +822,7 @@ pp(path.MustQuery("$.timestamp_tz(2)", arg)) // → ["2023-08-15T12:34:56.79+05:
 
 The object's key-value pairs, represented as an array of objects containing
 three fields: "key", "value", and "id"; "id" is a unique identifier of the
-object the key-value pair belongs to
+object the key-value pair belongs to ([playground][play51]):
 
 ``` go
 pp(path.MustQuery("$.keyvalue()", val(`{"x": "20", "y": 32}`)))
@@ -825,7 +836,7 @@ The filter expression elements available in JSON path.
 #### `value == value → boolean`
 
 Equality comparison (this, and the other comparison operators, work on all
-JSON scalar values).
+JSON scalar values; [playground][play52], [playground][play53]):
 
 ``` go
 pp(path.MustQuery("$[*] ? (@ == 1)", val(`[1, "a", 1, 3]`)))   // → [1,1]
@@ -836,7 +847,7 @@ pp(path.MustQuery(`$[*] ? (@ == "a")`, val(`[1, "a", 1, 3]`))) // → ["a"]
 
 #### `value <> value → boolean`
 
-Non-equality comparison.
+Non-equality comparison ([playground][play54], [playground][play55]):
 
 ``` go
 pp(path.MustQuery("$[*] ? (@ != 1)", val(`[1, 2, 1, 3]`)))      // → [2,3]
@@ -845,7 +856,7 @@ pp(path.MustQuery(`$[*] ? (@ <> "b")`, val(`["a", "b", "c"]`))) // → ["a","c"]
 
 #### `value < value → boolean`
 
-Less-than comparison.
+Less-than comparison ([playground][play56]):
 
 ``` go
 pp(path.MustQuery("$[*] ? (@ < 2)", val(`[1, 2, 3]`))) // → [1]
@@ -853,7 +864,7 @@ pp(path.MustQuery("$[*] ? (@ < 2)", val(`[1, 2, 3]`))) // → [1]
 
 #### `value <= value → boolean`
 
-Less-than-or-equal-to comparison.
+Less-than-or-equal-to comparison ([playground][play57]):
 
 ``` go
 pp(path.MustQuery(`$[*] ? (@ <= "b")`, val(`["a", "b", "c"]`))) // → ["a","b"]
@@ -861,7 +872,7 @@ pp(path.MustQuery(`$[*] ? (@ <= "b")`, val(`["a", "b", "c"]`))) // → ["a","b"]
 
 #### `value > value → boolean`
 
-Greater-than comparison
+Greater-than comparison ([playground][play58]):
 
 ``` go
 pp(path.MustQuery("$[*] ? (@ > 2)", val(`[1, 2, 3]`))) // → [3]
@@ -869,7 +880,7 @@ pp(path.MustQuery("$[*] ? (@ > 2)", val(`[1, 2, 3]`))) // → [3]
 
 #### `value >= value → boolean`
 
-Greater-than-or-equal-to comparison.
+Greater-than-or-equal-to comparison ([playground][play59]):
 
 ``` go
 pp(path.MustQuery("$[*] ? (@ >= 2)", val(`[1, 2, 3]`))) // → [2,3]
@@ -877,24 +888,24 @@ pp(path.MustQuery("$[*] ? (@ >= 2)", val(`[1, 2, 3]`))) // → [2,3]
 
 #### `true → boolean`
 
-JSON constant true.
+JSON constant true ([playground][play60]):
 
 ``` go
 arg := val(`[
-    {"name": "John", "parent": false},
-    {"name": "Chris", "parent": true}
+  {"name": "John", "parent": false},
+  {"name": "Chris", "parent": true}
 ]`)
 pp(path.MustQuery("$[*] ? (@.parent == true)", arg)) // → [{"name":"Chris","parent":true}]
 ```
 
 #### `false → boolean`
 
-JSON constant false.
+JSON constant false ([playground][play61]):
 
 ``` go
 arg := val(`[
-    {"name": "John", "parent": false},
-    {"name": "Chris", "parent": true}
+  {"name": "John", "parent": false},
+  {"name": "Chris", "parent": true}
 ]`)
 pp(path.MustQuery("$[*] ? (@.parent == false)", arg)) // → [{"name":"John","parent":false}]
 ```
@@ -902,19 +913,19 @@ pp(path.MustQuery("$[*] ? (@.parent == false)", arg)) // → [{"name":"John","pa
 #### `null → value`
 
 JSON constant null (note that, unlike in SQL, comparison to null works
-normally).
+normally; [playground][play62]):
 
 ``` go
 arg := val(`[
-    {"name": "Mary", "job": null},
-    {"name": "Michael", "job": "driver"}
+  {"name": "Mary", "job": null},
+  {"name": "Michael", "job": "driver"}
 ]`)
 pp(path.MustQuery("$[*] ? (@.job == null) .name", arg)) // → ["Mary"]
 ```
 
 #### `boolean && boolean → boolean`
 
-Boolean `AND`.
+Boolean `AND` ([playground][play63]):
 
 ``` go
 pp(path.MustQuery("$[*] ? (@ > 1 && @ < 5)", val(`[1, 3, 7]`))) // → [3]
@@ -922,7 +933,7 @@ pp(path.MustQuery("$[*] ? (@ > 1 && @ < 5)", val(`[1, 3, 7]`))) // → [3]
 
 #### `boolean || boolean → boolean`
 
-Boolean `OR`.
+Boolean `OR` ([playground][play64]):
 
 ``` go
 pp(path.MustQuery("$[*] ? (@ < 1 || @ > 5)", val(`[1, 3, 7]`))) // → [7]
@@ -930,7 +941,7 @@ pp(path.MustQuery("$[*] ? (@ < 1 || @ > 5)", val(`[1, 3, 7]`))) // → [7]
 
 #### `! boolean → boolean`
 
-Boolean `NOT`.
+Boolean `NOT` ([playground][play65]):
 
 ``` go
 pp(path.MustQuery("$[*] ? (!(@ < 5))", val(`[1, 3, 7]`))) // → [7]
@@ -938,7 +949,7 @@ pp(path.MustQuery("$[*] ? (!(@ < 5))", val(`[1, 3, 7]`))) // → [7]
 
 #### `boolean is unknown → boolean`
 
-Tests whether a Boolean condition is unknown.
+Tests whether a Boolean condition is unknown ([playground][play66]):
 
 ``` go
 pp(path.MustQuery("$[*] ? ((@ > 0) is unknown)", val(`[-1, 2, 7, "foo"]`))) // → ["foo"]
@@ -948,7 +959,8 @@ pp(path.MustQuery("$[*] ? ((@ > 0) is unknown)", val(`[-1, 2, 7, "foo"]`))) // �
 
 Tests whether the first operand matches the regular expression given by the
 second operand, optionally with modifications described by a string of flag
-characters (see [SQL/JSON Regular Expressions](#sqljson-regular-expressions)).
+characters (see [SQL/JSON Regular Expressions](#sqljson-regular-expressions);
+[playground][play67], [playground][play68]):
 
 ``` go
 arg := val(`["abc", "abd", "aBdC", "abdacb", "babc"]`)
@@ -958,7 +970,8 @@ pp(path.MustQuery(`$[*] ? (@ like_regex "^ab.*c" flag "i")`, arg)) // → ["abc"
 
 #### `string starts with string → boolean`
 
-Tests whether the second operand is an initial substring of the first operand.
+Tests whether the second operand is an initial substring of the first operand
+([playground][play69]):
 
 ``` go
 arg := val(`["John Smith", "Mary Stone", "Bob Johnson"]`)
@@ -969,7 +982,8 @@ pp(path.MustQuery(`$[*] ? (@ starts with "John")`, arg)) // → ["John Smith"]
 
 Tests whether a path expression matches at least one SQL/JSON item. Returns
 unknown if the path expression would result in an error; the second example
-uses this to avoid a no-such-key error in strict mode.
+uses this to avoid a no-such-key error in strict mode
+([playground][play70], [playground][play71]):
 
 ``` go
 arg := val(`{"x": [1, 2], "y": [2, 4]}`)
@@ -1022,7 +1036,8 @@ parsing and a second time for JSON path string parsing.
 We therefore recommend using raw [string literals] (backtick strings) to
 compose path expressions with double quotes or backslashes, both of which are
 common in `like_regex` expressions. Raw strings require double backslashes in
-regular expressions only once, for the path string parsing:
+regular expressions only once, for the path string parsing
+([playground][play72]):
 
 ``` go
 p := path.MustParse(`$.* ?(@ like_regex "^\\d+$")`)
@@ -1082,7 +1097,7 @@ unavoidable differences and to-dos. These include:
     the in the time zone defined by the [TimeZone GUC] or the server's system
     time zone. The path package does not rely on such global configuration. It
     instead uses the time zone configured in the context passed by the path
-    queries, an defaults to UTC if it's not set:
+    queries, an defaults to UTC if it's not set ([playground][play73]):
 
     ```go
     p := path.MustParse("$.timestamp_tz().string()")
@@ -1092,7 +1107,8 @@ unavoidable differences and to-dos. These include:
     ```
 
     To operate in a the context of a different time zone, use
-    `types.ContextWithTZ` to add it to the context.:
+    `types.ContextWithTZ` to add it to the context (playground does not
+    support time zone context):
 
     ``` go
     tz, err := time.LoadLocation("America/New_York")
@@ -1174,7 +1190,7 @@ Copyright © 1996-2024 The PostgreSQL Global Development Group
 Copyright © 2024 David E. Wheeler
 
   [🛝 Playground]: https://theory.github.io/sqljson/playground "Go SQL/JSON Path Playground"
-  [this one]: https://theory.github.io/sqljson/playground/?p=%2524.track.segments%255B*%255D.location&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1&v=v0.1.0
+  [this one]: https://theory.github.io/sqljson/playground/?p=%2524.track.segments%255B*%255D.location&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
   [PostgreSQL docs]: https://www.postgresql.org/docs/devel/functions-json.html#FUNCTIONS-SQLJSON-PATH
     "PostgreSQL Documentation: “The SQL/JSON Path Language”"
   [`json.Number`]: https://pkg.go.dev/encoding/json#Number
@@ -1199,3 +1215,78 @@ Copyright © 2024 David E. Wheeler
   [DateStyle]: https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-DATESTYLE
   [TimeZone GUC]: https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-TIMEZONE
   [output format]: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-DATETIME-OUTPUT
+
+  <!-- Playground Links -->
+  [play01]: https://theory.github.io/sqljson/playground/?p=%2524.track.segments&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=33
+  [play02]: https://theory.github.io/sqljson/playground/?p=%2524.track.segments%255B*%255D.location&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play03]: https://theory.github.io/sqljson/playground/?p=%2524.track.segments%255B0%255D.location&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play04]: https://theory.github.io/sqljson/playground/?p=%2524.track.segments.size%28%29&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play05]: https://theory.github.io/sqljson/playground/?p=%2524.track.segments%255B*%255D.HR%2520%253F%2520%28%2540%2520%253E%2520130%29&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play06]: https://theory.github.io/sqljson/playground/?p=%2524.track.segments%255B*%255D%2520%253F%2520%28%2540.HR%2520%253E%2520130%29.%2522start%2520time%2522&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play07]: https://theory.github.io/sqljson/playground/?p=%2524.track.segments%255B*%255D%2520%253F%2520%28%2540.location%255B1%255D%2520%253C%252013.4%29%2520%253F%2520%28%2540.HR%2520%253E%2520130%29.%2522start%2520time%2522&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play08]: https://theory.github.io/sqljson/playground/?p=%2524.track.segments%255B*%255D%2520%253F%2520%28%2540.location%255B1%255D%2520%253C%252013.4%29.HR%2520%253F%2520%28%2540%2520%253E%2520130%29&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play09]: https://theory.github.io/sqljson/playground/?p=%2524.track%2520%253F%2520%28exists%28%2540.segments%255B*%255D%2520%253F%2520%28%2540.HR%2520%253E%2520130%29%29%29.segments.size%28%29&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play10]: https://theory.github.io/sqljson/playground/?p=%2524.track.segments%2520%253F%28%2540%255B*%255D.HR%2520%253E%2520130%29&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=33
+  [play11]: https://theory.github.io/sqljson/playground/?p=%2524.track.segments%255B*%255D.HR%2520%253E%2520130&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play12]: https://theory.github.io/sqljson/playground/?p=lax%2520%2524.track.segments.location&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play13]: https://theory.github.io/sqljson/playground/?p=strict%2520%2524.track.segments.location&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play14]: https://theory.github.io/sqljson/playground/?p=strict%2520%2524.track.segments%255B*%255D.location&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play15]: https://theory.github.io/sqljson/playground/?p=lax%2520%2524.**.HR&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play16]: https://theory.github.io/sqljson/playground/?p=strict%2520%2524.**.HR&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play17]: https://theory.github.io/sqljson/playground/?p=lax%2520%2524.track.segments%255B*%255D.location&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play18]: https://theory.github.io/sqljson/playground/?p=lax%2520%2524.track.segments%255B*%255D.location%2520%253F%28%2540%255B*%255D%2520%253E%252015%29&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play19]: https://theory.github.io/sqljson/playground/?p=strict%2520%2524.track.segments%255B*%255D.location%2520%253F%28%2540%255B*%255D%2520%253E%252015%29&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
+  [play20]: https://theory.github.io/sqljson/playground/?p=%2524%255B0%255D%2520%252B%25203&j=2&a=&o=1
+  [play21]: https://theory.github.io/sqljson/playground/?p=%252B%2520%2524.x&j=%257B%2522x%2522%253A%2520%255B2%252C3%252C4%255D%257D&a=&o=1
+  [play22]: https://theory.github.io/sqljson/playground/?p=7%2520-%2520%2524%255B0%255D&j=%255B2%255D&a=&o=1
+  [play23]: https://theory.github.io/sqljson/playground/?p=-%2520%2524.x&j=%257B%2522x%2522%253A%2520%255B2%252C3%252C4%255D%257D&a=&o=1
+  [play24]: https://theory.github.io/sqljson/playground/?p=2%2520*%2520%2524%255B0%255D&j=4&a=&o=1
+  [play25]: https://theory.github.io/sqljson/playground/?p=%2524%255B0%255D%2520%252F%25202&j=%255B8.5%255D&a=&o=1
+  [play26]: https://theory.github.io/sqljson/playground/?p=%2524%255B0%255D%2520%2525%252010&j=%255B32%255D&a=&o=1
+  [play27]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D.type%28%29&j=%255B1%252C%2520%25222%2522%252C%2520%257B%257D%255D&a=&o=1
+  [play28]: https://theory.github.io/sqljson/playground/?p=%2524.m.size%28%29&j=%257B%2522m%2522%253A%2520%255B11%252C%252015%255D%257D&a=&o=1
+  [play29]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D.boolean%28%29&j=%255B1%252C%2520%2522yes%2522%252C%2520false%255D&a=&o=1
+  [play30]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D.string%28%29&j=%255B1.23%252C%2520%2522xyz%2522%252C%2520false%255D&a=&o=1
+  [play31]: https://theory.github.io/sqljson/playground/?p=%2524.datetime%28%29.string%28%29&j=%25222023-08-15%2522&a=&o=1
+  [play32]: https://theory.github.io/sqljson/playground/?p=%2524.len.double%28%29%2520*%25202&j=%257B%2522len%2522%253A%2520%25221.9%2522%257D&a=&o=1
+  [play33]: https://theory.github.io/sqljson/playground/?p=%2524.h.ceiling%28%29&j=%257B%2522h%2522%253A%25201.3%257D&a=&o=1
+  [play34]: https://theory.github.io/sqljson/playground/?p=%2524.h.floor%28%29&j=%257B%2522h%2522%253A%25201.7%257D&a=&o=1
+  [play35]: https://theory.github.io/sqljson/playground/?p=%2524.z.abs%28%29&j=%257B%2522z%2522%253A%2520-0.3%257D&a=&o=1
+  [play36]: https://theory.github.io/sqljson/playground/?p=%2524.len.bigint%28%29&j=%257B%2522len%2522%253A%2520%25229876543219%2522%257D&a=&o=1
+  [play37]: https://theory.github.io/sqljson/playground/?p=%2524.decimal%286%252C%25202%29&j=%25221234.5678%2522&a=&o=1
+  [play38]: https://theory.github.io/sqljson/playground/?p=%2524.len.integer%28%29&j=%257B%2522len%2522%253A%2520%252212345%2522%257D&a=&o=1
+  [play39]: https://theory.github.io/sqljson/playground/?p=%2524.len.number%28%29&j=%257B%2522len%2522%253A%2520%2522123.45%2522%257D&a=&o=1
+  [play40]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540.datetime%28%29%2520%253C%2520%25222015-08-02%2522.datetime%28%29%29&j=%255B%25222015-08-01%2522%252C%2520%25222015-08-12%2522%255D&a=&o=1
+  [play41]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D.datetime%28%2522HH24%253AMI%2522%29&j=%255B%252212%253A30%2522%252C%2520%252218%253A40%2522%255D&a=&o=1
+  [play42]: https://theory.github.io/sqljson/playground/?p=%2524.date%28%29&j=2023-08-15&a=&o=1
+  [play43]: https://theory.github.io/sqljson/playground/?p=%2524.time%28%29&j=12%253A34%253A56&a=&o=1
+  [play44]: https://theory.github.io/sqljson/playground/?p=%2524.time%282%29&j=%252212%253A34%253A56.789%2522&a=&o=1
+  [play45]: https://theory.github.io/sqljson/playground/?p=%2524.time_tz%28%29&j=%252212%253A34%253A56%252B05%253A30%2522&a=&o=1
+  [play46]: https://theory.github.io/sqljson/playground/?p=%2524.time_tz%282%29&j=%252212%253A34%253A56.789%252B05%253A30%2522&a=&o=1
+  [play47]: https://theory.github.io/sqljson/playground/?p=%2524.timestamp%28%29&j=%25222023-08-15%252012%253A34%253A56%2522&a=&o=1
+  [play48]: https://theory.github.io/sqljson/playground/?p=%2524.timestamp%282%29&j=%25222023-08-15%252012%253A34%253A56.789%2522&a=&o=1
+  [play49]: https://theory.github.io/sqljson/playground/?p=%2524.timestamp_tz%28%29&j=%25222023-08-15%252012%253A34%253A56%252B05%253A30%2522&a=&o=1
+  [play50]: https://theory.github.io/sqljson/playground/?p=%2524.timestamp_tz%282%29&j=%25222023-08-15%252012%253A34%253A56.789%252B05%253A30%2522&a=&o=1
+  [play51]: https://theory.github.io/sqljson/playground/?p=%2524.keyvalue%28%29&j=%257B%2522x%2522%253A%2520%252220%2522%252C%2520%2522y%2522%253A%252032%257D&a=&o=1
+  [play52]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540%2520%253D%253D%25201%29&j=%255B1%252C%2520%2522a%2522%252C%25201%252C%25203%255D&a=&o=1
+  [play53]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540%2520%253D%253D%2520%2522a%2522%29&j=%255B1%252C%2520%2522a%2522%252C%25201%252C%25203%255D&a=&o=1
+  [play54]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540%2520%21%253D%25201%29&j=%255B1%252C%25202%252C%25201%252C%25203%255D&a=&o=1
+  [play55]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540%2520%253C%253E%2520%2522b%2522%29&j=%255B%2522a%2522%252C%2520%2522b%2522%252C%2520%2522c%2522%255D&a=&o=1
+  [play56]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540%2520%253C%25202%29&j=%255B1%252C%25202%252C%25203%255D&a=&o=1
+  [play57]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540%2520%253C%253D%2520%2522b%2522%29&j=%255B%2522a%2522%252C%2520%2522b%2522%252C%2520%2522c%2522%255D&a=&o=1
+  [play58]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540%2520%253E%25202%29&j=%255B1%252C%25202%252C%25203%255D&a=&o=1
+  [play59]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540%2520%253E%253D%25202%29&j=%255B1%252C%25202%252C%25203%255D&a=&o=1
+  [play60]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540.parent%2520%253D%253D%2520true%29&j=%255B%250A%2520%2520%257B%2522name%2522%253A%2520%2522John%2522%252C%2520%2522parent%2522%253A%2520false%257D%252C%250A%2520%2520%257B%2522name%2522%253A%2520%2522Chris%2522%252C%2520%2522parent%2522%253A%2520true%257D%250A%255D&a=&o=1
+  [play61]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540.parent%2520%253D%253D%2520false%29&j=%255B%250A%2520%2520%257B%2522name%2522%253A%2520%2522John%2522%252C%2520%2522parent%2522%253A%2520false%257D%252C%250A%2520%2520%257B%2522name%2522%253A%2520%2522Chris%2522%252C%2520%2522parent%2522%253A%2520true%257D%250A%255D&a=&o=1
+  [play62]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540.job%2520%253D%253D%2520null%29%2520.name&j=%255B%250A%2520%2520%257B%2522name%2522%253A%2520%2522Mary%2522%252C%2520%2522job%2522%253A%2520null%257D%252C%250A%2520%2520%257B%2522name%2522%253A%2520%2522Michael%2522%252C%2520%2522job%2522%253A%2520%2522driver%2522%257D%250A%255D&a=&o=1
+  [play63]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540%2520%253E%25201%2520%2526%2526%2520%2540%2520%253C%25205%29&j=%255B1%252C%25203%252C%25207%255D&a=&o=1
+  [play64]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540%2520%253C%25201%2520%257C%257C%2520%2540%2520%253E%25205%29&j=%255B1%252C%25203%252C%25207%255D&a=&o=1
+  [play65]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%21%28%2540%2520%253C%25205%29%29&j=%255B1%252C%25203%252C%25207%255D&a=&o=1
+  [play66]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%28%2540%2520%253E%25200%29%2520is%2520unknown%29&j=%255B-1%252C%25202%252C%25207%252C%2520%2522foo%2522%255D&a=&o=1
+  [play66]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540%2520like_regex%2520%2522%255Eab.*c%2522%29&j=%255B%2522abc%2522%252C%2520%2522abd%2522%252C%2520%2522aBdC%2522%252C%2520%2522abdacb%2522%252C%2520%2522babc%2522%255D&a=&o=1
+  [play67]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540%2520like_regex%2520%2522%255Eab.*c%2522%2520flag%2520%2522i%2522%29&j=%255B%2522abc%2522%252C%2520%2522abd%2522%252C%2520%2522aBdC%2522%252C%2520%2522abdacb%2522%252C%2520%2522babc%2522%255D&a=&o=1
+  [play69]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D%2520%253F%2520%28%2540%2520starts%2520with%2520%2522John%2522%29&j=%255B%2522John%2520Smith%2522%252C%2520%2522Mary%2520Stone%2522%252C%2520%2522Bob%2520Johnson%2522%255D&a=&o=1
+  [play70]: https://theory.github.io/sqljson/playground/?p=strict%2520%2524.*%2520%253F%2520%28exists%2520%28%2540%2520%253F%2520%28%2540%255B*%255D%2520%253E%25202%29%29%29&j=%257B%2522x%2522%253A%2520%255B1%252C%25202%255D%252C%2520%2522y%2522%253A%2520%255B2%252C%25204%255D%257D&a=&o=1
+  [play71]: https://theory.github.io/sqljson/playground/?p=strict%2520%2524%2520%253F%2520%28exists%2520%28%2540.name%29%29%2520.name&j=%257B%2522x%2522%253A%2520%255B1%252C%25202%255D%252C%2520%2522y%2522%253A%2520%255B2%252C%25204%255D%257D&a=%257B%2522value%2522%253A%252042%257D&o=1
+  [play72]: https://theory.github.io/sqljson/playground/?p=%2524.*%2520%253F%28%2540%2520like_regex%2520%2522%255E%255C%255Cd%252B%2524%2522%29&j=%257B%2522x%2522%253A%2520%252242%2522%252C%2520%2522y%2522%253A%2520%2522no%2522%257D&a=&o=1
+  [play73]: https://theory.github.io/sqljson/playground/?p=%2524.timestamp_tz%28%29.string%28%29&j=%25222023-08-15%252012%253A34%253A56%252B05%253A30%2522&a=&o=1&v=v0.1.0

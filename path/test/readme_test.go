@@ -436,8 +436,8 @@ func Example_ge() {
 
 func Example_true() {
 	arg := val(`[
-		{"name": "John", "parent": false},
-		{"name": "Chris", "parent": true}
+	  {"name": "John", "parent": false},
+	  {"name": "Chris", "parent": true}
 	]`)
 	pp(path.MustQuery("$[*] ? (@.parent == true)", arg)) // → [{"name":"Chris","parent":true}]
 	// Output: [{"name":"Chris","parent":true}]
@@ -445,8 +445,8 @@ func Example_true() {
 
 func Example_false() {
 	arg := val(`[
-		{"name": "John", "parent": false},
-		{"name": "Chris", "parent": true}
+	  {"name": "John", "parent": false},
+	  {"name": "Chris", "parent": true}
 	]`)
 	pp(path.MustQuery("$[*] ? (@.parent == false)", arg)) // → [{"name":"John","parent":false}]
 	// Output: [{"name":"John","parent":false}]
@@ -454,8 +454,8 @@ func Example_false() {
 
 func Example_null() {
 	arg := val(`[
-		{"name": "Mary", "job": null},
-		{"name": "Michael", "job": "driver"}
+	  {"name": "Mary", "job": null},
+	  {"name": "Michael", "job": "driver"}
 	]`)
 	pp(path.MustQuery("$[*] ? (@.job == null) .name", arg)) // → ["Mary"]
 	// Output: ["Mary"]
