@@ -17,7 +17,7 @@ $(DST_DIR)/playground.css: $(SRC_DIR)/playground.css
 	mkdir -p $(@D)
 	cp $< $@
 
-$(DST_DIR)/path-playground.wasm: $(SRC_DIR)/wasm/main.go
+$(DST_DIR)/path-playground.wasm: $(SRC_DIR)/wasm/main.go $(DST_DIR)/wasm_exec.js
 	mkdir -p $(@D)
 	cd $(SRC_DIR)/wasm; GOOS=js GOARCH=wasm go build -o $(ROOT_DIR)/$@ $$(basename "$<")
 
