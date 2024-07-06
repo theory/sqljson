@@ -25,6 +25,8 @@ $(DST_DIR)/wasm_exec.js: $(WASM_EXEC)
 	mkdir -p $(@D) 
 	cp $< $@
 
+lint:
+
 .PHONY: clean
 clean:
 	rm -rf $(DST_DIR)

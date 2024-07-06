@@ -62,12 +62,31 @@ Clears the input fields and result.
 
 Input the jsonpath expression to execute into this field. See the [language
 docs] or the [PostgreSQL docs] for details on and examples of the jsonpath
-language.
+language. Example:
+
+```jsonpath
+$.a[*] ? (@ >= $min && @ <= $max)
+```
+
+### Variables
+
+Input the variables used in the Path as a JSON object. For example, the Path
+example above references two variables, `$min` and `$max`. The object to set
+their values might be:
+
+``` json
+{ "min": 2, "max": 4 }
+```
 
 ### JSON
 
 Input the JSON against which to execute the Path expression. May be any kind
-of JSON value, including objects, arrays, ans scalar values.
+of JSON value, including objects, arrays, ans scalar values. An example that
+the above Path expression can be executed:
+
+```json
+{ "a": [1,2,3,4,5] }
+```
 
 ## Copyright and License
 
