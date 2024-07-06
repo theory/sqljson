@@ -88,6 +88,10 @@ func TestExecVariable(t *testing.T) {
 	path, _ := parser.Parse("$")
 	ctx := context.Background()
 
+	// Offset of object in a slice is non-determinate, so calculate it at runtime.
+	vars := Vars{"x": map[string]any{"y": "hi"}}
+	xID := 10000000000 + deltaBetween(vars, vars["x"])
+
 	for _, tc := range []struct {
 		name  string
 		vars  Vars
@@ -121,10 +125,10 @@ func TestExecVariable(t *testing.T) {
 		},
 		{
 			name: "var_exists_next_keyvalue",
-			vars: Vars{"x": map[string]any{"y": "hi"}},
+			vars: vars,
 			node: ast.LinkNodes([]ast.Node{ast.NewVariable("x"), ast.NewMethod(ast.MethodKeyValue)}),
 			exp:  statusOK,
-			find: map[string]any{"id": int64(10000000048), "key": "y", "value": "hi"},
+			find: map[string]any{"id": xID, "key": "y", "value": "hi"},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -148,21 +152,6 @@ func TestExecVariable(t *testing.T) {
 			// Check the error and list.
 			if tc.isErr == nil {
 				r.NoError(err)
-				if tc.name == "var_exists_next_keyvalue" {
-					// The keyvalue ID can vary, so extract it and verify it.
-					a.Len(list.list, 1)
-					found, ok := list.list[0].(map[string]any)
-					a.True(ok)
-					id, ok := found["id"].(int64)
-					a.True(ok)
-
-					// Compare the ID to the expected and add it to expected.
-					find, ok := tc.find.(map[string]any)
-					a.True(ok)
-					a.GreaterOrEqual(id, find["id"])
-					find["id"] = id
-					tc.find = find
-				}
 				a.Equal([]any{tc.find}, list.list)
 			} else {
 				r.EqualError(err, tc.err)

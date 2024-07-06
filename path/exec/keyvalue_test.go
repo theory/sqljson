@@ -65,6 +65,18 @@ func TestAddrOf(t *testing.T) {
 	}
 }
 
+// deltaBetween determines the memory distance between collection and one of
+// the items it contains. Used to determine keyvalue IDs at runtime because
+// the memory distance can vary at runtime, but should be consistent between
+// the same two literal values.
+func deltaBetween(collection, item any) int64 {
+	delta := int64(reflect.ValueOf(item).Pointer() - reflect.ValueOf(collection).Pointer())
+	if delta < 0 {
+		return -delta
+	}
+	return delta
+}
+
 func TestKVBaseObject(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
@@ -75,10 +87,7 @@ func TestKVBaseObject(t *testing.T) {
 	// The offset of an array inside a map can very by execution, so calculate
 	// it at runtime.
 	mapArray := map[string]any{"x": []any{1, 4}}
-	mapArrayOff := int64(reflect.ValueOf(mapArray["x"]).Pointer() - reflect.ValueOf(mapArray).Pointer())
-	if mapArrayOff < 0 {
-		mapArrayOff *= -1
-	}
+	mapArrayOff := deltaBetween(mapArray, mapArray["x"])
 
 	for _, tc := range []struct {
 		name string
@@ -150,6 +159,10 @@ func TestSetTempBaseObject(t *testing.T) {
 
 func TestExecuteKeyValueMethod(t *testing.T) {
 	t.Parallel()
+	// ID can vary at runtime, so figure out the value at runtime.
+	vars := Vars{"foo": map[string]any{"x": true, "y": 1}}
+	fooID := 10000000000 + deltaBetween(vars, vars["foo"])
+
 	for _, tc := range []execTestCase{
 		{
 			name: "kv_single",
@@ -221,11 +234,11 @@ func TestExecuteKeyValueMethod(t *testing.T) {
 		{
 			name: "kv_variable",
 			path: "$foo.keyvalue()",
-			vars: Vars{"foo": map[string]any{"x": true, "y": 1}},
+			vars: vars,
 			json: `""`,
 			exp: []any{
-				map[string]any{"key": "x", "value": true, "id": int64(10000000048)},
-				map[string]any{"key": "y", "value": 1, "id": int64(10000000048)},
+				map[string]any{"key": "x", "value": true, "id": fooID},
+				map[string]any{"key": "y", "value": 1, "id": fooID},
 			},
 			rand: true, // Results can be in any order
 		},
@@ -272,10 +285,7 @@ func TestExecuteKeyValueMethodUnwrap(t *testing.T) {
 
 	// Offset of object in a slice is non-determinate, so calculate it at runtime.
 	value := []any{map[string]any{"x": true, "y": "hi"}}
-	offset := int64(reflect.ValueOf(value[0]).Pointer() - reflect.ValueOf(value).Pointer())
-	if offset < 0 {
-		offset *= -1
-	}
+	offset := deltaBetween(value, value[0])
 
 	// Run the query; lax mode will unwrap value to execute method on its items.
 	path, err := parser.Parse("$.keyvalue()")

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -26,10 +25,7 @@ func TestExecMethodNode(t *testing.T) {
 
 	// Offset of object in a slice is non-determinate, so calculate it at runtime.
 	value := []any{map[string]any{"x": true, "y": "hi"}}
-	offset := int64(reflect.ValueOf(value[0]).Pointer() - reflect.ValueOf(value).Pointer())
-	if offset < 0 {
-		offset *= -1
-	}
+	offset := deltaBetween(value, value[0])
 
 	for _, tc := range []struct {
 		name   string
