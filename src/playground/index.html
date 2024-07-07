@@ -189,20 +189,20 @@
         </fieldset>
       </div>
       <div>
-        <a id="permalink" href="" class="disable">Permalink</a>&nbsp;&nbsp;&nbsp;
-        <span id="clear" onclick="clearFields();return false;">Clear</span>
+        <a id="permalink" href="" class="disable" title="Reload with a permanent link that populates all the fields and executes the path">Permalink</a>&nbsp;&nbsp;&nbsp;
+        <span id="clear" onclick="clearFields();return false;" title="Clear the fields">Clear</span>
       </div>
       <div>
-        <label for="path">Path</label><br />
-        <textarea id="path" placeholder="$.a[*] ? (@ >= $min && @ <= $max)" rows="2" oninput="fit(this);" onchange="unlink();return false"></textarea>
+        <label for="path" title="The jsonpath expression to execute">Path</label><br />
+        <textarea id="path" title="The jsonpath expression to execute" placeholder="$.a[*] ? (@ >= $min && @ <= $max)" rows="2" oninput="fit(this);" onchange="unlink();return false"></textarea>
       </div>
       <div>
-        <label for="vars">Variables</label><br />
-        <textarea id="vars" placeholder="{&quot;min&quot;:2, &quot;max&quot;:4}" rows="2" oninput="fit(this);" onchange="unlink();return false"></textarea>
+        <label for="vars" title="JSON object mapping variables used in the Path to their values">Variables</label><br />
+        <textarea id="vars" title="JSON object mapping variables used in the Path to their values" placeholder="{&quot;min&quot;:2, &quot;max&quot;:4}" rows="2" oninput="fit(this);" onchange="unlink();return false"></textarea>
       </div>
       <div>
-        <label for="json">JSON</label><br />
-        <textarea id="json" placeholder="{&quot;a&quot;:[1,2,3,4,5]}" rows="8" oninput="fit(this);" onchange="unlink();return false"></textarea>
+        <label for="json" title="The JSON against which to execute the Path expression">JSON</label><br />
+        <textarea id="json" title="The JSON against which to execute the Path expression" placeholder="{&quot;a&quot;:[1,2,3,4,5]}" rows="8" oninput="fit(this);" onchange="unlink();return false"></textarea>
       </div>
       <div>
         <button onClick="execute();" id="query-json" disabled>Execute</button>
