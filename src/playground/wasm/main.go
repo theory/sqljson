@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"time"
 
 	//nolint
@@ -96,18 +98,17 @@ func execute(query, target, vars, tz string, opts int) string {
 	}
 
 	// Serialize the result
-	var js []byte
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
 	if opts&optIndent == optIndent {
-		js, err = json.MarshalIndent(res, "", "  ")
-	} else {
-		js, err = json.Marshal(res)
+		enc.SetIndent("", "  ")
 	}
-
-	if err != nil {
+	if err := enc.Encode(res); err != nil {
 		return fmt.Sprintf("Error parsing results: %v", err)
 	}
 
-	return string(js)
+	return html.EscapeString(buf.String())
 }
 
 func assembleOptions(opts int, vars string) ([]exec.Option, string) {

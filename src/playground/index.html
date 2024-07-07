@@ -24,7 +24,6 @@
       let options = 0;
       for(const optionName of optionNames) {
         if(document.getElementById(optionName).checked) {
-          console.log(window[optionName]);
           options |= window[optionName];
         }
       }
