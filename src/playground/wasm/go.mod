@@ -2,7 +2,7 @@ module main
 
 go 1.22
 
-require github.com/theory/sqljson v0.1.0
+require github.com/theory/sqljson v0.1.1
 
 require (
 	github.com/smasher164/xid v0.1.2 // indirect
