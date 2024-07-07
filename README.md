@@ -26,7 +26,7 @@ Choose the mode in which to execute the jsonpath query. The options are:
     by the Path from the JSON.
 *   **First**: Like Query, but uses [First] to return only the first item, if
     any.
-*   **Exists or Match**: Use [ExistsOrMatch] to return `true`, `false`
+*   **Exists or Match**: Use [ExistsOrMatch] to return `true` or `false`
     depending on whether the query does or does not find results or match
     values, and `null` if the result is unknown.
 
@@ -40,11 +40,11 @@ Select options for execution and the display of results:
 *   **Silent**: Use [WithSilent] to suppress some errors, including missing
     object field or array element, unexpected JSON item type, and datetime and
     numeric errors.
-*   **TZ Compare**: Use [WithTZ] to allow comparisons of date and time values
-    that require timezone-aware conversions. By default, the Playground
-    operates in the context of [UTC].
-*   **Local TZ**: Convert and display times and timestamps in the context of
-    your browser's local time zone.
+*   **TZ Compare**: Use [WithTZ] to allow comparisons of datetime values that
+    require timezone-aware conversions.
+*   **Local TZ**: Use [ContextWithTZ] to convert and display times and
+    timestamps in the context of your browser's local time zone instead of
+    [UTC].
 *   **Pretty**: Pretty-print the the JSON result.
 
 ### Permalink
@@ -54,7 +54,8 @@ the page with a URL that contains the contents of all the fields and executes
 the results. Use for sharing.
 
 Note that the Playground is stateless; no data is stored except in the
-Permalink URL itself.
+Permalink URL itself (and whatever data collection GitHub injects; see its
+[privacy statement] for details).
 
 ### Clear
 
@@ -63,8 +64,7 @@ Clears the input fields and result.
 ### Path
 
 Input the jsonpath expression to execute into this field. See the [language
-docs] or the [PostgreSQL docs] for details on and examples of the jsonpath
-language. Example:
+docs] or the [PostgreSQL docs] for details on the jsonpath language. Example:
 
 ```jsonpath
 $.a[*] ? (@ >= $min && @ <= $max)
@@ -83,8 +83,8 @@ their values might be:
 ### JSON
 
 Input the JSON against which to execute the Path expression. May be any kind
-of JSON value, including objects, arrays, ans scalar values. An example that
-the above Path expression can be executed:
+of JSON value, including objects, arrays, and scalar values. An example that
+the above Path expression successfully executes against:
 
 ```json
 { "a": [1,2,3,4,5] }
@@ -109,7 +109,9 @@ distributed under the [MIT License].
   [Two Types of Queries]: https://pkg.go.dev/github.com/theory/sqljson@v0.1.0/path#hdr-Two_Types_of_Queries
   [WithSilent]: https://pkg.go.dev/github.com/theory/sqljson@v0.1.0/path#example-package-WithSilent
   [WithTZ]: https://pkg.go.dev/github.com/theory/sqljson@v0.1.0/path#example-package-WithTZ
+  [ContextWithTZ]: https://pkg.go.dev/github.com/theory/sqljson/path/types#ContextWithTZ
   [UTC]: https://en.wikipedia.org/wiki/Coordinated_Universal_Time
+  [privacy statement]: https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement
   [language docs]: https://github.com/theory/sqljson/blob/main/path/README.md
   [PostgreSQL docs]: https://www.postgresql.org/docs/devel/functions-json.html#FUNCTIONS-SQLJSON-PATH
   [PostgreSQL License]: https://www.opensource.org/licenses/postgresql
