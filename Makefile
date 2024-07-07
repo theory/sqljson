@@ -30,7 +30,7 @@ debian-lint-depends:
 
 .PHONY: install-generators # Install Go code generators
 install-generators:
-	@$(GO) install golang.org/x/tools/cmd/goyacc@latest golang.org/x/tools/cmd/stringer@latest
+	@$(GO) install golang.org/x/tools/cmd/goyacc@v0.22.0 golang.org/x/tools/cmd/stringer@v0.22.0
 
 .PHONY: generate # Generate Go code
 generate:

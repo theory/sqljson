@@ -1084,15 +1084,6 @@ unavoidable differences and to-dos. These include:
     is implemented, as it will require adopting the full Postgres date/time
     formatting language.
 
-*   Date and time `string()` output. The output of the `.string()` method
-    chained after one of datetime methods (`datetime()`, `timestamp()`,
-    `timestamp_tz()`, etc.) is determined by the [DateStyle] configuration
-    parameter, just like the [output format] of the PostgreSQL types. The path
-    package's `string()` function formats dates and times only in the ISO
-    8601/SQL standard format, which is the Postgres default. Like the Postgres
-   ISO format, it includes no `T` between the date and time. An example:
-    `1997-12-17 07:37:16-08`.
-
 *   Time zones. Postgres operates on time and time values in the context of
     the in the time zone defined by the [TimeZone GUC] or the server's system
     time zone. The path package does not rely on such global configuration. It
@@ -1107,8 +1098,7 @@ unavoidable differences and to-dos. These include:
     ```
 
     To operate in a the context of a different time zone, use
-    `types.ContextWithTZ` to add it to the context (playground does not
-    support time zone context):
+    [types.ContextWithTZ] to add it to the context:
 
     ``` go
     tz, err := time.LoadLocation("America/New_York")
@@ -1121,14 +1111,14 @@ unavoidable differences and to-dos. These include:
     pp(p.MustQuery(ctx, arg)) // → ["2023-08-15T03:04:56-04"]
     ```
 
-*   Identifiers. Postgres jsonpath parsing is quite liberal in what it allows
-    in unquoted identifiers. The allowed characters are defined by the
-    [ECMAScript standard] are stricter, and this package hews closer to the
-    standard.
-
-    The upshot is that expressions allowed by Postgres, such as `x.🎉`, are
-    better written as `x."🎉"` for compatibility with the standard and to work
-    with both this package and Postgres.
+*   Date and time `string()` output. The output of the `.string()` method
+    chained after one of datetime methods (`datetime()`, `timestamp()`,
+    `timestamp_tz()`, etc.) is determined by the [DateStyle] configuration
+    parameter, just like the [output format] of the PostgreSQL types. The path
+    package's `string()` function formats dates and times only in the ISO
+    8601/SQL standard format, which is the Postgres default. Like the Postgres
+    ISO format, it includes no `T` between the date and time. An example:
+    `1997-12-17 07:37:16-08`.
 
 *   Regular expressions. Whereas the Postgres implementation of the `like_regex`
     expression relies on its [POSIX regular expression engine], the Go version
@@ -1171,6 +1161,15 @@ unavoidable differences and to-dos. These include:
     | `\Z`         | end of text                           | N/A (see `\z`)                        |
     | `\0`         | the null byte                         | N/A                                   |
     | `\*`         | literal punctuation character `*`     | literal `*` punctuation character `*` |
+
+*   Identifiers. Postgres jsonpath parsing is quite liberal in what it allows
+    in unquoted identifiers. The allowed characters are defined by the
+    [ECMAScript standard] are stricter, and this package hews closer to the
+    standard.
+
+    The upshot is that expressions allowed by Postgres, such as `x.🎉`, are
+    better written as `x."🎉"` for compatibility with the standard and to work
+    with both this package and Postgres.
 
 *   `keyvalue()` IDs. Postgres creates IDs for the output of the `keyvalue()`
     method by comparing memory addresses between JSONB values. This works well
@@ -1215,6 +1214,7 @@ Copyright © 2024 David E. Wheeler
   [backspace character]: https://en.wikipedia.org/wiki/Backspace
   [DateStyle]: https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-DATESTYLE
   [TimeZone GUC]: https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-TIMEZONE
+  [types.ContextWithTZ]: https://pkg.go.dev/github.com/theory/sqljson/path/types#ContextWithTZ
   [output format]: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-DATETIME-OUTPUT
 
   <!-- Playground Links -->

@@ -43,11 +43,7 @@ issues:
         - funlen
         - goerr113
         - err113
-        - wrapcheck
         - maintidx
-    - path: internal/version/version.go
-      linters:
-        - gochecknoglobals
 
 linters:
   # Enable specific linter
@@ -102,10 +98,6 @@ linters-settings:
       - empty
       - stdlib
       - generic
-      - Hark
-      - protoreflect.ProtoMessage
-      - tink\.(?:AEAD|MAC)$
-      - registry\.KMSClient$
       - ast\.Node$
       - types\.DateTime$
       # You can specify idiomatic endings for interface
@@ -124,10 +116,5 @@ linters-settings:
   funlen:
     # Ignore comments when counting lines.
     ignore-comments: true
-  nlreturn:
-    # Size of the block (including return statement that is still "OK")
-    # so no return split required.
-    # Default: 1
-    block-size: 2
   exhaustive:
     default-signifies-exhaustive: true
