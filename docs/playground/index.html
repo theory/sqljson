@@ -77,6 +77,18 @@
       elem.style.height = elem.scrollHeight + 3 + "px"
     }
 
+    const unlink = function() {
+      $('permalink').className = "disable";
+    }
+
+    const clearFields = function() {
+      $('path').value='';
+      $('vars').value='';
+      $('json').value='';
+      $$('#output pre').innerHTML='';
+      $('permalink').className = "disable";
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
       if(isMobile || isSlowConn) {
         if(!confirm("This page uses WASM modules. Size is approximately 5MB. Are you sure to load?")) {
@@ -157,40 +169,40 @@
       <div>
         <fieldset>
           <legend>Mode</legend>
-          <input type="radio" id="optQuery" name="mode" checked  title="Execute a query that selects and returns all the items found." />&nbsp;
+          <input type="radio" id="optQuery" name="mode" checked title="Execute a query that selects and returns all the items found." onchange="unlink();return false" />&nbsp;
           <label for="optQuery" title="Execute a query that selects and returns all the items found.">Query</label>
-          <input type="radio" id="optFirst" name="mode" title="Execute a query that selects and return the first item found." />
+          <input type="radio" id="optFirst" name="mode" title="Execute a query that selects and return the first item found." onchange="unlink();return false" />
           <label for="optFirst" title="Execute a query that selects and return the first item found.">First</label>
-          <input type="radio" id="optExistsOrMatch" name="mode" title="Return true if the query finds or matches items, false if it does not, and null if the result is unknown" />&nbsp;
+          <input type="radio" id="optExistsOrMatch" name="mode" title="Return true if the query finds or matches items, false if it does not, and null if the result is unknown" onchange="unlink();return false" />&nbsp;
           <label for="optExistsOrMatch" title="Return true if the query finds or matches items, false if it does not, and null if the result is unknown">Exists or Match</label>
         </fieldset>
         <fieldset>
           <legend>Options</legend>
-          <input id="optSilent" type="checkbox" title="Suppress some errors" />&nbsp;
+          <input id="optSilent" type="checkbox" title="Suppress some errors" onchange="unlink();return false" />&nbsp;
           <label for="optSilent" title="Suppress some errors">Silent</label>
-          <input id="optTZCompare" type="checkbox" title="Allow comparison of date/time values that require timezone-aware conversions" />&nbsp;
+          <input id="optTZCompare" type="checkbox" title="Allow comparison of date/time values that require timezone-aware conversions" onchange="unlink();return false" />&nbsp;
           <label for="optTZCompare" title="Allow comparison of date/time values that require timezone-aware conversions">TZ Compare</label>
-          <input id="optLocalTZ" type="checkbox" title="Convert and display times and timestamps in your local time zone" />&nbsp;
+          <input id="optLocalTZ" type="checkbox" title="Convert and display times and timestamps in your local time zone" onchange="unlink();return false" />&nbsp;
           <label for="optLocalTZ" title="Convert and display times and timestamps in your local time zone">Local TZ</label>
-          <input id="optIndent" type="checkbox" title="Pretty print the results (best used in query mode)" />&nbsp;
+          <input id="optIndent" type="checkbox" title="Pretty print the results (best used in query mode)" onchange="unlink();return false" />&nbsp;
           <label for="optIndent" title="Pretty print the results (best used in query mode)">Pretty</label>
         </fieldset>
       </div>
       <div>
         <a id="permalink" href="" class="disable">Permalink</a>&nbsp;&nbsp;&nbsp;
-        <span id="clear" onclick="$('path').value='';$('vars').value='';$('json').value='';$$('#output pre').innerHTML='';return false;">Clear</span>
+        <span id="clear" onclick="clearFields();return false;">Clear</span>
       </div>
       <div>
         <label for="path">Path</label><br />
-        <textarea id="path" placeholder="$.a[*] ? (@ >= $min && @ <= $max)" rows="2" oninput="fit(this);"></textarea>
+        <textarea id="path" placeholder="$.a[*] ? (@ >= $min && @ <= $max)" rows="2" oninput="fit(this);" onchange="unlink();return false"></textarea>
       </div>
       <div>
         <label for="vars">Variables</label><br />
-        <textarea id="vars" placeholder="{&quot;min&quot;:2, &quot;max&quot;:4}" rows="2" oninput="fit(this);"></textarea>
+        <textarea id="vars" placeholder="{&quot;min&quot;:2, &quot;max&quot;:4}" rows="2" oninput="fit(this);" onchange="unlink();return false"></textarea>
       </div>
       <div>
         <label for="json">JSON</label><br />
-        <textarea id="json" placeholder="{&quot;a&quot;:[1,2,3,4,5]}" rows="8" oninput="fit(this);"></textarea>
+        <textarea id="json" placeholder="{&quot;a&quot;:[1,2,3,4,5]}" rows="8" oninput="fit(this);" onchange="unlink();return false"></textarea>
       </div>
       <div>
         <button onClick="execute();" id="query-json" disabled>Execute</button>
