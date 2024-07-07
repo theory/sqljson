@@ -68,7 +68,7 @@
       u.searchParams.set("j", encodeURIComponent(jsonElm.value));
       u.searchParams.set("a", encodeURIComponent(varsElm.value));
       u.searchParams.set("o", getOptions());
-      u.searchParams.set("v", encodeURIComponent(sqljsonVersion));
+      // u.searchParams.set("v", encodeURIComponent(sqljsonVersion));
       permalinkElm.href = u.href;
       permalinkElm.className = "";
     }
@@ -120,12 +120,14 @@
 
         if (i == 2) { execute() }
 
+        /*
         if(u.searchParams.has("v")) {
           const v = u.searchParams.get("v")
           if(v !== sqljsonVersion) {
             $("message").innerHTML = "<div class=\"warn\">This link was created for sqljson/path@"+v+". Results may differ with this version.</div>";
           }
         }
+        */
       };
 
       if ('instantiateStreaming' in WebAssembly) {
