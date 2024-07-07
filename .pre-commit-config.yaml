@@ -25,10 +25,10 @@ repos:
         language: system
         entry: make golangci-lint
         pass_filenames: false
-      - id: build
-        name: build
+      - id: docs
+        name: docs
         language: system
-        entry: make all
+        entry: make docs/playground/index.html docs/playground/playground.css
         pass_filenames: false
 
   - repo: https://github.com/pre-commit/mirrors-prettier
