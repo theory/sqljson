@@ -40,9 +40,11 @@ Select options for execution and the display of results:
 *   **Silent**: Use [WithSilent] to suppress some errors, including missing
     object field or array element, unexpected JSON item type, and datetime and
     numeric errors.
-*   **TZ**: Use [WithTZ] to allow comparisons of date and time values that
-    require timezone-aware conversions. Note that the Playground currently
+*   **TZ Compare**: Use [WithTZ] to allow comparisons of date and time values
+    that require timezone-aware conversions. By default, the Playground
     operates in the context of [UTC].
+*   **Local TZ**: Convert and display times and timestamps in the context of
+    your browser's local time zone.
 *   **Pretty**: Pretty-print the the JSON result.
 
 ### Permalink

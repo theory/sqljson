@@ -22,7 +22,8 @@ const (
 	optExistsOrMatch
 	optFirst
 	optSilent
-	optTZ
+	optTZCompare
+	optLocalTZ
 	optIndent
 )
 
@@ -30,10 +31,9 @@ func query(_ js.Value, args []js.Value) any {
 	query := args[0].String()
 	target := args[1].String()
 	vars := args[2].String()
-	tz := args[3].String()
-	opts := args[4].Int()
+	opts := args[3].Int()
 
-	return execute(query, target, vars, tz, opts)
+	return execute(query, target, vars, opts)
 }
 
 func main() {
@@ -44,13 +44,14 @@ func main() {
 	js.Global().Set("optExistsOrMatch", js.ValueOf(optExistsOrMatch))
 	js.Global().Set("optFirst", js.ValueOf(optFirst))
 	js.Global().Set("optSilent", js.ValueOf(optSilent))
-	js.Global().Set("optTZ", js.ValueOf(optTZ))
+	js.Global().Set("optTZCompare", js.ValueOf(optTZCompare))
+	js.Global().Set("optLocalTZ", js.ValueOf(optLocalTZ))
 	js.Global().Set("optIndent", js.ValueOf(optIndent))
 
 	<-c
 }
 
-func execute(query, target, vars, tz string, opts int) string {
+func execute(query, target, vars string, opts int) string {
 	// Parse the JSON.
 	var value any
 	if err := json.Unmarshal([]byte(target), &value); err != nil {
@@ -63,13 +64,10 @@ func execute(query, target, vars, tz string, opts int) string {
 		return fmt.Sprintf("Error parsing %v", err)
 	}
 
-	// Parse the time zone (currently returns unimplemented error).
+	// Use local time zone if requested.
 	ctx := context.Background()
-	if zone, err := time.LoadLocation(tz); zone != nil {
-		ctx = types.ContextWithTZ(ctx, zone)
-	} else if err != nil {
-		// ERR: not implemented on js
-		// log.Printf("tzdata: %v", err)
+	if opts&optLocalTZ == optLocalTZ {
+		ctx = types.ContextWithTZ(ctx, time.Local)
 	}
 
 	// Assemble the options.
@@ -117,7 +115,7 @@ func assembleOptions(opts int, vars string) ([]exec.Option, string) {
 		options = append(options, exec.WithSilent())
 	}
 
-	if opts&optTZ == optTZ {
+	if opts&optTZCompare == optTZCompare {
 		options = append(options, exec.WithTZ())
 	}
 

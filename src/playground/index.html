@@ -16,7 +16,8 @@
       "optExistsOrMatch",
       "optFirst",
       "optSilent",
-      "optTZ",
+      "optTZCompare",
+      "optLocalTZ",
       "optIndent",
     ];
 
@@ -59,8 +60,7 @@
 
       messageElm.innerText = "";
       const options = getOptions();
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      outputElm.innerHTML = query(pathElm.value, jsonElm.value, vars.value, tz, options);
+      outputElm.innerHTML = query(pathElm.value, jsonElm.value, vars.value, options);
 
       const u = new URL(location.href);
       u.searchParams.set("p", encodeURIComponent(pathElm.value));
@@ -166,11 +166,13 @@
         </fieldset>
         <fieldset>
           <legend>Options</legend>
-          <input type="checkbox" title="Suppress some errors" id="optSilent" />&nbsp;
+          <input id="optSilent" type="checkbox" title="Suppress some errors" />&nbsp;
           <label for="optSilent" title="Suppress some errors">Silent</label>
-          <input type="checkbox" title="Allow comparison of date/time values that require timezone-aware conversions" id="optTZ" />&nbsp;
-          <label for="optTZ" title="Allow comparison of date/time values that require timezone-aware conversions">TZ</label>
-          <input type="checkbox" title="Pretty print the results (best used in query mode)" id="optIndent" />&nbsp;
+          <input id="optTZCompare" type="checkbox" title="Allow comparison of date/time values that require timezone-aware conversions" />&nbsp;
+          <label for="optTZCompare" title="Allow comparison of date/time values that require timezone-aware conversions">TZ Compare</label>
+          <input id="optLocalTZ" type="checkbox" title="Convert and display times and timestamps in your local time zone" />&nbsp;
+          <label for="optLocalTZ" title="Convert and display times and timestamps in your local time zone">Local TZ</label>
+          <input id="optIndent" type="checkbox" title="Pretty print the results (best used in query mode)" />&nbsp;
           <label for="optIndent" title="Pretty print the results (best used in query mode)">Pretty</label>
         </fieldset>
       </div>
