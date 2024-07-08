@@ -169,16 +169,30 @@
       <div>
         <fieldset>
           <legend>Mode</legend>
-          <input type="radio" id="optQuery" name="mode" checked title="Execute a query that selects and returns all the items found." onchange="unlink();return false" />&nbsp;<label for="optQuery" title="Execute a query that selects and returns all the items found.">Query</label>
-          <input type="radio" id="optFirst" name="mode" title="Execute a query that selects and return the first item found." onchange="unlink();return false" />&nbsp;<label for="optFirst" title="Execute a query that selects and return the first item found.">First</label>
-          <input type="radio" id="optExistsOrMatch" name="mode" title="Return true if the query finds or matches items, false if it does not, and null if the result is unknown" onchange="unlink();return false" />&nbsp;<label for="optExistsOrMatch" title="Return true if the query finds or matches items, false if it does not, and null if the result is unknown">Exists or Match</label>
+          <label title="Execute a query that selects and returns all the items found.">
+            <input type="radio" id="optQuery" name="mode" checked onchange="unlink();return false" />&nbsp;Query
+          </label>
+          <label title="Execute a query that selects and return the first item found.">
+            <input type="radio" id="optFirst" name="mode" onchange="unlink();return false" />&nbsp;First
+          </label>
+          <label title="Return true if the query finds or matches items, false if it does not, and null if the result is unknown">
+            <input type="radio" id="optExistsOrMatch" name="mode" onchange="unlink();return false" />&nbsp;Exists or Match
+          </label>
         </fieldset>
         <fieldset>
           <legend>Options</legend>
-          <input id="optSilent" type="checkbox" title="Suppress some errors" onchange="unlink();return false" />&nbsp;<label for="optSilent" title="Suppress some errors">WithSilent</label>
-          <input id="optTZCompare" type="checkbox" title="Allow comparison of date/time values that require timezone-aware conversions" onchange="unlink();return false" />&nbsp;<label for="optTZCompare" title="Allow comparison of date/time values that require timezone-aware conversions">WithTZ</label>
-          <input id="optLocalTZ" type="checkbox" title="Convert and display times and timestamps in your local time zone" onchange="unlink();return false" />&nbsp;<label for="optLocalTZ" title="Convert and display times and timestamps in your local time zone">Local TZ</label>
-          <input id="optIndent" type="checkbox" title="Pretty print the results (best used in query mode)" onchange="unlink();return false" />&nbsp;<label for="optIndent" title="Pretty print the results (best used in query mode)">Pretty</label>
+          <label title="Suppress some errors">
+            <input id="optSilent" type="checkbox" onchange="unlink();return false" />&nbsp;WithSilent
+          </label>
+          <label title="Allow comparison of date/time values that require timezone-aware conversions">
+            <input id="optTZCompare" type="checkbox" onchange="unlink();return false" />&nbsp;WithTZ
+          </label>
+          <label title="Convert and display times and timestamps in your local time zone">
+            <input id="optLocalTZ" type="checkbox" onchange="unlink();return false" />&nbsp;Local TZ
+          </label>
+          <label for="optIndent" title="Pretty print the results (best used in query mode)">
+            <input id="optIndent" type="checkbox" onchange="unlink();return false" />&nbsp;Pretty
+          </label>
         </fieldset>
       </div>
       <div>
