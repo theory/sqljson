@@ -169,47 +169,50 @@
       <div>
         <fieldset>
           <legend>Mode</legend>
-          <label title="Execute a query that selects and returns all the items found.">
-            <input type="radio" id="optQuery" name="mode" checked onchange="unlink();return false" />&nbsp;Query
+          <label class="nowrap" title="Execute a query that selects and returns all the items found.">
+            <input type="radio" id="optQuery" name="mode" checked onchange="unlink();return false" />Query
           </label>
-          <label title="Execute a query that selects and return the first item found.">
-            <input type="radio" id="optFirst" name="mode" onchange="unlink();return false" />&nbsp;First
+          <label class="nowrap" title="Execute a query that selects and return the first item found.">
+            <input type="radio" id="optFirst" name="mode" onchange="unlink();return false" />First
           </label>
-          <label title="Return true if the query finds or matches items, false if it does not, and null if the result is unknown">
-            <input type="radio" id="optExistsOrMatch" name="mode" onchange="unlink();return false" />&nbsp;Exists or Match
+          <label class="nowrap" title="Return true if the query finds or matches items, false if it does not, and null if the result is unknown">
+            <input type="radio" id="optExistsOrMatch" name="mode" onchange="unlink();return false" />Exists or Match
           </label>
         </fieldset>
         <fieldset>
           <legend>Options</legend>
-          <label title="Suppress some errors">
-            <input id="optSilent" type="checkbox" onchange="unlink();return false" />&nbsp;WithSilent
+          <label class="nowrap" title="Suppress some errors">
+            <input id="optSilent" type="checkbox" onchange="unlink();return false" />WithSilent
           </label>
-          <label title="Allow comparison of date/time values that require timezone-aware conversions">
-            <input id="optTZCompare" type="checkbox" onchange="unlink();return false" />&nbsp;WithTZ
+          <label class="nowrap" title="Allow comparison of date/time values that require timezone-aware conversions">
+            <input id="optTZCompare" type="checkbox" onchange="unlink();return false" />WithTZ
           </label>
-          <label title="Convert and display times and timestamps in your local time zone">
-            <input id="optLocalTZ" type="checkbox" onchange="unlink();return false" />&nbsp;Local TZ
+          <label class="nowrap" title="Convert and display times and timestamps in your local time zone">
+            <input id="optLocalTZ" type="checkbox" onchange="unlink();return false" />Local TZ
           </label>
-          <label for="optIndent" title="Pretty print the results (best used in query mode)">
-            <input id="optIndent" type="checkbox" onchange="unlink();return false" />&nbsp;Pretty
+          <label class="nowrap" for="optIndent" title="Pretty print the results (best used in query mode)">
+            <input id="optIndent" type="checkbox" onchange="unlink();return false" />Pretty
           </label>
         </fieldset>
       </div>
-      <div>
-        <a id="permalink" href="" class="disable" title="Reload with a permanent link that populates all the fields and executes the path">Permalink</a>&nbsp;&nbsp;&nbsp;
+      <div id="actions">
+        <a id="permalink" href="" class="disable" title="Reload with a permanent link that populates all the fields and executes the path">Permalink</a>
         <span id="clear" onclick="clearFields();return false;" title="Clear the fields">Clear</span>
       </div>
       <div>
-        <label for="path" title="The jsonpath expression to execute">Path</label><br />
-        <textarea id="path" title="The jsonpath expression to execute" placeholder="$.a[*] ? (@ >= $min && @ <= $max)" rows="2" oninput="fit(this);" onchange="unlink();return false"></textarea>
+        <label title="The jsonpath expression to execute">Path
+          <textarea id="path" placeholder="$.a[*] ? (@ >= $min && @ <= $max)" rows="2" oninput="fit(this);" onchange="unlink();return false"></textarea>
+        </label>
       </div>
       <div>
-        <label for="vars" title="JSON object mapping variables used in the Path to their values">Variables</label><br />
-        <textarea id="vars" title="JSON object mapping variables used in the Path to their values" placeholder="{&quot;min&quot;:2, &quot;max&quot;:4}" rows="2" oninput="fit(this);" onchange="unlink();return false"></textarea>
+        <label title="JSON object mapping variables used in the Path to their values">Variables
+          <textarea id="vars" title="JSON object mapping variables used in the Path to their values" placeholder="{&quot;min&quot;:2, &quot;max&quot;:4}" rows="2" oninput="fit(this);" onchange="unlink();return false"></textarea>
+        </label>
       </div>
       <div>
-        <label for="json" title="The JSON against which to execute the Path expression">JSON</label><br />
-        <textarea id="json" title="The JSON against which to execute the Path expression" placeholder="{&quot;a&quot;:[1,2,3,4,5]}" rows="8" oninput="fit(this);" onchange="unlink();return false"></textarea>
+        <label title="The JSON against which to execute the Path expression">JSON
+          <textarea id="json" title="The JSON against which to execute the Path expression" placeholder="{&quot;a&quot;:[1,2,3,4,5]}" rows="8" oninput="fit(this);" onchange="unlink();return false"></textarea>
+        </label>
       </div>
       <div>
         <button onClick="execute();" id="query-json" disabled>Execute</button>
