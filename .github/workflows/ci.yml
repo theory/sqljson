@@ -10,7 +10,7 @@ jobs:
     name: ${{ matrix.os[0] }} Test ${{ matrix.os[1] }}
     runs-on: ${{ matrix.os[1] }}-latest
     steps:
-      - name: Checkout Harpo
+      - name: Checkout Repo
         uses: actions/checkout@v4
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -21,7 +21,7 @@ jobs:
     name: 📊 Lint and Cover
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Harpo
+      - name: Checkout Repo
         uses: actions/checkout@v4
       - name: Setup Go
         uses: actions/setup-go@v5
