@@ -116,7 +116,7 @@ type Executor struct {
 // Option specifies an execution option.
 type Option func(*Executor)
 
-// WithVars passes specifies variables to use during execution.
+// WithVars specifies variables to use during execution.
 func WithVars(vars Vars) Option { return func(e *Executor) { e.vars = vars } }
 
 // WithTZ allows casting between TZ and non-TZ time and timestamp types.
