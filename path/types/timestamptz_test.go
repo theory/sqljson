@@ -34,7 +34,7 @@ func TestTimestampTZ(t *testing.T) {
 			// Check JSON
 			json, err := ts.MarshalJSON()
 			r.NoError(err)
-			a.Equal(fmt.Sprintf("%q", ts.Time.Format(timestampTZOutputFormat)), string(json))
+			a.JSONEq(fmt.Sprintf("%q", ts.Time.Format(timestampTZOutputFormat)), string(json))
 			ts2 := new(TimestampTZ)
 			r.NoError(ts2.UnmarshalJSON(json))
 			a.Equal(ts.Time, ts2.In(ts.Location()))

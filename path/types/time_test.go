@@ -41,7 +41,7 @@ func TestTime(t *testing.T) {
 			// Check JSON
 			json, err := ts.MarshalJSON()
 			r.NoError(err)
-			a.Equal(fmt.Sprintf("%q", ts.String()), string(json))
+			a.JSONEq(fmt.Sprintf("%q", ts.String()), string(json))
 			ts2 := new(Time)
 			r.NoError(ts2.UnmarshalJSON(json))
 			a.Equal(ts, ts2)

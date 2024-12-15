@@ -357,7 +357,7 @@ func (n *VariableNode) String() string {
 }
 
 // writeTo writes n.String to buf.
-func (n VariableNode) writeTo(buf *strings.Builder, _, _ bool) {
+func (n *VariableNode) writeTo(buf *strings.Builder, _, _ bool) {
 	buf.WriteString(n.String())
 	if next := n.Next(); next != nil {
 		next.writeTo(buf, true, true)
@@ -560,7 +560,7 @@ func (n *BinaryNode) writeTo(buf *strings.Builder, _, withParens bool) {
 }
 
 // priority returns the priority of n.op.
-func (n BinaryNode) priority() uint8 { return n.op.priority() }
+func (n *BinaryNode) priority() uint8 { return n.op.priority() }
 
 // Operator returns the BinaryNode's BinaryOperator.
 func (n *BinaryNode) Operator() BinaryOperator {
@@ -609,7 +609,7 @@ func (n *UnaryNode) String() string {
 }
 
 // priority returns the priority of n.op.
-func (n UnaryNode) priority() uint8 { return n.op.priority() }
+func (n *UnaryNode) priority() uint8 { return n.op.priority() }
 
 // writeTo writes the SQL/JSON path string representation of the unary
 // expression to buf. If withParens is true and the binary operation is
@@ -696,6 +696,7 @@ func LinkNodes(nodes []Node) Node {
 	}
 
 	// Append the remaining nodes to the list.
+	//nolint:gosec // disable G602 (xxx fixed in https://github.com/securego/gosec/commit/ea5b276?)
 	for _, next := range nodes[1:] {
 		end.setNext(next)
 		end = next
@@ -766,13 +767,14 @@ type AnyNode struct {
 }
 
 // NewAny returns a new AnyNode with first as its first index and last as its
-// last. If either number is negative it's considered unbounded.
+// last. If either number is negative it's considered unbounded. Numbers
+// greater than [math.MaxUint32] will max out at that number.
 func NewAny(first, last int) *AnyNode {
 	n := &AnyNode{first: math.MaxUint32, last: math.MaxUint32}
-	if first >= 0 {
+	if first >= 0 && first < math.MaxUint32 {
 		n.first = uint32(first)
 	}
-	if last >= 0 {
+	if last >= 0 && last < math.MaxUint32 {
 		n.last = uint32(last)
 	}
 	return n

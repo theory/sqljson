@@ -297,12 +297,12 @@ func (path *Path) Scan(src any) error {
 // Value implements sql.Valuer so that Paths can be written to databases
 // transparently. Currently, Paths map to strings. Please consult
 // database-specific driver documentation for matching types.
-func (path Path) Value() (driver.Value, error) {
+func (path *Path) Value() (driver.Value, error) {
 	return path.String(), nil
 }
 
 // MarshalText implements encoding.TextMarshaler.
-func (path Path) MarshalText() ([]byte, error) {
+func (path *Path) MarshalText() ([]byte, error) {
 	return path.MarshalBinary()
 }
 
@@ -312,7 +312,7 @@ func (path *Path) UnmarshalText(data []byte) error {
 }
 
 // MarshalBinary implements encoding.BinaryMarshaler.
-func (path Path) MarshalBinary() ([]byte, error) {
+func (path *Path) MarshalBinary() ([]byte, error) {
 	return []byte(path.String()), nil
 }
 

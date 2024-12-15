@@ -7,7 +7,7 @@ import (
 	"slices"
 
 	"github.com/theory/sqljson/path/ast"
-	"golang.org/x/exp/maps"
+	"golang.org/x/exp/maps" // Switch to maps when go 1.22 dropped
 )
 
 // kvBaseObject represents the "base object" and its "id" for .keyvalue()

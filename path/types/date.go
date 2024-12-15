@@ -54,7 +54,7 @@ func (d *Date) Compare(u time.Time) int {
 
 // MarshalJSON implements the json.Marshaler interface. The time is a quoted
 // string in the RFC 3339 format with sub-second precision.
-func (d Date) MarshalJSON() ([]byte, error) {
+func (d *Date) MarshalJSON() ([]byte, error) {
 	const dateJSONSize = len(dateFormat) + len(`""`)
 	b := make([]byte, 0, dateJSONSize)
 	b = append(b, '"')

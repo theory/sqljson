@@ -131,7 +131,7 @@ func TestKVBaseObject(t *testing.T) {
 				// The ID can vary at runtime (48, 96, 144, 480 are common, but so
 				// are much larger numbers), so just make sure it's greater than 0
 				// and less than 10000000000.
-				a.Greater(off, int64(0))
+				a.Positive(off)
 				a.Less(off, tenTen)
 			}
 		})

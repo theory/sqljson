@@ -335,12 +335,12 @@ func isHex(ch rune) bool     { return '0' <= ch && ch <= '9' || 'a' <= lower(ch)
 func (l *lexer) digits(ch0 rune, base int, invalid *rune) (ch rune, digSep int) {
 	ch = ch0
 	if base <= decimal {
-		max := rune('0' + base)
+		maxCh := rune('0' + base)
 		for isDecimal(ch) || ch == '_' {
 			ds := 1
 			if ch == '_' {
 				ds = 2
-			} else if ch >= max && *invalid == 0 {
+			} else if ch >= maxCh && *invalid == 0 {
 				*invalid = ch
 			}
 			digSep |= ds

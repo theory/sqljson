@@ -65,7 +65,7 @@ func (ts *Timestamp) Compare(u time.Time) int {
 
 // MarshalJSON implements the json.Marshaler interface. The time is a quoted
 // string using the "2006-01-02T15:04:05.999999999" format.
-func (ts Timestamp) MarshalJSON() ([]byte, error) {
+func (ts *Timestamp) MarshalJSON() ([]byte, error) {
 	const timestampJSONSize = len(timestampFormat) + len(`""`)
 	b := make([]byte, 0, timestampJSONSize)
 	b = append(b, '"')

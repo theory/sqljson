@@ -39,7 +39,7 @@ func TestDate(t *testing.T) {
 			// Check JSON
 			json, err := date.MarshalJSON()
 			r.NoError(err)
-			a.Equal(fmt.Sprintf("%q", date.String()), string(json))
+			a.JSONEq(fmt.Sprintf("%q", date.String()), string(json))
 			ts2 := new(Date)
 			r.NoError(ts2.UnmarshalJSON(json))
 			a.Equal(date, ts2)
