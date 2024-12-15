@@ -1,0 +1,20 @@
+{
+  "gopls": {
+    "build.env": {
+      "GOOS": "js",
+      "GOARCH": "wasm"
+    }
+  },
+  "cSpell.words": [
+    "datetime",
+    "Goldmark",
+    "Inuzuka",
+    "keyvalue",
+    "lval",
+    "shopspring",
+    "sqljson",
+    "timetz's",
+    "vals",
+    "Yusuke"
+  ]
+}

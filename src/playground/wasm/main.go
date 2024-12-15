@@ -1,3 +1,4 @@
+// package main provides the Wasm app.
 package main
 
 import (
@@ -7,10 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"html"
-	"time"
-
-	//nolint
 	"syscall/js"
+	"time"
 
 	"github.com/theory/sqljson/path"
 	"github.com/theory/sqljson/path/exec"
@@ -37,7 +36,7 @@ func query(_ js.Value, args []js.Value) any {
 }
 
 func main() {
-	c := make(chan struct{}, 0)
+	stream := make(chan struct{})
 
 	js.Global().Set("query", js.FuncOf(query))
 	js.Global().Set("optQuery", js.ValueOf(optQuery))
@@ -48,7 +47,7 @@ func main() {
 	js.Global().Set("optLocalTZ", js.ValueOf(optLocalTZ))
 	js.Global().Set("optIndent", js.ValueOf(optIndent))
 
-	<-c
+	<-stream
 }
 
 func execute(query, target, vars string, opts int) string {
@@ -59,7 +58,7 @@ func execute(query, target, vars string, opts int) string {
 	}
 
 	// Parse the SQL jsonpath query.
-	p, err := path.Parse(query)
+	jsonpath, err := path.Parse(query)
 	if err != nil {
 		return fmt.Sprintf("Error parsing %v", err)
 	}
@@ -67,6 +66,7 @@ func execute(query, target, vars string, opts int) string {
 	// Use local time zone if requested.
 	ctx := context.Background()
 	if opts&optLocalTZ == optLocalTZ {
+		//nolint:gosmopolitan // We want the browser time.
 		ctx = types.ContextWithTZ(ctx, time.Local)
 	}
 
@@ -80,11 +80,11 @@ func execute(query, target, vars string, opts int) string {
 	var res any
 	switch {
 	case opts&optQuery == optQuery:
-		res, err = p.Query(ctx, value, options...)
+		res, err = jsonpath.Query(ctx, value, options...)
 	case opts&optExistsOrMatch == optExistsOrMatch:
-		res, err = p.ExistsOrMatch(ctx, value, options...)
+		res, err = jsonpath.ExistsOrMatch(ctx, value, options...)
 	case opts&optFirst == optFirst:
-		res, err = p.First(ctx, value, options...)
+		res, err = jsonpath.First(ctx, value, options...)
 	}
 
 	// Error handling.
