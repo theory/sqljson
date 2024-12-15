@@ -15,6 +15,7 @@ check expressions.
 > This section was ported from the [PostgreSQL docs].
 
 <!-- See ./tests/example_test.go for runnable versions of all the examples. -->
+<!-- https://github.com/postgres/postgres/blob/REL_17_2/doc/src/sgml/func.sgml#L17343-#L18662 -->
 
 SQL/JSON Path is a query language for JSON values. A path expression applied
 to a JSON value produces a JSON result.
@@ -539,7 +540,9 @@ pp(path.MustQuery(
 The list of operators and methods available in JSON path expressions. Note
 that while the unary operators and methods can be applied to multiple values
 resulting from a preceding path step, the binary operators (addition etc.) can
-only be applied to single values.
+only be applied to single values. In lax mode, methods applied to an array
+will be executed for each value in the array. The exceptions are `.type()` and
+`.size()`, which apply to the array itself.
 
 **Note:** The examples below use this utility function to marshall JSON
 arguments:
@@ -643,8 +646,8 @@ String value converted from a JSON boolean, number, string, or datetime
 ([playground][play30], [playground][play31]):
 
 ``` go
-pp(path.MustQuery("$[*].string()", val(`[1.23, "xyz", false]`))) // → ["1.23","xyz","false"]
-pp(path.MustQuery("$.datetime().string()", "2023-08-15"))        // → ["2023-08-15"]
+pp(path.MustQuery("$[*].string()", val(`[1.23, "xyz", false]`)))    // → ["1.23","xyz","false"]
+pp(path.MustQuery("$.timestamp().string()", "2023-08-15 12:34:56")) // → ["2023-08-15T12:34:56"]
 ```
 
 #### `value . double() → number`
@@ -1085,40 +1088,27 @@ unavoidable differences and to-dos. These include:
     formatting language.
 
 *   Time zones. Postgres operates on time and time values in the context of
-    the in the time zone defined by the [TimeZone GUC] or the server's system
-    time zone. The path package does not rely on such global configuration. It
+    the time zone defined by the [TimeZone GUC] or the server's system time
+    zone. The path package does not rely on such global configuration. It
     instead uses the time zone configured in the context passed by the path
-    queries, an defaults to UTC if it's not set ([playground][play73]):
+    queries, and defaults to UTC if it's not set or included in the value
+    ([playground][play73]):
 
     ```go
-    p := path.MustParse("$.timestamp_tz().string()")
-    arg := "2023-08-15 12:34:56+05:30"
-    // Stringifies to UTC by default.
-    pp(p.MustQuery(context.Background(), arg)) // → ["2023-08-15T07:04:56+00"]
-    ```
+    p := path.MustParse("$.timestamp_tz()")
+    arg := "2023-08-15 12:34:56"
+    pp(p.MustQuery(context.Background(), arg, exec.WithTZ())) // → ["2023-08-15T12:34:56+00:00"]
 
-    To operate in a the context of a different time zone, use
-    [types.ContextWithTZ] to add it to the context:
-
-    ``` go
+    // Add a time zone to the context.
     tz, err := time.LoadLocation("America/New_York")
     if err != nil {
-        log.Fatal(err)
+    	log.Fatal(err)
     }
     ctx := types.ContextWithTZ(context.Background(), tz)
 
-    // Now stringifies to America/New_York.
-    pp(p.MustQuery(ctx, arg)) // → ["2023-08-15T03:04:56-04"]
+    // The output will now be in the custom time zone.
+    pp(p.MustQuery(ctx, arg, exec.WithTZ())) // → ["2023-08-15T12:34:56-04:00"]
     ```
-
-*   Date and time `string()` output. The output of the `.string()` method
-    chained after one of datetime methods (`datetime()`, `timestamp()`,
-    `timestamp_tz()`, etc.) is determined by the [DateStyle] configuration
-    parameter, just like the [output format] of the PostgreSQL types. The path
-    package's `string()` function formats dates and times only in the ISO
-    8601/SQL standard format, which is the Postgres default. Like the Postgres
-    ISO format, it includes no `T` between the date and time. An example:
-    `1997-12-17 07:37:16-08`.
 
 *   Regular expressions. Whereas the Postgres implementation of the `like_regex`
     expression relies on its [POSIX regular expression engine], the Go version
@@ -1212,7 +1202,6 @@ Copyright © 2024 David E. Wheeler
   [POSIX regular expression engine]: https://www.postgresql.org/docs/devel/functions-matching.html#FUNCTIONS-POSIX-REGEXP
   [regexp]: https://pkg.go.dev/regexp
   [backspace character]: https://en.wikipedia.org/wiki/Backspace
-  [DateStyle]: https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-DATESTYLE
   [TimeZone GUC]: https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-TIMEZONE
   [types.ContextWithTZ]: https://pkg.go.dev/github.com/theory/sqljson/path/types#ContextWithTZ
   [output format]: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-DATETIME-OUTPUT
@@ -1248,7 +1237,7 @@ Copyright © 2024 David E. Wheeler
   [play28]: https://theory.github.io/sqljson/playground/?p=%2524.m.size%28%29&j=%257B%2522m%2522%253A%2520%255B11%252C%252015%255D%257D&a=&o=1
   [play29]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D.boolean%28%29&j=%255B1%252C%2520%2522yes%2522%252C%2520false%255D&a=&o=1
   [play30]: https://theory.github.io/sqljson/playground/?p=%2524%255B*%255D.string%28%29&j=%255B1.23%252C%2520%2522xyz%2522%252C%2520false%255D&a=&o=1
-  [play31]: https://theory.github.io/sqljson/playground/?p=%2524.datetime%28%29.string%28%29&j=%25222023-08-15%2522&a=&o=1
+  [play31]: https://theory.github.io/sqljson/playground/?p=%2524.timestamp%28%29.string%28%29&j=%25222023-08-15%252012%253A34%253A56%2522
   [play32]: https://theory.github.io/sqljson/playground/?p=%2524.len.double%28%29%2520*%25202&j=%257B%2522len%2522%253A%2520%25221.9%2522%257D&a=&o=1
   [play33]: https://theory.github.io/sqljson/playground/?p=%2524.h.ceiling%28%29&j=%257B%2522h%2522%253A%25201.3%257D&a=&o=1
   [play34]: https://theory.github.io/sqljson/playground/?p=%2524.h.floor%28%29&j=%257B%2522h%2522%253A%25201.7%257D&a=&o=1
@@ -1290,4 +1279,4 @@ Copyright © 2024 David E. Wheeler
   [play70]: https://theory.github.io/sqljson/playground/?p=strict%2520%2524.*%2520%253F%2520%28exists%2520%28%2540%2520%253F%2520%28%2540%255B*%255D%2520%253E%25202%29%29%29&j=%257B%2522x%2522%253A%2520%255B1%252C%25202%255D%252C%2520%2522y%2522%253A%2520%255B2%252C%25204%255D%257D&a=&o=1
   [play71]: https://theory.github.io/sqljson/playground/?p=strict%2520%2524%2520%253F%2520%28exists%2520%28%2540.name%29%29%2520.name&j=%257B%2522x%2522%253A%2520%255B1%252C%25202%255D%252C%2520%2522y%2522%253A%2520%255B2%252C%25204%255D%257D&a=%257B%2522value%2522%253A%252042%257D&o=1
   [play72]: https://theory.github.io/sqljson/playground/?p=%2524.*%2520%253F%28%2540%2520like_regex%2520%2522%255E%255C%255Cd%252B%2524%2522%29&j=%257B%2522x%2522%253A%2520%252242%2522%252C%2520%2522y%2522%253A%2520%2522no%2522%257D&a=&o=1
-  [play73]: https://theory.github.io/sqljson/playground/?p=%2524.timestamp_tz%28%29.string%28%29&j=%25222023-08-15%252012%253A34%253A56%252B05%253A30%2522&a=&o=1&v=v0.1.0
+  [play73]: https://theory.github.io/sqljson/playground/?p=$.timestamp_tz()&j=%222023-08-15%2012:34:56%2b05:30%22&o=17

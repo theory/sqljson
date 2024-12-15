@@ -37,7 +37,6 @@ func TestTime(t *testing.T) {
 			a.Equal(&Time{Time: exp}, ts)
 			a.Equal(exp, ts.GoTime())
 			a.Equal(exp.Format(timeFormat), ts.String())
-			a.Equal(exp.Format(timeFormat), ts.ToString(ctx))
 
 			// Check JSON
 			json, err := ts.MarshalJSON()

@@ -178,7 +178,7 @@ func TestExecuteItem(t *testing.T) {
 			path:  "strict $.string()",
 			value: []any{int64(42), true},
 			exp:   statusFailed,
-			err:   `exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value`,
+			err:   `exec: jsonpath item method .string() can only be applied to a boolean, string, numeric, or datetime value`,
 			isErr: ErrVerbose,
 		},
 		{
@@ -278,7 +278,7 @@ func TestExecuteItemOptUnwrapResult(t *testing.T) {
 			value:  []any{int64(42), true},
 			unwrap: true,
 			exp:    statusFailed,
-			err:    `exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value`,
+			err:    `exec: jsonpath item method .string() can only be applied to a boolean, string, numeric, or datetime value`,
 			isErr:  ErrVerbose,
 		},
 		{

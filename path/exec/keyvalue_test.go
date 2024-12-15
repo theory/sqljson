@@ -266,7 +266,7 @@ func TestExecuteKeyValueMethod(t *testing.T) {
 			name: "next_error",
 			path: "$.keyvalue().string()",
 			json: map[string]any{"x": []any{}},
-			err:  "exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value",
+			err:  "exec: jsonpath item method .string() can only be applied to a boolean, string, numeric, or datetime value",
 			exp:  []any{},
 		},
 	} {

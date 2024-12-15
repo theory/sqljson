@@ -35,9 +35,7 @@ func Example_uTC() {
 	)
 
 	fmt.Printf("%v\n", timestamp)
-	fmt.Println(timestamp.ToString(ctx))
 	// Output: 2023-08-15T12:34:56+05:00
-	// 2023-08-15T07:34:56+00
 }
 
 // Postgres:
@@ -71,9 +69,7 @@ func Example_nYC() {
 	)
 
 	fmt.Printf("%v\n", timestamp)
-	fmt.Println(timestamp.ToString(ctx))
 	// Output: 2023-08-15T12:34:56+05:00
-	// 2023-08-15T03:34:56-04
 }
 
 // Postgres:

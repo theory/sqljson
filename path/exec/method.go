@@ -118,6 +118,7 @@ func (exec *Executor) execMethodSize(
 		size = len(value)
 	default:
 		if !exec.autoWrap() && !exec.ignoreStructuralErrors {
+			// https://github.com/postgres/postgres/blob/REL_17_2/src/backend/utils/adt/jsonpath_exec.c#L1114
 			return exec.returnVerboseError(fmt.Errorf(
 				"%w: jsonpath item method %v can only be applied to an array",
 				ErrVerbose, node.Name(),
@@ -331,13 +332,13 @@ func (exec *Executor) execMethodString(
 			return exec.executeItemUnwrapTargetArray(ctx, node, value, found)
 		}
 		return exec.returnVerboseError(fmt.Errorf(
-			`%w: jsonpath item method %v can only be applied to a bool, string, numeric, or datetime value`,
+			`%w: jsonpath item method %v can only be applied to a boolean, string, numeric, or datetime value`,
 			ErrVerbose, node.Name(),
 		))
 	case string:
 		str = val
 	case types.DateTime:
-		str = val.ToString(ctx)
+		str = val.String()
 	case json.Number:
 		str = val.String()
 	case int64:
@@ -352,7 +353,7 @@ func (exec *Executor) execMethodString(
 		}
 	default:
 		return exec.returnVerboseError(fmt.Errorf(
-			`%w: jsonpath item method %v can only be applied to a bool, string, numeric, or datetime value`,
+			`%w: jsonpath item method %v can only be applied to a boolean, string, numeric, or datetime value`,
 			ErrVerbose, name,
 		))
 	}
@@ -380,8 +381,9 @@ func (exec *Executor) execMethodBoolean(
 		if unwrap {
 			return exec.executeItemUnwrapTargetArray(ctx, node, value, found)
 		}
+		// https://github.com/postgres/postgres/blob/REL_17_2/src/backend/utils/adt/jsonpath_exec.c#L1386
 		return exec.returnVerboseError(fmt.Errorf(
-			"%w: jsonpath item method %v can only be applied to a bool, string, or numeric value",
+			"%w: jsonpath item method %v can only be applied to a boolean, string, or numeric value",
 			ErrVerbose, name,
 		))
 	case bool:
@@ -415,7 +417,7 @@ func (exec *Executor) execMethodBoolean(
 
 	default:
 		return exec.returnVerboseError(fmt.Errorf(
-			"%w: jsonpath item method %v can only be applied to a bool, string, or numeric value",
+			"%w: jsonpath item method %v can only be applied to a boolean, string, or numeric value",
 			ErrVerbose, name,
 		))
 	}
@@ -554,7 +556,7 @@ func (exec *Executor) executeNumberMethod(
 	return exec.executeNextItem(ctx, node, nil, num, found)
 }
 
-// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/include/utils/numeric.h#L32-L35
+// https://github.com/postgres/postgres/blob/REL_17_2/src/include/utils/numeric.h#L32-L35
 const (
 	numericMaxPrecision = 1000
 	numericMinScale     = -1000
@@ -581,7 +583,7 @@ func (exec *Executor) executeDecimalMethod(
 	}
 
 	// Verify the precision
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/backend/utils/adt/numeric.c#L1326-L1330
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/backend/utils/adt/numeric.c#L1333-L1337
 	if precision < 1 || precision > numericMaxPrecision {
 		return 0, fmt.Errorf(
 			"%w: NUMERIC precision %d must be between 1 and %d",
@@ -598,7 +600,7 @@ func (exec *Executor) executeDecimalMethod(
 		}
 
 		// Verify the scale.
-		// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/backend/utils/adt/numeric.c#L1331-L1335
+		// https://github.com/postgres/postgres/blob/REL_17_2/src/backend/utils/adt/numeric.c#L1338-L1342
 		if scale < numericMinScale || scale > numericMaxScale {
 			return 0, fmt.Errorf(
 				"%w: NUMERIC scale %d must be between %d and %d",

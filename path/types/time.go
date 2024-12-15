@@ -35,11 +35,6 @@ func (t *Time) String() string {
 	return t.Time.Format(timeFormat)
 }
 
-// ToString returns the output appropriate for the jsonpath string() method.
-func (t *Time) ToString(context.Context) string {
-	return t.String()
-}
-
 // ToTimeTZ converts t to *TimeTZ in the time zone in ctx. It works relative
 // the current date.
 func (t *Time) ToTimeTZ(ctx context.Context) *TimeTZ {

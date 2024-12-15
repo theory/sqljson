@@ -1,10 +1,10 @@
 //nolint:lll // Ignore long lines copied from Postgres.
 package exec
 
-// Tests from https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql
-// Results from https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/expected/jsonb_jsonpath.out
+// Tests from https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql
+// Results from https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/expected/jsonb_jsonpath.out
 // Test cases scaffolded by pasting each block of tests under __DATA__ in
-// pg2go.pl and running `./internal/sqljson/path/exec/pg2go.pl | pbcopy`.
+// .util/pg2go.pl and running `./.util/pg2go.pl | pbcopy`.
 
 import (
 	"context"
@@ -170,7 +170,7 @@ func TestPgAtQuestion(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1-L40
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L1-L40
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_1",
@@ -404,7 +404,7 @@ func TestPgQueryCompareAtQuestion(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L21-L26
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L21-L26
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_21",
@@ -445,7 +445,7 @@ func TestPgExists(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L42-L45
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L42-L45
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_1",
@@ -487,7 +487,7 @@ func TestPgQueryModes(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L47-L57
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L47-L57
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -573,7 +573,7 @@ func TestPgQueryStrict(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L59-L66
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L59-L66
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -641,7 +641,7 @@ func TestPgQueryBasics(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L68-L97
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L68-L97
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -843,7 +843,7 @@ func TestPgQueryBinaryOps(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L99-L115
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L99-L115
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -973,7 +973,7 @@ func TestPgQueryAny(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L117-L138
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L117-L138
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -1121,7 +1121,7 @@ func TestPgAtQuestionAny(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L140-L152
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L140-L152
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_1",
@@ -1215,7 +1215,7 @@ func TestPgQueryExists(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L154-L163
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L154-L163
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -1291,7 +1291,7 @@ func TestPgQueryTernaryLogic(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L166-L190
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L166-L190
 	path1 := `$[*] ? (@ == true  &&  ($x == true && $y == true) ||
 					  @ == false && !($x == true && $y == true) ||
 					  @ == null  &&  ($x == true && $y == true) is unknown)`
@@ -1441,7 +1441,7 @@ func TestPgAtQuestionFilter(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L192-L198
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L192-L198
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_1",
@@ -1499,7 +1499,7 @@ func TestPgQueryAnyMath(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L200-L203
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L200-L203
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -1539,7 +1539,7 @@ func TestPgAtQuestionAnyMath(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L204-L215
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L204-L215
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_1",
@@ -1627,7 +1627,7 @@ func TestPgQueryMathErrors(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L218-L230
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L218-L230
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -1725,7 +1725,7 @@ func TestPgAtQuestionMathErrors(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L231-L234
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L231-L234
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_1",
@@ -1765,7 +1765,7 @@ func TestPgQueryUnwrapping(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L236-L242
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L236-L242
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -1813,7 +1813,7 @@ func TestPgQueryBoolean(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L245-L247
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L245-L247
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -1847,7 +1847,7 @@ func TestPgAtQuestionBoolean(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L248
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L248
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_1",
@@ -1869,7 +1869,7 @@ func TestPgAtAtBoolean(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L250-L257
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L250-L257
 	for _, tc := range []matchTestCase{
 		{
 			name: "test_1",
@@ -1933,7 +1933,7 @@ func TestPgMatch(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L258-L264
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L258-L264
 	for _, tc := range []matchTestCase{
 		{
 			name: "test_1",
@@ -1989,7 +1989,7 @@ func TestPgQueryTypeMethod(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L267-L273
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L267-L273
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -2047,7 +2047,7 @@ func TestPgQueryAbsFloorType(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L275-L280
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L275-L280
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -2099,7 +2099,7 @@ func TestPgQuerySizeMethod(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L282-L284
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L282-L284
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -2137,7 +2137,7 @@ func TestPgQueryMethodChain(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L286-L290
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L286-L290
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -2198,7 +2198,7 @@ func TestPgQueryKeyValue(t *testing.T) {
 	array, ok := js(`[{"a": 1, "b": [1, 2]}, {"c": {"a": "bbb"}}]`).([]any)
 	r.True(ok)
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L292-L299
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L292-L299
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -2277,7 +2277,7 @@ func TestPgAtQuestionKeyValue(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L300-L301
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L300-L301
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_1",
@@ -2305,7 +2305,7 @@ func TestPgQueryDoubleMethod(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L303-L321
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L303-L321
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -2443,7 +2443,7 @@ func TestPgQueryAbsFloorCeilErr(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L323-L328
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L323-L328
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -2498,7 +2498,7 @@ func TestPgQueryStartsWith(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L330-L337
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L330-L337
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -2562,7 +2562,7 @@ func TestPgQueryLikeRegex(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L339-L348
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L339-L348
 	// pg: Using \t instead of \b, because \b is word boundary only in Go, while
 	// in Postgres it's bell. Using \t gets the original intent of the tests.
 	for _, tc := range []queryTestCase{
@@ -2640,7 +2640,7 @@ func TestPgQueryDateTimeErr(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L350-L358
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L350-L358
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -2712,7 +2712,7 @@ func TestPgQueryDateTimeAtQuestion(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L360
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L360
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_1",
@@ -2743,7 +2743,7 @@ func TestPgQueryDateTimeFormat(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L361-L373
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L361-L373
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -2826,7 +2826,7 @@ func TestPgQueryBigInt(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L375-L405
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L375-L405
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -3031,13 +3031,13 @@ func TestPgQueryBooleanMethod(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L407-L447
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L407-L447
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
 			json: js(`null`),
 			path: `$.boolean()`,
-			err:  `exec: jsonpath item method .boolean() can only be applied to a bool, string, or numeric value`,
+			err:  `exec: jsonpath item method .boolean() can only be applied to a boolean, string, or numeric value`,
 		},
 		{
 			name: "test_2",
@@ -3056,13 +3056,13 @@ func TestPgQueryBooleanMethod(t *testing.T) {
 			name: "test_4",
 			json: js(`[]`),
 			path: `strict $.boolean()`,
-			err:  `exec: jsonpath item method .boolean() can only be applied to a bool, string, or numeric value`,
+			err:  `exec: jsonpath item method .boolean() can only be applied to a boolean, string, or numeric value`,
 		},
 		{
 			name: "test_5",
 			json: js(`{}`),
 			path: `$.boolean()`,
-			err:  `exec: jsonpath item method .boolean() can only be applied to a bool, string, or numeric value`,
+			err:  `exec: jsonpath item method .boolean() can only be applied to a boolean, string, or numeric value`,
 		},
 		{
 			name: "test_6",
@@ -3299,7 +3299,7 @@ func TestPgQueryDateMethod(t *testing.T) {
 	r.NoError(err)
 	ctx := types.ContextWithTZ(context.Background(), loc)
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L449-L466
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L449-L466
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -3401,7 +3401,7 @@ func TestPgQueryDateAtQuestion(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L458
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L458
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_8",
@@ -3422,7 +3422,7 @@ func TestPgQueryDateMethodSyntaxError(t *testing.T) {
 	r := require.New(t)
 	a := assert.New(t)
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L468
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L468
 	t.Run("test_16", func(t *testing.T) {
 		t.Parallel()
 		path, err := parser.Parse("$.date(2)")
@@ -3438,7 +3438,7 @@ func TestPgQueryDecimalMethod(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L470-L514
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L470-L514
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -3726,7 +3726,7 @@ func TestPgQueryIntegerMethod(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L516-L544
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L516-L544
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -3919,7 +3919,7 @@ func TestPgQueryNumberMethod(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L546-L573
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L546-L573
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -4108,13 +4108,13 @@ func TestPgQueryStringMethod(t *testing.T) {
 	r.NoError(err)
 	ctx := types.ContextWithTZ(context.Background(), loc)
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L575-L592
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L575-L605
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
 			json: js(`null`),
 			path: `$.string()`,
-			err:  `exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value`,
+			err:  `exec: jsonpath item method .string() can only be applied to a boolean, string, numeric, or datetime value`,
 		},
 		{
 			name: "test_2",
@@ -4133,13 +4133,13 @@ func TestPgQueryStringMethod(t *testing.T) {
 			name: "test_4",
 			json: js(`[]`),
 			path: `strict $.string()`,
-			err:  `exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value`,
+			err:  `exec: jsonpath item method .string() can only be applied to a boolean, string, numeric, or datetime value`,
 		},
 		{
 			name: "test_5",
 			json: js(`{}`),
 			path: `$.string()`,
-			err:  `exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value`,
+			err:  `exec: jsonpath item method .string() can only be applied to a boolean, string, numeric, or datetime value`,
 		},
 		{
 			name: "test_6",
@@ -4197,33 +4197,130 @@ func TestPgQueryStringMethod(t *testing.T) {
 			path: `$.string()`,
 			exp:  []any{"2", "true"},
 		},
-		{
-			name: "test_15",
-			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +5:30
-			path: `$.timestamp().string()`,
-			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + tzHint,
-		},
-		{
-			name: "test_16",
-			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +5:30
-			path: `$.timestamp().string()`,
-			opt:  []Option{WithTZ()},
-			exp:  []any{"2023-08-15 00:04:56"}, // should work
-			// Tue Aug 15 00:04:56 2023
-		},
-		// pg: tests 17 & 18 use jsonb_path_query_array but our Query() always
+		// pg: tests 15 & 16 use jsonb_path_query_array but our Query() always
 		// returns a slice.
 		{
-			name: "test_17",
+			name: "test_15",
 			json: js(`[1.23, "yes", false]`),
 			path: `$[*].string()`,
 			exp:  []any{"1.23", "yes", "false"},
 		},
 		{
-			name: "test_18",
+			name: "test_16",
 			json: js(`[1.23, "yes", false]`),
 			path: `$[*].string().type()`,
 			exp:  []any{"string", "string", "string"},
+		},
+		{
+			name: "test_17",
+			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +5:30
+			path: `$.timestamp().string()`,
+			err:  `exec: cannot convert value from timestamptz to timestamp without time zone usage.` + tzHint,
+		},
+		{
+			name: "test_18",
+			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +5:30
+			path: `$.timestamp().string()`,
+			opt:  []Option{WithTZ()},
+			exp:  []any{"2023-08-15T00:04:56"}, // should work
+		},
+		{
+			name: "test_19",
+			json: js(`"2023-08-15 12:34:56"`),
+			path: `$.timestamp_tz().string()`,
+			err:  `exec: cannot convert value from timestamp to timestamptz without time zone usage.` + tzHint,
+		},
+		{
+			name: "test_20",
+			json: js(`"2023-08-15 12:34:56"`),
+			path: `$.timestamp_tz().string()`,
+			opt:  []Option{WithTZ()},
+			exp:  []any{"2023-08-15T12:34:56-07:00"}, // should work
+		},
+		{
+			name: "test_21",
+			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +5:30
+			path: `$.timestamp_tz().string()`,
+			exp:  []any{"2023-08-15T12:34:56+05:30"},
+		},
+		{
+			name: "test_22",
+			json: js(`"2023-08-15 12:34:56"`),
+			path: `$.timestamp().string()`,
+			exp:  []any{"2023-08-15T12:34:56"},
+		},
+		{
+			name: "test_23",
+			json: js(`"12:34:56+05:30"`), // pg: 12:34:56 +5:30
+			path: `$.time_tz().string()`,
+			exp:  []any{"12:34:56+05:30"},
+		},
+		// test_24 in TestPgQueryStringMethodTZ10 below
+		{
+			name: "test_25",
+			json: js(`"12:34:56"`),
+			path: `$.time().string()`,
+			exp:  []any{"12:34:56"},
+		},
+		{
+			name: "test_26",
+			json: js(`"2023-08-15"`),
+			path: `$.date().string()`,
+			exp:  []any{"2023-08-15"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.run(ctx, a, r)
+		})
+	}
+}
+
+func TestPgQueryStringMethodTZ10(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+	a := assert.New(t)
+	// We use +10 here, because the POSIX syntax used in the test, UTC-10,
+	// uses the opposite meaning for +/-.
+	// https://www.postgresql.org/docs/current/datetime-posix-timezone-specs.html
+	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 60*60*10)) // UTC-10
+
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L600-L603
+	for _, tc := range []queryTestCase{
+		{
+			name: "test_24",
+			json: js(`"12:34:56"`),
+			path: `$.time_tz().string()`,
+			opt:  []Option{WithTZ()},
+			exp:  []any{"12:34:56+10:00"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tc.run(ctx, a, r)
+		})
+	}
+}
+
+func TestPgQueryNoDateStyle(t *testing.T) {
+	t.Parallel()
+	r := require.New(t)
+	a := assert.New(t)
+	ctx := types.ContextWithTZ(context.Background(), time.UTC)
+
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L607-L613
+	for _, tc := range []queryTestCase{
+		{
+			name: "test_1",
+			json: js(`"2023-08-15 12:34:56+05:30"`), // pg: 2023-08-15 12:34:56 +5:30
+			path: `$.timestamp_tz().string()`,
+			exp:  []any{"2023-08-15T12:34:56+05:30"},
+		},
+		{
+			name: "test_2",
+			json: js(`"2023-08-15 12:34:56"`),
+			path: `$.timestamp().string()`,
+			exp:  []any{"2023-08-15T12:34:56"},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -4242,7 +4339,7 @@ func TestPgQueryTimeMethod(t *testing.T) {
 	r.NoError(err)
 	ctx := types.ContextWithTZ(context.Background(), loc)
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L594-L619
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L615-L640
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -4375,7 +4472,7 @@ func TestPgQueryTimeAtQuestion(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L603
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L624
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_8",
@@ -4396,7 +4493,7 @@ func TestPgQueryTimeMethodSyntaxError(t *testing.T) {
 	r := require.New(t)
 	a := assert.New(t)
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L612-L613
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L633-L634
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_15",
@@ -4427,7 +4524,7 @@ func TestPgQueryTimeTZMethod(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L621-L644
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L642-L665
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -4547,7 +4644,7 @@ func TestPgQueryTimeTZAtQuestion(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L630
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L651
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_8",
@@ -4568,7 +4665,7 @@ func TestPgQueryTimeTZMethodSyntaxError(t *testing.T) {
 	r := require.New(t)
 	a := assert.New(t)
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L637-L638
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L658-L659
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_13",
@@ -4602,7 +4699,7 @@ func TestPgQueryTimestampMethod(t *testing.T) {
 	r.NoError(err)
 	ctx := types.ContextWithTZ(context.Background(), loc)
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L646-L670
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L667-L691
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -4728,7 +4825,7 @@ func TestPgQueryTimestampAtQuestion(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L655
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L676
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_8",
@@ -4749,7 +4846,7 @@ func TestPgQueryTimestampMethodSyntaxError(t *testing.T) {
 	r := require.New(t)
 	a := assert.New(t)
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L663-L664
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L684-L685
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_14",
@@ -4783,7 +4880,7 @@ func TestPgQueryTimestampTZMethod(t *testing.T) {
 	r.NoError(err)
 	ctx := types.ContextWithTZ(context.Background(), loc)
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L672-L697
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L693-L718
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -4918,7 +5015,7 @@ func TestPgQueryTimestampTZAtQuestion(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L681
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L702
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_8",
@@ -4939,7 +5036,7 @@ func TestPgQueryTimestampTZMethodSyntaxError(t *testing.T) {
 	r := require.New(t)
 	a := assert.New(t)
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L690-L691
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L711-L712
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_15",
@@ -4970,7 +5067,7 @@ func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 	a := assert.New(t)
 	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L700-L723
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L721-L744
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -5129,7 +5226,7 @@ func TestPgQueryDateTimeMethodsPlus10(t *testing.T) {
 	a := assert.New(t)
 	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 10*3600))
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L725-L747
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L746-L768
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -5285,7 +5382,7 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 	r.NoError(err)
 	ctx := types.ContextWithTZ(context.Background(), loc)
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L749-L778
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L770-L799
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -5465,7 +5562,7 @@ func TestPgQueryDateComparison(t *testing.T) {
 	a := assert.New(t)
 	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L782-L828
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L803-L849
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -5586,7 +5683,7 @@ func TestPgQueryTimeComparison(t *testing.T) {
 	a := assert.New(t)
 	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L830-L882
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L851-L903
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -5720,7 +5817,7 @@ func TestPgQueryTimeTZComparison(t *testing.T) {
 	a := assert.New(t)
 	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L885-L937
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L906-L958
 	// All ` +1`s replaced with `+01`.
 	for _, tc := range []queryTestCase{
 		{
@@ -5855,7 +5952,7 @@ func TestPgQueryTimestampComparison(t *testing.T) {
 	a := assert.New(t)
 	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L939-L991
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L960-L1012
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -5989,7 +6086,7 @@ func TestPgQueryTimestampTZComparison(t *testing.T) {
 	a := assert.New(t)
 	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L993-L1045
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L1014-L1066
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -6123,7 +6220,7 @@ func TestPgQueryComparisonOverflow(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1048-L1049
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L1069-L1070
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -6145,7 +6242,7 @@ func TestPgQueryOperators(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1053-L1065
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L1076-L1086
 	for _, tc := range []queryTestCase{
 		{
 			name: "test_1",
@@ -6225,7 +6322,7 @@ func TestPgFirst(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1067-L1075
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L1088-L1096
 	for _, tc := range []firstTestCase{
 		{
 			name: "test_1",
@@ -6298,7 +6395,7 @@ func TestPgAtQuestionOperators(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1077-L1078
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L1098-L1099
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_1",
@@ -6326,7 +6423,7 @@ func TestPgExistsOperators(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1079-L1083
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L1100-L1104
 	for _, tc := range []existsTestCase{
 		{
 			name: "test_1",
@@ -6374,7 +6471,7 @@ func TestPgMatchOperators(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1085-L1101
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L1106-L1122
 	for _, tc := range []matchTestCase{
 		{
 			name: "test_1",
@@ -6493,16 +6590,16 @@ func TestPgAtAtOperators(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1097-L1098
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L1118-L1119
 	for _, tc := range []matchTestCase{
 		{
-			name: "test_1",
+			name: "test_13",
 			json: js(`[{"a": 1}, {"a": 2}]`),
 			path: `$[*].a > 1`,
 			exp:  true,
 		},
 		{
-			name: "test_2",
+			name: "test_14",
 			json: js(`[{"a": 1}, {"a": 2}]`),
 			path: `$[*].a > 2`,
 			exp:  false,
@@ -6521,7 +6618,7 @@ func TestPgFirstStringComparison(t *testing.T) {
 	a := assert.New(t)
 	ctx := context.Background()
 
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/sql/jsonb_jsonpath.sql#L1103-L1117
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonb_jsonpath.sql#L1124-L1138
 	i := 0
 	for _, tc := range []struct {
 		obj1 map[string]any
@@ -6532,7 +6629,7 @@ func TestPgFirstStringComparison(t *testing.T) {
 		ge   bool
 		gt   bool
 	}{
-		// Table copied from https://github.com/postgres/postgres/blob/REL_17_BETA1/src/test/regress/expected/jsonb_jsonpath.out#L4241-L4384
+		// Table copied from https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/expected/jsonb_jsonpath.out#L4317-L4460
 		{jv(`{"s": ""}`), jv(`{"s": ""}`), false, true, true, true, false},
 		{jv(`{"s": ""}`), jv(`{"s": "a"}`), true, true, false, false, false},
 		{jv(`{"s": ""}`), jv(`{"s": "ab"}`), true, true, false, false, false},

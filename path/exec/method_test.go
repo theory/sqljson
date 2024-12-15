@@ -262,7 +262,7 @@ func TestExecMethodNode(t *testing.T) {
 			node:  ast.NewMethod(ast.MethodString),
 			value: []any{true, int64(42)},
 			exp:   statusFailed,
-			err:   `exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value`,
+			err:   `exec: jsonpath item method .string() can only be applied to a boolean, string, numeric, or datetime value`,
 			isErr: ErrVerbose,
 		},
 		{
@@ -285,7 +285,7 @@ func TestExecMethodNode(t *testing.T) {
 			node:  ast.NewMethod(ast.MethodBoolean),
 			value: []any{"t", "n"},
 			exp:   statusFailed,
-			err:   `exec: jsonpath item method .boolean() can only be applied to a bool, string, or numeric value`,
+			err:   `exec: jsonpath item method .boolean() can only be applied to a boolean, string, or numeric value`,
 			isErr: ErrVerbose,
 		},
 		{
@@ -1193,35 +1193,35 @@ func TestExecMethodString(t *testing.T) {
 			node:  meth,
 			value: types.NewDate(now),
 			exp:   statusOK,
-			find:  []any{types.NewDate(now).ToString(ctx)},
+			find:  []any{types.NewDate(now).String()},
 		},
 		{
 			name:  "time",
 			node:  meth,
 			value: types.NewTime(now),
 			exp:   statusOK,
-			find:  []any{types.NewTime(now).ToString(ctx)},
+			find:  []any{types.NewTime(now).String()},
 		},
 		{
 			name:  "timetz",
 			node:  meth,
 			value: types.NewTimeTZ(now),
 			exp:   statusOK,
-			find:  []any{types.NewTimeTZ(now).ToString(ctx)},
+			find:  []any{types.NewTimeTZ(now).String()},
 		},
 		{
 			name:  "timestamp",
 			node:  meth,
 			value: types.NewTimestamp(now),
 			exp:   statusOK,
-			find:  []any{types.NewTimestamp(now).ToString(ctx)},
+			find:  []any{types.NewTimestamp(now).String()},
 		},
 		{
 			name:  "timestamptz",
 			node:  meth,
 			value: types.NewTimestampTZ(ctx, now),
 			exp:   statusOK,
-			find:  []any{types.NewTimestampTZ(ctx, now).ToString(ctx)},
+			find:  []any{types.NewTimestampTZ(ctx, now).String()},
 		},
 		{
 			name:  "stringer_json_number",
@@ -1263,7 +1263,7 @@ func TestExecMethodString(t *testing.T) {
 			node:  meth,
 			value: nil,
 			exp:   statusFailed,
-			err:   `exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value`,
+			err:   `exec: jsonpath item method .string() can only be applied to a boolean, string, numeric, or datetime value`,
 			isErr: ErrVerbose,
 		},
 		{
@@ -1271,7 +1271,7 @@ func TestExecMethodString(t *testing.T) {
 			node:  meth,
 			value: map[string]any{},
 			exp:   statusFailed,
-			err:   `exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value`,
+			err:   `exec: jsonpath item method .string() can only be applied to a boolean, string, numeric, or datetime value`,
 			isErr: ErrVerbose,
 		},
 		{
@@ -1279,7 +1279,7 @@ func TestExecMethodString(t *testing.T) {
 			node:  meth,
 			value: []any{int64(42), true},
 			exp:   statusFailed,
-			err:   `exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value`,
+			err:   `exec: jsonpath item method .string() can only be applied to a boolean, string, numeric, or datetime value`,
 			isErr: ErrVerbose,
 		},
 		{
@@ -1540,7 +1540,7 @@ func TestExecMethodBoolean(t *testing.T) {
 			node:  meth,
 			value: map[string]any{"x": true},
 			exp:   statusFailed,
-			err:   `exec: jsonpath item method .boolean() can only be applied to a bool, string, or numeric value`,
+			err:   `exec: jsonpath item method .boolean() can only be applied to a boolean, string, or numeric value`,
 			isErr: ErrVerbose,
 		},
 		{
@@ -1548,7 +1548,7 @@ func TestExecMethodBoolean(t *testing.T) {
 			node:  meth,
 			value: []any{true, false},
 			exp:   statusFailed,
-			err:   `exec: jsonpath item method .boolean() can only be applied to a bool, string, or numeric value`,
+			err:   `exec: jsonpath item method .boolean() can only be applied to a boolean, string, or numeric value`,
 			isErr: ErrVerbose,
 		},
 		{

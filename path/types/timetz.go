@@ -35,24 +35,11 @@ const (
 	timeTZHourFormat = "15:04:05.999999999Z07"
 	// timeTZOutputFormat outputs 00:00 zones.
 	timeTZOutputFormat = "15:04:05.999999999-07:00"
-	// timeTZOffHourOutputFormat is the ToString output format when the offset
-	// does not include minutes.
-	timeTZOffHourOutputFormat = "15:04:05.999999999-07"
 )
 
 // String returns the string representation of ts using the format
 // "15:04:05.999999999-07:00".
 func (t *TimeTZ) String() string {
-	return t.Time.Format(timeTZOutputFormat)
-}
-
-// ToString returns the jsonpath string() method format of ts in the local
-// time zone using the format "2006-01-02T15:04:05.999999999-07" or
-// "2006-01-02T15:04:05.999999999-07:00".
-func (t *TimeTZ) ToString(context.Context) string {
-	if _, off := t.Time.Zone(); off%secondsPerHour == 0 {
-		return t.Time.Format(timeTZOffHourOutputFormat)
-	}
 	return t.Time.Format(timeTZOutputFormat)
 }
 
@@ -66,7 +53,7 @@ func (t *TimeTZ) ToTime(context.Context) *Time {
 // that the TZ offset contributes to this comparison; values with different
 // offsets are never considered to be the same.
 func (t *TimeTZ) Compare(u time.Time) int {
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/backend/utils/adt/date.c#L2442-L2467
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/backend/utils/adt/date.c#L2442-L2467
 
 	// Primary sort is by true (GMT-equivalent) time.
 	cmp := t.Time.UTC().Compare(u.UTC())

@@ -976,8 +976,8 @@ func (tc testDatetimeCast) run(t *testing.T, cast func(*Executor) (types.DateTim
 // To test the handling of unknown types.DateTime types.
 type mockDateTime struct{}
 
-func (mockDateTime) GoTime() time.Time               { return time.Now() }
-func (mockDateTime) ToString(context.Context) string { return "" }
+func (mockDateTime) GoTime() time.Time { return time.Now() }
+func (mockDateTime) String() string    { return "" }
 func TestCastDate(t *testing.T) {
 	t.Parallel()
 	moment := stableTime()

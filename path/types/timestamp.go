@@ -29,25 +29,12 @@ const (
 	// timestampFormat represents the canonical string format for Timestamp
 	// values.
 	timestampFormat = "2006-01-02T15:04:05.999999999"
-
-	// timestampToStringFormat represents the format used by
-	// [Timestamp.ToString]. Like the [Postgres ISO format], it uses a space
-	// between the date and time, rather than a "T".
-	//
-	// [Postgres ISO format]: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-DATETIME-OUTPUT
-	timestampToStringFormat = "2006-01-02 15:04:05.999999999"
 )
 
 // String returns the string representation of ts using the format
 // "2006-01-02T15:04:05.999999999".
 func (ts *Timestamp) String() string {
 	return ts.Time.Format(timestampFormat)
-}
-
-// ToString returns the output appropriate for the jsonpath string() method.
-// It uses the format "2006-01-02 15:04:05.999999999".
-func (ts *Timestamp) ToString(context.Context) string {
-	return ts.Time.Format(timestampToStringFormat)
 }
 
 // ToDate converts ts to *Date.

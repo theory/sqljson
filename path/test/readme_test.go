@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/theory/sqljson/path"
+	"github.com/theory/sqljson/path/exec"
 	"github.com/theory/sqljson/path/types"
 )
 
@@ -516,9 +517,9 @@ func Example_regexp_literal() {
 }
 
 func Example_custom_time_zone() {
-	p := path.MustParse("$.timestamp_tz().string()")
-	arg := "2023-08-15 12:34:56+05:30"
-	pp(p.MustQuery(context.Background(), arg)) // → ["2023-08-15T07:04:56+00"]
+	p := path.MustParse("$.timestamp_tz()")
+	arg := "2023-08-15 12:34:56"
+	pp(p.MustQuery(context.Background(), arg, exec.WithTZ())) // → ["2023-08-15T12:34:56+00:00"]
 
 	// Add a time zone to the context.
 	tz, err := time.LoadLocation("America/New_York")
@@ -528,7 +529,8 @@ func Example_custom_time_zone() {
 	ctx := types.ContextWithTZ(context.Background(), tz)
 
 	// The output will now be in the custom time zone.
-	pp(p.MustQuery(ctx, arg)) // → ["2023-08-15T03:04:56-04"]
-	// Output: ["2023-08-15T07:04:56+00"]
-	// ["2023-08-15T03:04:56-04"]
+	pp(p.MustQuery(ctx, arg, exec.WithTZ())) // → ["2023-08-15T12:34:56-04:00"]
+	// Output:
+	// ["2023-08-15T12:34:56+00:00"]
+	// ["2023-08-15T12:34:56-04:00"]
 }

@@ -44,11 +44,6 @@ func TestTimeTZ(t *testing.T) {
 			a.Equal(&TimeTZ{Time: exp}, ts)
 			a.Equal(exp, ts.GoTime())
 			a.Equal(exp.Format(timeTZOutputFormat), ts.String())
-			if _, off := exp.Zone(); off%secondsPerHour != 0 {
-				a.Equal(exp.Format(timeTZOutputFormat), ts.ToString(ctx))
-			} else {
-				a.Equal(exp.Format(timeTZOffHourOutputFormat), ts.ToString(ctx))
-			}
 
 			// Check JSON
 			json, err := ts.MarshalJSON()

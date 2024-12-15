@@ -60,7 +60,6 @@ add it to the context passed to any constructor or method that takes a context:
 	)
 
 	fmt.Printf("%v\n", timestamp)        // → 2023-08-15T07:34:56+00:00
-	fmt.Println(timestamp.ToString(ctx)) // → 2023-08-15T03:34:56-04
 
 This time zone affects casts, as well, between offset-aware types ([TimeTZ],
 [TimestampTZ]) and offset-unaware types ([Date], [Time], [Timestamp]). For any
@@ -69,8 +68,8 @@ execution, be sure to pass the same context to all operations.
 package types
 
 import (
-	"context"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -83,10 +82,7 @@ const secondsPerHour = 60 * 60
 
 // DateTime defines the interface for all date and time data types.
 type DateTime interface {
+	fmt.Stringer
 	// GoTime returns the underlying time.Time object.
 	GoTime() time.Time
-
-	// ToString returns the output appropriate for the jsonpath string()
-	// method, where appropriate in the time zone in ctx.
-	ToString(ctx context.Context) string
 }

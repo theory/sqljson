@@ -388,7 +388,7 @@ func TestExecAnyArray(t *testing.T) {
 			value: []any{true, false, nil},
 			exp:   statusFailed,
 			find:  []any{"true", "false"},
-			err:   "exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value",
+			err:   "exec: jsonpath item method .string() can only be applied to a boolean, string, numeric, or datetime value",
 			isErr: ErrVerbose,
 		},
 		{

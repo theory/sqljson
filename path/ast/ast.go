@@ -51,7 +51,7 @@
 //		}
 //	}
 //
-// [jsonpath.c]: https://github.com/postgres/postgres/blob/REL_17_BETA1/src/backend/utils/adt/jsonpath.c
+// [jsonpath.c]: https://github.com/postgres/postgres/blob/REL_17_2/src/backend/utils/adt/jsonpath.c
 package ast
 
 // Use golang.org/x/tools/cmd/stringer to generate the String method for enums
@@ -71,9 +71,7 @@ import (
 
 // Node represents a single node in the AST.
 type Node interface {
-	// String returns the properly-encoded and delimited SQL/JSON Path string
-	// representation of the node.
-	String() string
+	fmt.Stringer
 
 	// writeTo writes the string representation of a node to buf. inKey is true
 	// when the node is a key in an accessor list and withParens requires

@@ -787,7 +787,7 @@ func (l *lexer) scanEscape() rune {
 // scanUnicode decodes \uNNNN and \u{NN...} UTF-16 code points into UTF-8.
 func (l *lexer) scanUnicode() rune {
 	// Parsing borrowed from Postgres:
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/backend/utils/adt/jsonpath_scan.l#L669-L718
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/backend/utils/adt/jsonpath_scan.l#L669-L718
 	// and from encoding/json:
 	// https://cs.opensource.google/go/go/+/refs/tags/go1.22.1:src/encoding/json/decode.go;l=1253-1272
 	rr := l.decodeUnicode()
@@ -878,7 +878,7 @@ func isVariableRune(ch rune) bool {
 func (l *lexer) writeUnicode(r rune) {
 	// Should never need more than 4 max size UTF-8 characters (16 bytes) for a
 	// UTF-16 code point.
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/include/mb/pg_wchar.h#L345
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/src/include/mb/pg_wchar.h#L345
 	const maxUnicodeEquivalentString = utf8.UTFMax * 4
 	b := make([]byte, maxUnicodeEquivalentString)
 	n := utf8.EncodeRune(b, r)
@@ -894,7 +894,7 @@ func merge(r1, r2 rune) rune {
 
 func (l *lexer) scanHex() rune {
 	// Parsing borrowed from the Postgres JSON Path scanner:
-	// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/backend/utils/adt/jsonpath_scan.l#L720-L733
+	// https://github.com/postgres/postgres/blob/REL_17_2/src/backend/utils/adt/jsonpath_scan.l#L720-L733
 	if c1 := hexChar(l.next()); c1 >= 0 {
 		if c2 := hexChar(l.next()); c2 >= 0 {
 			decoded := merge(c1, c2)
@@ -965,7 +965,7 @@ func (l *lexer) decodeUnicode() rune {
 
 // hexVal turns a hex character into a rune. Returns -1 for an invalid hex code.
 // Adapted from the Postgres hexval function encoding/json's getu4 function:
-// https://github.com/postgres/postgres/blob/REL_17_BETA1/src/backend/utils/adt/jsonpath_scan.l#L575-L596
+// https://github.com/postgres/postgres/blob/REL_17_2/src/backend/utils/adt/jsonpath_scan.l#L575-L596
 // https://cs.opensource.google/go/go/+/refs/tags/go1.22.0:src/encoding/json/decode.go;l=1149-1170
 func hexChar(c rune) rune {
 	switch {

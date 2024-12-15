@@ -41,3 +41,7 @@ generate:
 .git/hooks/pre-commit:
 	@printf "#!/bin/sh\nmake lint\n" > $@
 	@chmod +x $@
+
+.PHONY: pg-diff # Generage diff statements aginst the Postgres source.
+pg-diff: .util/pglist.go
+	@go run $<

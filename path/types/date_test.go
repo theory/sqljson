@@ -35,7 +35,6 @@ func TestDate(t *testing.T) {
 			a.Equal(&Date{Time: tc.time}, date)
 			a.Equal(tc.time, date.GoTime())
 			a.Equal(tc.time.Format(dateFormat), date.String())
-			a.Equal(tc.time.Format(dateFormat), date.ToString(ctx))
 
 			// Check JSON
 			json, err := date.MarshalJSON()

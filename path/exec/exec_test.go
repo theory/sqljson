@@ -196,7 +196,7 @@ func TestQueryAndFirstAndExists(t *testing.T) {
 			name:  "error",
 			path:  "$.string()",
 			value: []any{1, 2},
-			err:   "exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value",
+			err:   "exec: jsonpath item method .string() can only be applied to a boolean, string, numeric, or datetime value",
 			isErr: ErrVerbose,
 		},
 		{
@@ -2094,19 +2094,19 @@ func TestExecuteStringMethod(t *testing.T) {
 			name: "time_tz_string",
 			path: `$.x.time_tz().string()`,
 			json: map[string]any{"x": "12:34:56Z"},
-			exp:  []any{"12:34:56+00"},
+			exp:  []any{"12:34:56+00:00"},
 		},
 		{
 			name: "timestamp_string",
 			path: `$.x.timestamp().string()`,
 			json: map[string]any{"x": "2024-05-05 12:34:56"},
-			exp:  []any{"2024-05-05 12:34:56"},
+			exp:  []any{"2024-05-05T12:34:56"},
 		},
 		{
 			name: "timestamp_tz_string",
 			path: `$.x.timestamp_tz().string()`,
 			json: map[string]any{"x": "2024-05-05 12:34:56Z"},
-			exp:  []any{pt(context.Background(), "2024-05-05 12:34:56Z").ToString(context.Background())},
+			exp:  []any{pt(context.Background(), "2024-05-05 12:34:56Z").String()},
 		},
 		{
 			name: "json_number_string",
@@ -2142,7 +2142,7 @@ func TestExecuteStringMethod(t *testing.T) {
 			name: "null_string",
 			path: `$.x.string()`,
 			json: map[string]any{"x": nil},
-			err:  `exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value`,
+			err:  `exec: jsonpath item method .string() can only be applied to a boolean, string, numeric, or datetime value`,
 		},
 		{
 			name: "array_string",
@@ -2154,7 +2154,7 @@ func TestExecuteStringMethod(t *testing.T) {
 			name: "obj_string",
 			path: `$.x.string()`,
 			json: map[string]any{"x": map[string]any{"hi": 42}},
-			err:  `exec: jsonpath item method .string() can only be applied to a bool, string, numeric, or datetime value`,
+			err:  `exec: jsonpath item method .string() can only be applied to a boolean, string, numeric, or datetime value`,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -2441,13 +2441,13 @@ func TestExecuteBooleanMethod(t *testing.T) {
 			name: "bool_array_strict",
 			path: "strict $.x.boolean()",
 			json: map[string]any{"x": []any{"0", true}},
-			err:  `exec: jsonpath item method .boolean() can only be applied to a bool, string, or numeric value`,
+			err:  `exec: jsonpath item method .boolean() can only be applied to a boolean, string, or numeric value`,
 		},
 		{
 			name: "bool_obj",
 			path: "strict $.x.boolean()",
 			json: map[string]any{"x": map[string]any{"0": true}},
-			err:  `exec: jsonpath item method .boolean() can only be applied to a bool, string, or numeric value`,
+			err:  `exec: jsonpath item method .boolean() can only be applied to a boolean, string, or numeric value`,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

@@ -30,12 +30,6 @@ func TestTimestampTZ(t *testing.T) {
 			a.Equal(&TimestampTZ{Time: tc.time, tz: tz}, ts)
 			a.Equal(tc.time, ts.GoTime())
 			a.Equal(tc.time.Format(timestampTZOutputFormat), ts.String())
-			loc := tc.time.In(tz)
-			if _, off := loc.Zone(); off%secondsPerHour != 0 {
-				a.Equal(loc.Format(timestampTZToStringFormat), ts.ToString(ctx))
-			} else {
-				a.Equal(loc.Format(timestampTZOffHourToStringFormat), ts.ToString(ctx))
-			}
 
 			// Check JSON
 			json, err := ts.MarshalJSON()
@@ -50,47 +44,6 @@ func TestTimestampTZ(t *testing.T) {
 			a.Equal(NewTime(ts.Time.In(tz)), ts.ToTime(ctx))
 			a.Equal(NewTimeTZ(ts.Time.In(tz)), ts.ToTimeTZ(ctx))
 			a.Equal(NewTimestamp(ts.Time.In(tz)), ts.ToTimestamp(ctx))
-		})
-	}
-}
-
-func TestTimestampTZToString(t *testing.T) {
-	t.Parallel()
-	a := assert.New(t)
-
-	for _, tc := range timestampTestCases(t) {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			// Don't test Time and TimeTZ
-			switch tc.ctor(time.Time{}, &time.Location{}).(type) {
-			case *Time, *TimeTZ:
-				return
-			}
-
-			for _, zc := range []struct {
-				name     string
-				offset   int
-				withMins bool
-			}{
-				{"utc", 0, false},
-				{"plus_4", 4 * secondsPerHour, false},
-				{"minus_3", -3 * secondsPerHour, false},
-				{"five_30", 5*secondsPerHour + 30*60, true},
-				{"neg_2_15", -2*secondsPerHour + 15*60, true},
-			} {
-				t.Run(zc.name, func(t *testing.T) {
-					t.Parallel()
-					tz := time.FixedZone("", zc.offset)
-					ctx := ContextWithTZ(context.Background(), tz)
-					ts := NewTimestampTZ(ctx, tc.time)
-					loc := tc.time.In(tz)
-					if zc.withMins {
-						a.Equal(loc.Format(timestampTZToStringFormat), ts.ToString(ctx))
-					} else {
-						a.Equal(loc.Format(timestampTZOffHourToStringFormat), ts.ToString(ctx))
-					}
-				})
-			}
 		})
 	}
 }

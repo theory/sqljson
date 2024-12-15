@@ -30,11 +30,6 @@ func (d *Date) String() string {
 	return d.Time.Format(dateFormat)
 }
 
-// ToString returns the output appropriate for the jsonpath string() method.
-func (d *Date) ToString(context.Context) string {
-	return d.String()
-}
-
 // ToTimestamp converts ts to *Timestamp.
 func (d *Date) ToTimestamp(context.Context) *Timestamp {
 	return NewTimestamp(d.Time)

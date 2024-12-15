@@ -11,7 +11,7 @@
  * Copyright (c) 2019-2024, PostgreSQL Global Development Group
  *
  * IDENTIFICATION
- *	https://git.postgresql.org/gitweb/?p=postgresql.git;a=blob;f=src/backend/utils/adt/jsonpath_gram.y;h=8733a0e;hb=HEAD
+ *	https://git.postgresql.org/gitweb/?p=postgresql.git;a=blob;f=src/backend/utils/adt/jsonpath_gram.y;hb=HEAD
  *
  *-------------------------------------------------------------------------
  */
