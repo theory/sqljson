@@ -18,17 +18,17 @@ repos:
       - id: go-mod-tidy
         name: Go mod tidy
         language: system
-        entry: make tidy
+        entry: go mod tidy
         pass_filenames: false
       - id: golangci-lint
         name: Go linting
         language: system
         entry: make golangci-lint
         pass_filenames: false
-      - id: docs
-        name: docs
+      - id: playground
+        name: playground
         language: system
-        entry: make docs/playground/index.html docs/playground/playground.css
+        entry: make playground
         pass_filenames: false
 
   - repo: https://github.com/pre-commit/mirrors-prettier

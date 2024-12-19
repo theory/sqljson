@@ -16,5 +16,8 @@
     "timetz's",
     "vals",
     "Yusuke"
-  ]
+  ],
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": "file:///Users/david/dev/go/sqljson/.github/workflows/deploy.yml"
+  }
 }
