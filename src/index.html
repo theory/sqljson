@@ -208,10 +208,10 @@
       <a href="https://github.com/theory/sqljson/tree/playground">on GitHub</a>.</p>
   </details>
   <details id="help">
-    <summary>JSONPath Expressions</summary>
+    <summary>SQL/JSON Path Expressions</summary>
     <h2>
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill:currentcolor;"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm1 16h-2v-2h2v2zm.976-4.885c-.196.158-.385.309-.535.459-.408.407-.44.777-.441.793v.133h-2v-.167c0-.118.029-1.177 1.026-2.174.195-.195.437-.393.691-.599.734-.595 1.216-1.029 1.216-1.627a1.934 1.934 0 0 0-3.867.001h-2C8.066 7.765 9.831 6 12 6s3.934 1.765 3.934 3.934c0 1.597-1.179 2.55-1.958 3.181z"></path></svg>
-      JSONPath Expressions
+      SQL/JSON Path Expressions
     </h2>
     <table>
       <thead>
@@ -230,52 +230,64 @@
           <td>current node identifier (valid only within filter selectors)</td>
         </tr>
         <tr>
-          <td><code>[&lt;selectors&gt;]</code></td>
-          <td>child segment: selects zero or more children of a node</td>
-        </tr>
-        <tr>
-          <td><code>.name</code></td>
-          <td>shorthand for <code>['name']</code></td>
-        </tr>
-        <tr>
-          <td><code>.*</code></td>
-          <td>shorthand for <code>[*]</code></td>
-        </tr>
-        <tr>
-          <td><code>..[&lt;selectors&gt;]</code></td>
-          <td>descendant segment: selects zero or more descendants of a node</td>
-        </tr>
-        <tr>
-          <td><code>..name</code></td>
-          <td>shorthand for <code>..['name']</code></td>
-        </tr>
-        <tr>
-          <td><code>..*</code></td>
-          <td>shorthand for <code>..[*]</code></td>
-        </tr>
-        <tr>
-          <td><code>'name'</code> or <code>"name"</code></td>
+          <td><code>."name"</code></td>
           <td>name selector: selects a named child of an object</td>
         </tr>
         <tr>
-          <td><code>*</code></td>
+          <td><code>.name</code></td>
+          <td>shorthand for <code>."name"</code></td>
+        </tr>
+        <tr>
+          <td><code>.*</code></td>
           <td>wildcard selector: selects all children of a node</td>
         </tr>
         <tr>
-          <td><code>3</code></td>
-          <td>index selector: selects an indexed child of an array (from 0)</td>
+          <td><code>.**</code></td>
+          <td>recursive wildcard accessor: selects zero or more descendants of a node</td>
         </tr>
         <tr>
-          <td><code>0:100:5</code></td>
-          <td>array slice selector: <code>start:end:step</code> for arrays</td>
+          <td><code>.**{3}</code></td>
+          <td>recursive wildcard accessor: selects up to specified level of hierarchy</td>
         </tr>
         <tr>
-          <td><code>?&lt;logical-expr&gt;</code></td>
-          <td>filter selector: selects particular children using a logical expression</td>
+          <td><code>.**{2 to 5}</code></td>
+          <td>recursive wildcard accessor: selects from start to end level</td>
         </tr>
         <tr>
-          <td><code>length(@.foo)</code></td>
-          <td>function extension: invokes a function in a filter expression</td>
+          <td><code>[&lt;subscripts&gt;]</code></td>
+          <td>array selector with comma-delimited subscripts</td>
+        </tr>
+        <tr>
+          <td><code>[3]</code></td>
+          <td>index selector subscript: selects an indexed child of an array</td>
+        </tr>
+        <tr>
+          <td><code>[3 to last]</code></td>
+          <td>array slice subscript: select slice from start to end index (or <code>last</code>)</td>
+        </tr>
+        <tr>
+          <td><code>[*]</code></td>
+          <td>wildcard array selector: returns all array elements.</td>
+        </tr>
+        <tr>
+          <td><code>$var_name</code></td>
+          <td>a variable referring to a value in the Vars object</td>
+        </tr>
+        <tr>
+          <td><code>strict</code></td>
+          <td>raise error on a structural error</td>
+        </tr>
+        <tr>
+          <td><code>lax</code></td>
+          <td>suppress structural errors</td>
+        </tr>
+        <tr>
+          <td><code>?(&lt;expr&gt;)</code></td>
+          <td>filter selector: selects and transforms children</td>
+        </tr>
+        <tr>
+          <td><code>.size()</code></td>
+          <td>method selector</td>
         </tr>
       </tbody>
     </table>
