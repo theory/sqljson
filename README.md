@@ -85,6 +85,28 @@ the above Path expression successfully executes against:
 { "a": [1,2,3,4,5] }
 ```
 
+## Syntax Summary
+
+| Syntax Element     | Description                                                             |
+| ------------------ | ----------------------------------------------------------------------- |
+| `$`                | root node identifier                                                    |
+| `@`                | current node identifier (valid only within filter selectors)            |
+| `."name"`          | name selector: selects a named child of an object                       |
+| `.name`            | shorthand for `."name"`                                                 |
+| `.*`               | wildcard selector: selects all children of a node                       |
+| `.**`              | recursive wildcard accessor: selects zero or more descendants of a node |
+| `.**{3}`           | recursive wildcard accessor: selects up to specified level of hierarchy |
+| `.**{2 to 5}`      | recursive wildcard accessor: selects from start to end level            |
+| `[<subscripts>]`   | array selector with comma-delimited subscripts                          |
+| `[3]`              | index selector subscript: selects an indexed child of an array          |
+| `[3 to last]`      | array slice subscript: select slice from start to end index (or `last`) |
+| `[*]`              | wildcard array selector: returns all array elements.                    |
+| `$var_name`        | a variable referring to a value in the Vars object                      |
+| `strict`           | raise error on a structural error                                       |
+| `lax`              | suppress structural errors                                              |
+| `?(<expr>)`        | filter selector: selects and transforms children                        |
+| `.size()`          | method selector                                                         |
+
 ## Copyright and License
 
 Copyright (c) 2024 David E. Wheeler. Distributed under the [PostgreSQL License].
