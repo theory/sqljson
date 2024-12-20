@@ -2,17 +2,19 @@ Go SQL/JSON Path Playground
 ===========================
 
 The source for the [Go SQL/JSON Path Playground], a stateless single-page web
-site for experimenting with the [Go SQL/JSON Path] package. Compiled
-via [Go WebAssembly] into a ca. 5MB [Wasm] file and loaded directly into the
-page. All functionality implemented in JavaScript and Go, heavily borrowed
-from the [Goldmark Playground].
+site for experimenting with the [Go SQL/JSON Path] package. Compiled via [Go
+WebAssembly] into a ca. 4.5 MB (1.3MB compressed) [Wasm] file and loaded
+directly into the page. All functionality implemented in JavaScript and Go,
+[Go JSONPath Playground], [Goldmark Playground] and [serde_json_path Sandbox].
 
 Usage
 -----
 
-To get started, paste the JSON to query into the JSON field and input the
-jsonpath expression into the Path field, then hit the "Execute" button to see
-the result of the path expression executed on the JSON.
+On load, the form will be filled with sample JSON, a randomly-selected example
+query, and, in some cases, option adjustments for the query. To try your own,
+paste the JSON to query into the "JSON" field and input the jsonpath
+expression into the "Path" field, then hit the "Run Query" button to see the
+the values the path query selects from the JSON.
 
 That's it.
 
@@ -42,15 +44,13 @@ Select options for execution and the display of results:
     numeric errors.
 *   **WithTZ**: Use [WithTZ] to allow comparisons of datetime values that
     require timezone-aware conversions.
-*   **LocalTZ**: Use [ContextWithTZ] to convert and display times and
-    timestamps in the context of your browser's local time zone instead of
-    [UTC].
+*   **LocalTZ**: Use [ContextWithTZ] to parse times and timestamps in the
+    context of your browser's local time zone instead of [UTC].
 
 ### Permalink
 
-Once a query has been executed, this link will become active. Hit it to reload
-the page with a URL that contains the contents of all the fields and executes
-the results. Use for sharing.
+Hit this button to reload the page with a URL that contains the contents of
+all the fields. Use for sharing.
 
 Note that the Playground is stateless; no data is stored except in the
 Permalink URL itself (and whatever data collection GitHub injects; see its
@@ -67,9 +67,9 @@ $.a[*] ? (@ >= $min && @ <= $max)
 
 ### Variables
 
-Input the variables used in the Path as a JSON object. For example, the Path
-example above references two variables, `$min` and `$max`. The object to set
-their values might be:
+Input the variables used in the *Path* as a JSON object. For example, the
+*Path* example above references two variables, `$min` and `$max`. The object
+to set their values might be:
 
 ``` json
 { "min": 2, "max": 4 }
@@ -77,7 +77,7 @@ their values might be:
 
 ### JSON
 
-Input the JSON against which to execute the Path expression. May be any kind
+Input the JSON against which to execute the *Path* expression. May be any kind
 of JSON value, including objects, arrays, and scalar values. An example that
 the above Path expression successfully executes against:
 
