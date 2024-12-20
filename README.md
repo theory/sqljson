@@ -37,15 +37,14 @@ For the subtleties on the two behaviors of jsonpath expressions that use
 
 Select options for execution and the display of results:
 
-*   **Silent**: Use [WithSilent] to suppress some errors, including missing
+*   **WithSilent**: Use [WithSilent] to suppress some errors, including missing
     object field or array element, unexpected JSON item type, and datetime and
     numeric errors.
-*   **TZ Compare**: Use [WithTZ] to allow comparisons of datetime values that
+*   **WithTZ**: Use [WithTZ] to allow comparisons of datetime values that
     require timezone-aware conversions.
-*   **Local TZ**: Use [ContextWithTZ] to convert and display times and
+*   **LocalTZ**: Use [ContextWithTZ] to convert and display times and
     timestamps in the context of your browser's local time zone instead of
     [UTC].
-*   **Pretty**: Pretty-print the the JSON result.
 
 ### Permalink
 
@@ -56,10 +55,6 @@ the results. Use for sharing.
 Note that the Playground is stateless; no data is stored except in the
 Permalink URL itself (and whatever data collection GitHub injects; see its
 [privacy statement] for details).
-
-### Clear
-
-Clears the input fields and result.
 
 ### Path
 
@@ -94,15 +89,17 @@ the above Path expression successfully executes against:
 
 Copyright (c) 2024 David E. Wheeler. Distributed under the [PostgreSQL License].
 
-Based on [Goldmark Playground], copyright (c) 2024 Yusuke Inuzuka and
-distributed under the [MIT License].
+Based on [Goldmark Playground] the [serde_json_path Sandbox], with icons from
+[Boxicons], all distributed under the [MIT License].
 
   [Go SQL/JSON Path Playground]: https://theory.github.io/sqljson/playground
   [Go SQL/JSON Path]: https://pkg.go.dev/github.com/theory/sqljson/path
     "pkg.go.dev: github.com/theory/sqljson/path"
   [Wasm]: https://webassembly.org "WebAssembly"
   [Go WebAssembly]: https://go.dev/wiki/WebAssembly
+  [Go JSONPath Playground]: https://theory.github.io/jsonpath/playground
   [Goldmark Playground]: https://yuin.github.io/goldmark/playground
+  [serde_json_path Sandbox]: https://serdejsonpath.live
   [Query]: https://pkg.go.dev/github.com/theory/sqljson@v0.1.0/path#Path.Query
   [First]: https://pkg.go.dev/github.com/theory/sqljson@v0.1.0/path#Path.First
   [ExistsOrMatch]: https://pkg.go.dev/github.com/theory/sqljson@v0.1.0/path#Path.ExistsOrMatch
