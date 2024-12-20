@@ -203,10 +203,9 @@
       package into a browser-compatible Wasm file.</p>
     <p>Learn more about SQL/JSON Path by reading the
       <a href="https://www.postgresql.org/docs/current/functions-json.html#FUNCTIONS-SQLJSON-PATH" title="The SQL/JSON Path Language">PostgreSQL docs</a>,
-      and more about <strong>github.com/theory/jsonpath</strong> by following the links at the
+      and more about <strong>github.com/theory/sqljson/path</strong> by following the links at the
       bottom of the page. The code for this website can be found
-      <a href="https://github.com/theory/jsonpath/tree/playground">on
-      GitHub</a>.</p>
+      <a href="https://github.com/theory/sqljson/tree/playground">on GitHub</a>.</p>
   </details>
   <details id="help">
     <summary>JSONPath Expressions</summary>
@@ -294,10 +293,10 @@
     </div>
   </noscript>
   <div id="fluid">
-    <input id="path" placeholder="Enter a JSONPath query…" />
+    <input id="path" placeholder="Enter an SQL/JSON Path query…" />
     <div id="go">
       <button id="exec-btn">Run Query</button>
-      <button id="permalink" title="Reload with a permanent link that populates all the fields and executes the path">Permalink</button>
+      <button id="permalink" title="Reload with a permanent link that populates all the fields">Permalink</button>
     </div>
   </div>
   <div class="container">
@@ -312,7 +311,7 @@
           <input id="optSilent" type="checkbox" />
           WithSilent
         </label>
-        <label for="optTZCompare" class="nowrap" title="Print the string representation of the JSONTree">
+        <label for="optTZCompare" class="nowrap" title="Allow comparisons of datetime values that require timezone-aware conversions">
           <input id="optTZCompare" type="checkbox" />
           WithTZ
         </label>
@@ -325,7 +324,7 @@
           <span id="mode">
             <label class="nowrap" title="Execute a query that selects and returns all the items found.">
               <input type="radio" id="optQuery" name="mode" checked />Query
-            </label><label class="nowrap" title="Execute a query that selects and return the first item found.">
+            </label><label class="nowrap" title="Execute a query that selects and returns the first item found.">
               <input type="radio" id="optFirst" name="mode" />First
             </label><label class="nowrap" title="Return true if the query finds or matches items, false if it does not, and null if the result is unknown">
               <input type="radio" id="optExistsOrMatch" name="mode" />Exists or Match</label>
@@ -336,7 +335,7 @@
   </div>
   <div class="container">
     <div class="left">
-      <label title="The JSON against which to execute the Path expression">JSON Input
+      <label title="The JSON against which to execute the JSONPath query">JSON Input
         <textarea id="json"></textarea>
       </label>
     </div>
@@ -347,9 +346,9 @@
     </div>
   </div>
   <footer>
-    <p>Queries powered by the Go <strong>github.com/theory/jsonpath</strong> package:</p>
+    <p>Queries powered by the Go <strong>github.com/theory/sqljson/path</strong> package:</p>
     <div id="refs">
-      <a href="https://github.com/theory/jsonpath" title="GitHub Repository">
+      <a href="https://github.com/theory/sqljson" title="GitHub Repository">
         <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16" type="logo" color="#adb5bd"
           style="color: rgb(173, 181, 189);" height="24" width="24" xmlns="http://www.w3.org/2000/svg">
           <path
@@ -357,7 +356,7 @@
           </path>
         </svg>
       </a>
-      <a href="https://github.com/theory/jsonpath/blob/main/README.md" title="Documentation">
+      <a href="https://github.com/theory/sqljson/blob/main/path/README.md" title="Documentation">
         <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" color="#adb5bd"
           style="color: rgb(173, 181, 189);" height="26" width="26" xmlns="http://www.w3.org/2000/svg">
           <path
@@ -365,7 +364,7 @@
           </path>
         </svg>
       </a>
-      <a href="https://pkg.go.dev/github.com/theory/jsonpath" title="Go Package">
+      <a href="https://pkg.go.dev/github.com/theory/sqljson/path" title="Go Package">
         <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" type="logo" color="#adb5bd"
           style="color: rgb(173, 181, 189);" height="26" width="26" xmlns="http://www.w3.org/2000/svg">
           <path
