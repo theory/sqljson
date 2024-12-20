@@ -69,7 +69,10 @@
         {path: '$.store.book ?(@.price < $max && @.price > $min)', vars: {"min": 10, "max": 20 }},
         {path: '$.**.book ?(@.price < 20).title'},
         {path: '$.**.book ?(@.category == "reference").*'},
-        {path: '$.store.book[::-1]'},
+        {path: '$.store.book[2 to last].title'},
+        {path: '$.**.book ?(@.title like_regex " the ").title'},
+        {path: '$.**.book ?(@.title starts with "S").title'},
+        {path: 'strict $.** ? (exists (@ ? (@.price > 9)))'},
         {path: '$.**.author'},
         {path: '$.**.price'},
         {path: 'strict $.**.author'},
@@ -77,6 +80,8 @@
         {path: 'strict $.store.book[1, 3, 7]', opts: ["optSilent"]},
         {path: '$.**.book.published.timestamp_tz()'},
         {path: '$.store.bicycle.listed.timestamp_tz()', opts: ["optTZCompare", "optLocalTZ"]},
+        {path: '$.**.bicycle.keyvalue()'},
+        {path: '$.**.bicycle[0].price * 2'},
       ];
 
       const getQueryExample = () => {
