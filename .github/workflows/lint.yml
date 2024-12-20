@@ -11,9 +11,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Go
         uses: actions/setup-go@v5
-        with:
-          go-version-file: src/playground/wasm/go.mod
-          check-latest: true
+        with: { check-latest: true }
       - name: Install Dependencies
         run: make debian-lint-depends
       - name: Run pre-commit

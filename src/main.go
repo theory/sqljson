@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html"
 	"syscall/js"
 	"time"
 
@@ -45,7 +44,6 @@ func main() {
 	js.Global().Set("optSilent", js.ValueOf(optSilent))
 	js.Global().Set("optTZCompare", js.ValueOf(optTZCompare))
 	js.Global().Set("optLocalTZ", js.ValueOf(optLocalTZ))
-	js.Global().Set("optIndent", js.ValueOf(optIndent))
 
 	<-stream
 }
@@ -99,14 +97,12 @@ func execute(query, target, vars string, opts int) string {
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetEscapeHTML(false)
-	if opts&optIndent == optIndent {
-		enc.SetIndent("", "  ")
-	}
+	enc.SetIndent("", "  ")
 	if err := enc.Encode(res); err != nil {
 		return fmt.Sprintf("Error parsing results: %v", err)
 	}
 
-	return html.EscapeString(buf.String())
+	return buf.String()
 }
 
 func assembleOptions(opts int, vars string) ([]exec.Option, string) {

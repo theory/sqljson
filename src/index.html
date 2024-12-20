@@ -12,7 +12,12 @@
       const $$ = (q) => document.querySelector(q);
 
       const optionNames = [
-        "optIndent",
+        "optQuery",
+        "optExistsOrMatch",
+        "optFirst",
+        "optSilent",
+        "optTZCompare",
+        "optLocalTZ",
       ];
 
       const EXAMPLE_JSON = {
@@ -22,12 +27,14 @@
               "category": "reference",
               "author": "Nigel Rees",
               "title": "Sayings of the Century",
+              "published": "1984-01-01 12:53:02Z",
               "price": 8.95
             },
             {
               "category": "fiction",
               "author": "Evelyn Waugh",
               "title": "Sword of Honour",
+              "published": "1994-05-10 15:05:27Z",
               "price": 12.99
             },
             {
@@ -35,6 +42,7 @@
               "author": "Herman Melville",
               "title": "Moby Dick",
               "isbn": "0-553-21311-3",
+              "published": "1851-10-18 10:00:42Z",
               "price": 8.99
             },
             {
@@ -42,25 +50,32 @@
               "author": "J. R. R. Tolkien",
               "title": "The Lord of the Rings",
               "isbn": "0-395-19395-8",
+              "published": "1954-07-29 08:15:37Z",
               "price": 22.99
             }
           ],
           "bicycle": {
             "color": "red",
+            "listed": "2023-12-19 10:43:54",
             "price": 399
           }
         }
       }
 
       const QUERY_EXAMPLES = [
-        "$.store.book[?@.author == 'Herman Melville']['title', 'author', 'price']",
-        "$.store.book[?search(@.author, 'Waugh|Tolkien')]",
-        "$.store.book[?@.price < 20 && @.price > 10]",
-        "$..book[?@.price < 20].title",
-        "$..book[?@.category == 'reference'].*",
-        "$.store.book[::-1]",
-        "$..author",
-        "$..price",
+        '$.store.book ?(@.author == "Herman Melville").title',
+        '$.store.book ?(@.author like_regex "Waugh|Tolkien")',
+        "$.store.book ?(@.price < 20 && @.price > 10)",
+        '$.**.book ?(@.price < 20).title',
+        '$.**.book ?(@.category == "reference").*',
+        '$.store.book[::-1]',
+        '$.**.author',
+        '$.**.price',
+        'strict $.**.author',
+        'strict $.**.price',
+        'strict $.store.book[1, 3, 7]', // use WithSilent
+        '$.**.book.published.timestamp_tz()',
+        '$.store.bicycle.listed.timestamp_tz()', // use WithTZ
       ];
 
       const getQueryExample = () => QUERY_EXAMPLES[Math.floor(Math.random() * QUERY_EXAMPLES.length)];
@@ -86,7 +101,7 @@
       const execute = function () {
         const options = getOptions();
         const outputElm = $$('#values');
-        outputElm.value = query($('path').value, $('json').value, options);
+        outputElm.value = query($('path').value, $('json').value, $('vars').value, options);
         fit(outputElm);
       }
 
@@ -94,6 +109,7 @@
         const u = new URL(location.href);
         u.searchParams.set("p", encodeURIComponent($('path').value));
         u.searchParams.set("j", encodeURIComponent($('json').value));
+        u.searchParams.set("a", encodeURIComponent($('vars').value));
         u.searchParams.set("o", getOptions());
         window.location = u.href;
       }
@@ -118,6 +134,12 @@
         $("path").value = u.searchParams.has("p")
           ? decodeURIComponent(u.searchParams.get("p"))
           : getQueryExample();
+
+        if (u.searchParams.has("a")) {
+          const elem = $("vars");
+          elem.value = decodeURIComponent(u.searchParams.get("a"));
+          fit(elem);
+        }
 
         const json = $("json");
         json.value = u.searchParams.has("j")
