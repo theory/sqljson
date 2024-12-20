@@ -5,7 +5,7 @@ DST_DIR := pub
 # WASM_EXEC := $(shell tinygo env TINYGOROOT)/targets/wasm_exec.js
 WASM_EXEC := $(shell go env GOROOT)/misc/wasm/wasm_exec.js
 
-playground: $(DST_DIR)/play.wasm $(DST_DIR)/index.html $(DST_DIR)/wasm_exec.js $(DST_DIR)/play.css
+playground: $(DST_DIR)/play.wasm $(DST_DIR)/index.html $(DST_DIR)/wasm_exec.js $(DST_DIR)/play.css $(DST_DIR)/playground/index.html
 
 ROOT_DIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 $(DST_DIR)/play.wasm: $(SRC_DIR)/main.go
@@ -18,6 +18,10 @@ $(DST_DIR)/play.css: $(SRC_DIR)/play.css
 	cp $< $@
 
 $(DST_DIR)/index.html: $(SRC_DIR)/index.html
+	mkdir -p $(@D)
+	cp $< $@
+
+$(DST_DIR)/playground/index.html: $(SRC_DIR)/playground/index.html
 	mkdir -p $(@D)
 	cp $< $@
 
