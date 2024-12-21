@@ -66,8 +66,8 @@
         {path: '$.store.book ?(@.author == "Herman Melville").title'},
         {path: '$.store.book ?(@.author like_regex "Waugh|Tolkien")'},
         {path: '$.store.book ?(@.price < 20 && @.price > 10)'},
-        {path: '$.store.book ?(@.price < $max && @.price > $min)', vars: {"min": 10, "max": 20}},
-        {path: '$.**.book ?(@.price < $cost).title', vars: {"cost": 20}},
+        {path: '$.store.book ?(@.price < $max && @.price > $min)', vars: '{"min": 10, "max": 20}'},
+        {path: '$.**.book ?(@.price < $cost).title', vars: '{"cost": 20}'},
         {path: '$.**.book ?(@.category == "reference").*'},
         {path: '$.store.book[2 to last].title'},
         {path: '$.**.book ?(@.title starts with "S").title'},
@@ -80,12 +80,12 @@
         {path: '$.**.book.published.timestamp_tz()'},
         {path: '$.store.bicycle.listed.timestamp_tz()', opts: ["optTZCompare", "optLocalTZ"]},
         {path: '$.**.bicycle.keyvalue()'},
-        {path: '$.**.bicycle[0].price * $mul', vars: {"mul": 2}},
+        {path: '$.**.bicycle[0].price * $mul', vars: '{"mul": 2}'},
       ];
 
       const getQueryExample = () => {
         const cfg = QUERY_EXAMPLES[Math.floor(Math.random() * QUERY_EXAMPLES.length)];
-        if (cfg.vars) { $('vars').value = JSON.stringify(cfg.vars) }
+        if (cfg.vars) { $('vars').value = cfg.vars }
         if (cfg.opts) {
           for (const optionName of cfg.opts) {
             document.getElementById(optionName).checked = true
