@@ -19,7 +19,7 @@ $(DST_DIR)/play.css: $(SRC_DIR)/play.css
 
 $(DST_DIR)/index.html: $(SRC_DIR)/index.html
 	mkdir -p $(@D)
-	cp $< $@
+	version=$$(grep sqljson go.mod | awk '{print $$3}'); cat $< | sed -e "s!{{version}}!$${version}!g" > $@
 
 $(DST_DIR)/playground/index.html: $(SRC_DIR)/playground/index.html
 	mkdir -p $(@D)
