@@ -12,7 +12,8 @@ Usage
 
 On load, the form will be filled with sample JSON, a randomly-selected example
 query, and, in some cases, option adjustments for the query. Hit the "Run
-Query" button to see the values the path query selects from the JSON.
+Query" button to see the values the path query selects from the JSON appear in
+the "Query Output" field.
 
 To try your own, paste the JSON to query into the "JSON" field and input the
 jsonpath expression into the "Path" field, then hit the "Run Query" button to
