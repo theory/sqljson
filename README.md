@@ -3,7 +3,7 @@ Go SQL/JSON Path Playground
 
 The source for the [Go SQL/JSON Path Playground], a stateless single-page web
 site for experimenting with the [Go SQL/JSON Path] package. Compiled via [Go
-WebAssembly] into a ca. 4.5 MB (1.3MB compressed) [Wasm] file and loaded
+WebAssembly] into a ca. 4.5 MB (1.3 MB compressed) [Wasm] file and loaded
 directly into the page. All functionality implemented in JavaScript and Go,
 [Go JSONPath Playground], [Goldmark Playground] and [serde_json_path Sandbox].
 
@@ -11,14 +11,26 @@ Usage
 -----
 
 On load, the form will be filled with sample JSON, a randomly-selected example
-query, and, in some cases, option adjustments for the query. To try your own,
-paste the JSON to query into the "JSON" field and input the jsonpath
-expression into the "Path" field, then hit the "Run Query" button to see the
-the values the path query selects from the JSON.
+query, and, in some cases, option adjustments for the query. Hit the "Run
+Query" button to see the values the path query selects from the JSON.
+
+To try your own, paste the JSON to query into the "JSON" field and input the
+jsonpath expression into the "Path" field, then hit the "Run Query" button to
+see the the values the path query selects from the JSON.
 
 That's it.
 
 Read on for details and additional features.
+
+### Docs
+
+The two buttons in the top-right corner provide documentation and links.
+
+*   Hit the button with the circled question mark in the top right corner to
+    reveal a table summarizing the SQL/JSON Path syntax.
+
+*   Hit the button with the circled i for information about the SQL/JSON Path
+    playground.
 
 ### Mode
 
