@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file. It uses the
   [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
     "Semantic Versioning 2.0.0"
 
-## [v0.2.1] — 2024-12-15
+## [v0.2.1] — 2024-12-22
 
   [v0.2.1]: https://github.com/theory/sqljson/compare/v0.2.0...v0.2.1
 
