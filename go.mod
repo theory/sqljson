@@ -4,7 +4,7 @@ go 1.22.0
 
 toolchain go1.23.2
 
-require github.com/theory/sqljson v0.2.0
+require github.com/theory/sqljson v0.2.1
 
 require (
 	github.com/smasher164/xid v0.1.2 // indirect
