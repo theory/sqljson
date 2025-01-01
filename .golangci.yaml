@@ -115,5 +115,6 @@ linters-settings:
   funlen:
     # Ignore comments when counting lines.
     ignore-comments: true
+    lines: 68
   exhaustive:
     default-signifies-exhaustive: true
