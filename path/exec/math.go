@@ -202,9 +202,8 @@ func execMathOp(left, right any, op ast.BinaryOperator) (any, error) {
 			}
 			if right, err := right.Float64(); err == nil {
 				return executeFloatMath(float64(left), right, op)
-			} else {
-				return nil, mathOperandErr(op, "right")
 			}
+			return nil, mathOperandErr(op, "right")
 		default:
 			return nil, mathOperandErr(op, "right")
 		}
@@ -217,9 +216,8 @@ func execMathOp(left, right any, op ast.BinaryOperator) (any, error) {
 		case json.Number:
 			if right, err := right.Float64(); err == nil {
 				return executeFloatMath(left, right, op)
-			} else {
-				return nil, mathOperandErr(op, "right")
 			}
+			return nil, mathOperandErr(op, "right")
 		default:
 			return nil, mathOperandErr(op, "right")
 		}

@@ -132,15 +132,15 @@ func compareNumeric(left, right any) int {
 		case float64:
 			return compareNumbers(float64(left), right)
 		case json.Number:
-			if right, err := right.Int64(); err == nil {
-				return compareNumbers(left, right)
+			if rightInt, err := right.Int64(); err == nil {
+				return compareNumbers(left, rightInt)
 			}
-			if right, err := right.Float64(); err == nil {
-				return compareNumbers(float64(left), right)
-			} else {
-				// This should not happen.
-				panic(err)
+			rightFloat, err := right.Float64()
+			if err == nil {
+				return compareNumbers(float64(left), rightFloat)
 			}
+			// This should not happen.
+			panic(err)
 		}
 	case float64:
 		switch right := right.(type) {
@@ -149,23 +149,23 @@ func compareNumeric(left, right any) int {
 		case int64:
 			return compareNumbers(left, float64(right))
 		case json.Number:
-			if right, err := right.Float64(); err == nil {
-				return compareNumbers(left, right)
-			} else {
-				// This should not happen.
-				panic(err)
+			rightFloat, err := right.Float64()
+			if err == nil {
+				return compareNumbers(left, rightFloat)
 			}
+			// This should not happen.
+			panic(err)
 		}
 	case json.Number:
 		if left, err := left.Int64(); err == nil {
 			return compareNumeric(left, right)
 		}
-		if left, err := left.Float64(); err == nil {
-			return compareNumeric(left, right)
-		} else {
-			// This should not happen.
-			panic(err)
+		leftFloat, err := left.Float64()
+		if err == nil {
+			return compareNumeric(leftFloat, right)
 		}
+		// This should not happen.
+		panic(err)
 	}
 
 	// This should not happen
