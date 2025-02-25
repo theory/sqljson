@@ -158,7 +158,6 @@ func (n *ConstNode) Next() Node {
 // BinaryOperator represents a binary operator.
 type BinaryOperator int
 
-//revive:disable:exported
 const (
 	BinaryAnd            BinaryOperator = iota // &&
 	BinaryOr                                   // ||
@@ -202,7 +201,6 @@ func (op BinaryOperator) priority() uint8 {
 // UnaryOperator represents a unary operator.
 type UnaryOperator int
 
-//revive:disable:exported
 const (
 	UnaryExists      UnaryOperator = iota // exists
 	UnaryNot                              // !
@@ -233,7 +231,6 @@ func (op UnaryOperator) priority() uint8 {
 // MethodName represents the name of a path method.
 type MethodName int
 
-//revive:disable:exported
 const (
 	MethodAbs      MethodName = iota // .abs()
 	MethodSize                       // .size()
