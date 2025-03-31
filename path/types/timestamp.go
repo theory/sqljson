@@ -34,7 +34,7 @@ const (
 // String returns the string representation of ts using the format
 // "2006-01-02T15:04:05.999999999".
 func (ts *Timestamp) String() string {
-	return ts.Time.Format(timestampFormat)
+	return ts.Format(timestampFormat)
 }
 
 // ToDate converts ts to *Date.
@@ -69,7 +69,7 @@ func (ts *Timestamp) MarshalJSON() ([]byte, error) {
 	const timestampJSONSize = len(timestampFormat) + len(`""`)
 	b := make([]byte, 0, timestampJSONSize)
 	b = append(b, '"')
-	b = ts.Time.AppendFormat(b, timestampFormat)
+	b = ts.AppendFormat(b, timestampFormat)
 	b = append(b, '"')
 	return b, nil
 }

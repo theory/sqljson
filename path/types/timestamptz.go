@@ -46,27 +46,27 @@ const (
 // Context passed to NewTimestampTZ, using the format
 // "2006-01-02T15:04:05.999999999-07:00".
 func (ts *TimestampTZ) String() string {
-	return ts.Time.Format(timestampTZOutputFormat)
+	return ts.Format(timestampTZOutputFormat)
 }
 
 // ToDate converts ts to *Date in the time zone in ctx.
 func (ts *TimestampTZ) ToDate(ctx context.Context) *Date {
-	return NewDate(ts.Time.In(TZFromContext(ctx)))
+	return NewDate(ts.In(TZFromContext(ctx)))
 }
 
 // ToTime converts ts to *Time in the time zone in ctx.
 func (ts *TimestampTZ) ToTime(ctx context.Context) *Time {
-	return NewTime(ts.Time.In(TZFromContext(ctx)))
+	return NewTime(ts.In(TZFromContext(ctx)))
 }
 
 // ToTimestamp converts ts to *Timestamp in the time zone in ctx.
 func (ts *TimestampTZ) ToTimestamp(ctx context.Context) *Timestamp {
-	return NewTimestamp(ts.Time.In(TZFromContext(ctx)))
+	return NewTimestamp(ts.In(TZFromContext(ctx)))
 }
 
 // ToTimeTZ converts ts to TimeTZ in the time zone in ctx.
 func (ts *TimestampTZ) ToTimeTZ(ctx context.Context) *TimeTZ {
-	return NewTimeTZ(ts.Time.In(TZFromContext(ctx)))
+	return NewTimeTZ(ts.In(TZFromContext(ctx)))
 }
 
 // Compare compares the time instant ts with u. If ts is before u, it returns
@@ -81,7 +81,7 @@ func (ts *TimestampTZ) MarshalJSON() ([]byte, error) {
 	const timestampJSONSize = len(timestampTZOutputFormat) + len(`""`)
 	b := make([]byte, 0, timestampJSONSize)
 	b = append(b, '"')
-	b = ts.Time.AppendFormat(b, timestampTZOutputFormat)
+	b = ts.AppendFormat(b, timestampTZOutputFormat)
 	b = append(b, '"')
 	return b, nil
 }

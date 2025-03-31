@@ -34,16 +34,16 @@ func TestTimestampTZ(t *testing.T) {
 			// Check JSON
 			json, err := ts.MarshalJSON()
 			r.NoError(err)
-			a.JSONEq(fmt.Sprintf("%q", ts.Time.Format(timestampTZOutputFormat)), string(json))
+			a.JSONEq(fmt.Sprintf("%q", ts.Format(timestampTZOutputFormat)), string(json))
 			ts2 := new(TimestampTZ)
 			r.NoError(ts2.UnmarshalJSON(json))
 			a.Equal(ts.Time, ts2.In(ts.Location()))
 
 			// Test Conversion methods.
-			a.Equal(NewDate(ts.Time.In(tz)), ts.ToDate(ctx))
-			a.Equal(NewTime(ts.Time.In(tz)), ts.ToTime(ctx))
-			a.Equal(NewTimeTZ(ts.Time.In(tz)), ts.ToTimeTZ(ctx))
-			a.Equal(NewTimestamp(ts.Time.In(tz)), ts.ToTimestamp(ctx))
+			a.Equal(NewDate(ts.In(tz)), ts.ToDate(ctx))
+			a.Equal(NewTime(ts.In(tz)), ts.ToTime(ctx))
+			a.Equal(NewTimeTZ(ts.In(tz)), ts.ToTimeTZ(ctx))
+			a.Equal(NewTimestamp(ts.In(tz)), ts.ToTimestamp(ctx))
 		})
 	}
 }

@@ -35,8 +35,12 @@
 //		case *ast.IntegerNode:
 //		case *ast.AnyNode:
 //		case *ast.BinaryNode:
-//			processNode(node.Left())
-//			processNode(node.Right())
+//			if node.Left() != nil {
+//				processNode(node.Left())
+//			}
+//			if node.Right() != nil {
+//				processNode(node.Right())
+//			}
 //		case *ast.UnaryNode:
 //			processNode(node.Operand())
 //		case *ast.RegexNode:
@@ -46,7 +50,7 @@
 //				processNode(n)
 //			}
 //		}
-//		if next := node.Next(); node != nil {
+//		if next := node.Next(); next != nil {
 //			processNode(next)
 //		}
 //	}
@@ -805,14 +809,14 @@ func (n *AnyNode) writeTo(buf *strings.Builder, inKey, _ bool) {
 		if n.first == math.MaxUint32 {
 			buf.WriteString("**{last}")
 		} else {
-			buf.WriteString(fmt.Sprintf("**{%v}", n.first))
+			fmt.Fprintf(buf, "**{%v}", n.first)
 		}
 	case n.first == math.MaxUint32:
-		buf.WriteString(fmt.Sprintf("**{last to %v}", n.last))
+		fmt.Fprintf(buf, "**{last to %v}", n.last)
 	case n.last == math.MaxUint32:
-		buf.WriteString(fmt.Sprintf("**{%v to last}", n.first))
+		fmt.Fprintf(buf, "**{%v to last}", n.first)
 	default:
-		buf.WriteString(fmt.Sprintf("**{%v to %v}", n.first, n.last))
+		fmt.Fprintf(buf, "**{%v to %v}", n.first, n.last)
 	}
 	if next := n.Next(); next != nil {
 		next.writeTo(buf, true, true)
@@ -869,7 +873,7 @@ func (n *RegexNode) writeTo(buf *strings.Builder, _, withParens bool) {
 	}
 
 	n.operand.writeTo(buf, false, n.operand.priority() <= n.priority())
-	buf.WriteString(fmt.Sprintf(" like_regex %q%v", n.pattern, n.flags))
+	fmt.Fprintf(buf, " like_regex %q%v", n.pattern, n.flags)
 
 	if withParens {
 		buf.WriteRune(')')

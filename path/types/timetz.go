@@ -40,7 +40,7 @@ const (
 // String returns the string representation of ts using the format
 // "15:04:05.999999999-07:00".
 func (t *TimeTZ) String() string {
-	return t.Time.Format(timeTZOutputFormat)
+	return t.Format(timeTZOutputFormat)
 }
 
 // ToTime converts t to *Time.
@@ -63,7 +63,7 @@ func (t *TimeTZ) Compare(u time.Time) int {
 
 	// If same GMT time, sort by timezone; we only want to say that two
 	// timetz's are equal if both the time and zone parts are equal.
-	_, off1 := t.Time.Zone()
+	_, off1 := t.Zone()
 	_, off2 := u.Zone()
 	if off1 > off2 {
 		return -1
@@ -80,7 +80,7 @@ func (t *TimeTZ) MarshalJSON() ([]byte, error) {
 	const timeJSONSize = len(timeTZOutputFormat) + len(`""`)
 	b := make([]byte, 0, timeJSONSize)
 	b = append(b, '"')
-	b = t.Time.AppendFormat(b, timeTZOutputFormat)
+	b = t.AppendFormat(b, timeTZOutputFormat)
 	b = append(b, '"')
 	return b, nil
 }

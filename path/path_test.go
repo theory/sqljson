@@ -47,9 +47,9 @@ func TestPath(t *testing.T) {
 		a.Equal(tc.exp, res)
 
 		// Test First.
-		res, err = path.First(ctx, tc.json)
+		item, err := path.First(ctx, tc.json)
 		r.NoError(err)
-		a.Equal(tc.exp[0], res)
+		a.Equal(tc.exp[0], item)
 
 		// Tests Exists.
 		ok, err := path.Exists(ctx, tc.json, exec.WithSilent())
@@ -58,9 +58,9 @@ func TestPath(t *testing.T) {
 
 		if _, ok := tc.exp[0].(bool); ok {
 			// Tests Match.
-			res, err = path.Match(ctx, tc.json)
+			res, err := path.Match(ctx, tc.json)
 			r.NoError(err)
-			a.Equal(true, res)
+			a.True(res)
 		}
 
 		// Tests ExistsOrMatch.

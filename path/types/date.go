@@ -27,7 +27,7 @@ const dateFormat = "2006-01-02"
 
 // String returns the string representation of d.
 func (d *Date) String() string {
-	return d.Time.Format(dateFormat)
+	return d.Format(dateFormat)
 }
 
 // ToTimestamp converts ts to *Timestamp.
@@ -58,7 +58,7 @@ func (d *Date) MarshalJSON() ([]byte, error) {
 	const dateJSONSize = len(dateFormat) + len(`""`)
 	b := make([]byte, 0, dateJSONSize)
 	b = append(b, '"')
-	b = d.Time.AppendFormat(b, dateFormat)
+	b = d.AppendFormat(b, dateFormat)
 	b = append(b, '"')
 	return b, nil
 }

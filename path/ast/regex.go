@@ -50,7 +50,7 @@ func newRegexFlags(flags string) (regexFlags, error) {
 		case 'q':
 			bitMask |= regexQuote
 		default:
-			//nolint:err113,stylecheck
+			//nolint:err113,staticcheck
 			return 0, fmt.Errorf(
 				`Unrecognized flag character "%c" in LIKE_REGEX predicate`,
 				f,

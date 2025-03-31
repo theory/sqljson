@@ -32,7 +32,7 @@ const timeFormat = "15:04:05.999999999"
 // String returns the string representation of ts using the format
 // "15:04:05.999999999".
 func (t *Time) String() string {
-	return t.Time.Format(timeFormat)
+	return t.Format(timeFormat)
 }
 
 // ToTimeTZ converts t to *TimeTZ in the time zone in ctx. It works relative
@@ -58,7 +58,7 @@ func (t *Time) MarshalJSON() ([]byte, error) {
 	const timeJSONSize = len(timeFormat) + len(`""`)
 	b := make([]byte, 0, timeJSONSize)
 	b = append(b, '"')
-	b = t.Time.AppendFormat(b, timeFormat)
+	b = t.AppendFormat(b, timeFormat)
 	b = append(b, '"')
 	return b, nil
 }

@@ -39,7 +39,7 @@ var (
 	ErrInvalid = errors.New("exec invalid")
 )
 
-//nolint:revive,gochecknoglobals,stylecheck
+//nolint:revive,gochecknoglobals,staticcheck
 var (
 	// NULL is returned when Postgres would return NULL from Match and Exists.
 	NULL = errors.New("NULL")

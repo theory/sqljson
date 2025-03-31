@@ -142,7 +142,7 @@ func MustParse(path string) *Path {
 // MustQuery is syntax sugar for
 // MustParse(path).MustQuery(context.Background(), json). Provided mainly for
 // use in documentation examples.
-func MustQuery(path string, json any, opt ...exec.Option) any {
+func MustQuery(path string, json any, opt ...exec.Option) []any {
 	return MustParse(path).MustQuery(context.Background(), json, opt...)
 }
 
@@ -231,14 +231,14 @@ func (path *Path) ExistsOrMatch(ctx context.Context, json any, opt ...exec.Optio
 //
 // See the Options section for details on the optional [exec.WithVars],
 // [exec.WithTZ], and [exec.WithSilent] options.
-func (path *Path) Query(ctx context.Context, json any, opt ...exec.Option) (any, error) {
+func (path *Path) Query(ctx context.Context, json any, opt ...exec.Option) ([]any, error) {
 	//nolint:wrapcheck // Okay to return unwrapped error
 	return exec.Query(ctx, path.AST, json, opt...)
 }
 
 // MustQuery is like [Query], but panics on error. Mostly provided mainly for
 // use in documentation examples.
-func (path *Path) MustQuery(ctx context.Context, json any, opt ...exec.Option) any {
+func (path *Path) MustQuery(ctx context.Context, json any, opt ...exec.Option) []any {
 	res, err := exec.Query(ctx, path.AST, json, opt...)
 	if err != nil {
 		panic(err)
@@ -294,7 +294,7 @@ func (path *Path) Scan(src any) error {
 	return nil
 }
 
-// Value implements sql.Valuer so that Paths can be written to databases
+// Value implements [driver.Valuer] so that Paths can be written to databases
 // transparently. Currently, Paths map to strings. Please consult
 // database-specific driver documentation for matching types.
 func (path *Path) Value() (driver.Value, error) {

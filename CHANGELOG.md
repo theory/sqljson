@@ -7,14 +7,33 @@ All notable changes to this project will be documented in this file. It uses the
   [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
     "Semantic Versioning 2.0.0"
 
-## [v0.2.1] — 2024-12-22
+## [v0.3.0] — Unreleased
 
-  [v0.2.1]: https://github.com/theory/sqljson/compare/v0.2.0...v0.2.1
+### 🪲 Bug Fixes
+
+*   Changed the return value of the `Query` and `MustQuery` functions and
+    methods from `any` to `[]any`, as they always return a slice of selected
+    items.
+
+### 📚 Documentation
+
+*   Fixed the example code at the top of [ast](./path/ast/ast.go) to properly
+    handle `nil` binary operands and the node returned by `Next()`.
+
+### 📔 Notes
+
+*   Applied fixes suggested by golangci-lint v2.
+
+  [v0.3.0]: https://github.com/theory/sqljson/compare/v0.2.1...v0.2.0
+
+## [v0.2.1] — 2024-12-22
 
 ### 📚 Documentation
 
 *   Updated the playground links in the README to the new URL.
 *   Added a couple of missing playground links to the README.
+
+  [v0.2.1]: https://github.com/theory/sqljson/compare/v0.2.0...v0.2.1
 
 ## [v0.2.0] — 2024-12-15
 

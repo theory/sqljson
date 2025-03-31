@@ -140,12 +140,12 @@ func compareTimestampTZ(_ context.Context, val1 *types.TimestampTZ, val2 any, us
 		if !useTZ {
 			return 0, tzRequiredCast("date", "timestamptz")
 		}
-		return val1.Compare(val2.Time.UTC()), nil
+		return val1.Compare(val2.UTC()), nil
 	case *types.Timestamp:
 		if !useTZ {
 			return 0, tzRequiredCast("timestamp", "timestamptz")
 		}
-		return val1.Compare(val2.Time.UTC()), nil
+		return val1.Compare(val2.UTC()), nil
 	case *types.TimestampTZ:
 		return val1.Compare(val2.Time), nil
 	case *types.Time, *types.TimeTZ:

@@ -26,7 +26,7 @@ func TestNewLexer(t *testing.T) {
 	a.Equal(noChar, l.tokPos)
 	a.Equal(rune(noChar), l.ch)
 	a.Equal(1, l.line)
-	a.Equal("", l.tokenText())
+	a.Empty(l.tokenText())
 
 	// Make sure path was loaded into the scanner.
 	buf := new(strings.Builder)
@@ -37,11 +37,11 @@ func TestNewLexer(t *testing.T) {
 	}
 
 	a.Equal(path, buf.String())
-	a.Equal("", l.tokenText())
+	a.Empty(l.tokenText())
 
 	// tokenText should be correct even when tokEnd < tokPos
 	l.tokEnd = l.tokPos - 1
-	a.Equal("", l.tokenText())
+	a.Empty(l.tokenText())
 	a.Equal(l.tokPos, l.tokEnd)
 }
 
@@ -96,7 +96,7 @@ func TestScanError(t *testing.T) {
 
 	l.Error("oops")
 	a.Equal([]string{"oops at 1:1"}, l.errors)
-	a.Equal("", l.tokenText())
+	a.Empty(l.tokenText())
 
 	a.Equal(int('$'), l.Lex(&pathSymType{}))
 	l.Error("yikes")

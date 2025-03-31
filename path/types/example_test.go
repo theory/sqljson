@@ -182,6 +182,7 @@ func ExampleTimeTZ() {
 	ctx := types.ContextWithTZ(context.Background(), time.UTC)
 	fmt.Printf("%v\n", timeTZ.ToTime(ctx))
 
+	//nolint:gosmopolitan
 	ctx = types.ContextWithTZ(context.Background(), time.Local)
 	fmt.Printf("%v\n", timeTZ.ToTime(ctx))
 	// Output: 12:34:56-04:00
