@@ -2,8 +2,6 @@ module github.com/theory/sqljson
 
 go 1.22.0
 
-toolchain go1.23.2
-
 require (
 	github.com/smasher164/xid v0.1.2
 	github.com/stretchr/testify v1.10.0
