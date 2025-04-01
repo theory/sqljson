@@ -3,7 +3,7 @@ GO ?= go
 SRC_DIR := src
 DST_DIR := pub
 # WASM_EXEC := $(shell tinygo env TINYGOROOT)/targets/wasm_exec.js
-WASM_EXEC := $(shell go env GOROOT)/misc/wasm/wasm_exec.js
+WASM_EXEC := $(shell go env GOROOT)/lib/wasm/wasm_exec.js
 
 playground: $(DST_DIR)/play.wasm $(DST_DIR)/index.html $(DST_DIR)/wasm_exec.js $(DST_DIR)/play.css $(DST_DIR)/playground/index.html
 
@@ -39,7 +39,7 @@ brew-lint-depends:
 
 .PHONY: debian-lint-depends # Install linting tools on Debian
 debian-lint-depends:
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b /usr/bin v1.62.2
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b /usr/bin v2.0.2
 
 .PHONY: lint # Lint the project
 lint: .pre-commit-config.yaml
