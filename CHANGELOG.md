@@ -7,6 +7,15 @@ All notable changes to this project will be documented in this file. It uses the
   [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
     "Semantic Versioning 2.0.0"
 
+## [v0.3.1] — Unreleased
+
+### ⚡ Improvements
+
+*   Added support for 32-bit architectures, including [TinyGo].
+
+  [v0.3.1]: https://github.com/theory/sqljson/compare/v0.3.0...v0.3.1
+  [TinyGo]: https://tinygo.org
+
 ## [v0.3.0] — 2025-03-31
 
 ### 🪲 Bug Fixes
