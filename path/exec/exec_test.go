@@ -1143,7 +1143,7 @@ func TestExecuteDateTimeErrors(t *testing.T) {
 		},
 		{
 			name: "invalid_precision",
-			path: fmt.Sprintf(`$.x.time(%v)`, math.MaxInt32+1),
+			path: fmt.Sprintf(`$.x.time(%v)`, int64(math.MaxInt32+1)),
 			json: map[string]any{"x": "2024-05-05 20:59:19.79142-05"},
 			err:  `exec: time precision of jsonpath item method .time() is out of integer range`,
 		},

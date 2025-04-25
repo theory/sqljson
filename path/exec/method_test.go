@@ -793,7 +793,7 @@ func TestExecMethodInteger(t *testing.T) {
 			exp:   statusFailed,
 			err: fmt.Sprintf(
 				`exec: argument "%v" of jsonpath item method .integer() is invalid for type integer`,
-				math.MaxInt32+1,
+				int64(math.MaxInt32+1),
 			),
 			isErr: ErrVerbose,
 		},
@@ -804,7 +804,7 @@ func TestExecMethodInteger(t *testing.T) {
 			exp:   statusFailed,
 			err: fmt.Sprintf(
 				`exec: argument "%v" of jsonpath item method .integer() is invalid for type integer`,
-				math.MinInt32-1,
+				int64(math.MinInt32-1),
 			),
 			isErr: ErrVerbose,
 		},
@@ -1069,14 +1069,14 @@ func TestExecMethodBigInt(t *testing.T) {
 		{
 			name:  "string_max_big_int",
 			node:  meth,
-			value: strconv.Itoa(math.MaxInt64),
+			value: strconv.FormatInt(math.MaxInt64, 10),
 			exp:   statusOK,
 			find:  []any{int64(math.MaxInt64)},
 		},
 		{
 			name:  "string_min_big_int",
 			node:  meth,
-			value: strconv.Itoa(math.MinInt64),
+			value: strconv.FormatInt(math.MinInt64, 10),
 			exp:   statusOK,
 			find:  []any{int64(math.MinInt64)},
 		},
@@ -1893,7 +1893,7 @@ func TestExecuteNumberMethod(t *testing.T) {
 		{
 			name:  "string_max_int",
 			node:  number,
-			value: strconv.Itoa(math.MaxInt64),
+			value: strconv.FormatInt(math.MaxInt64, 10),
 			exp:   statusOK,
 			find:  []any{float64(math.MaxInt64)},
 		},

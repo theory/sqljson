@@ -769,13 +769,14 @@ type AnyNode struct {
 
 // NewAny returns a new AnyNode with first as its first index and last as its
 // last. If either number is negative it's considered unbounded. Numbers
-// greater than [math.MaxUint32] will max out at that number.
+// greater than [math.MaxUint32] (or [math.MaxInt] on 32-bit systems) will
+// max out at that number.
 func NewAny(first, last int) *AnyNode {
 	n := &AnyNode{first: math.MaxUint32, last: math.MaxUint32}
-	if first >= 0 && first < math.MaxUint32 {
+	if first >= 0 && first < min(math.MaxUint32, math.MaxInt) {
 		n.first = uint32(first)
 	}
-	if last >= 0 && last < math.MaxUint32 {
+	if last >= 0 && last < min(math.MaxUint32, math.MaxInt) {
 		n.last = uint32(last)
 	}
 	return n

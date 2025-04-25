@@ -88,7 +88,7 @@ func TestGetNodeInt32(t *testing.T) {
 		},
 		{
 			name:  "too_big",
-			node:  ast.NewInteger(strconv.Itoa(math.MaxInt32 + 1)),
+			node:  ast.NewInteger(strconv.FormatInt(int64(math.MaxInt32+1), 10)),
 			meth:  ".go()",
 			field: "aaa",
 			err:   `exec: aaa of jsonpath item method .go() is out of integer range`,
@@ -96,7 +96,7 @@ func TestGetNodeInt32(t *testing.T) {
 		},
 		{
 			name:  "too_small",
-			node:  ast.NewInteger(strconv.Itoa(math.MinInt32 - 1)),
+			node:  ast.NewInteger(strconv.FormatInt(int64(math.MinInt32-1), 10)),
 			meth:  ".go()",
 			field: "aaa",
 			err:   `exec: aaa of jsonpath item method .go() is out of integer range`,

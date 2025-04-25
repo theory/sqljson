@@ -336,9 +336,9 @@ func TestIntegerNode(t *testing.T) {
 		{"hex", "0x42F", 1071, "1071", ""},
 		{
 			name: "max_int",
-			num:  strconv.Itoa(math.MaxInt64),
-			val:  math.MaxInt64,
-			str:  strconv.Itoa(math.MaxInt64),
+			num:  strconv.FormatInt(math.MaxInt64, 10),
+			val:  math.MaxInt,
+			str:  strconv.FormatInt(math.MaxInt64, 10),
 		},
 		{
 			name: "min_int",

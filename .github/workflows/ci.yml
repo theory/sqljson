@@ -6,10 +6,15 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [[🐧, Ubuntu], [🍎, macOS], [🪟, Windows]]
+        os:
+          - { icon: 🐧, name: AMD64 Linux, on: ubuntu-latest }
+          - { icon: 🐧, name: ARM64 Linux, on: ubuntu-24.04-arm }
+          - { icon: 🍎, name: ARM64 macOS, on: macos-latest }
+          - { icon: 🍎, name: AMD64 macOS, on: macos-13 }
+          - { icon: 🪟, name: AMD64 Windows, on: windows-latest }
         go: ["1.24", "1.23", "1.22"]
-    name: ${{ matrix.os[0] }} Test Go ${{ matrix.go }} on ${{ matrix.os[1] }}
-    runs-on: ${{ matrix.os[1] }}-latest
+    name: ${{ matrix.os.icon }} ${{ matrix.os.name }}
+    runs-on: ${{ matrix.os.on }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -18,6 +23,17 @@ jobs:
         with: { go-version: "${{ matrix.go }}", check-latest: true }
       - name: Run Tests
         run: make test
+  wasm:
+    name: 🕸️ Build WASM
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - name: Setup TinyGo
+        uses: acifani/setup-tinygo@v2
+        with: { tinygo-version: 0.37.0 }
+      - name: Test WASM
+        run: make wasm
   lint:
     name: 📊 Lint and Cover
     runs-on: ubuntu-latest
