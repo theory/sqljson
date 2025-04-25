@@ -6,6 +6,7 @@ linters:
     - cyclop # redundant, covered by gocyclo
     - depguard
     - exhaustruct
+    - funcorder # new, too much to move around
     - nestif # redundant, covered by gocyclo
     - nlreturn
     - testpackage

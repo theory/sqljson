@@ -26,12 +26,12 @@ brew-lint-depends:
 
 .PHONY: debian-lint-depends # Install linting tools on Debian
 debian-lint-depends:
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b /usr/bin v2.0.2
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sudo sh -s -- -b /usr/bin v2.1.5
 
 .PHONY: install-generators # Install Go code generators
 install-generators:
-	$(GO) install golang.org/x/tools/cmd/goyacc@v0.28.0
-	$(GO) install golang.org/x/tools/cmd/stringer@v0.28.0
+	$(GO) install golang.org/x/tools/cmd/goyacc@v0.32.0
+	$(GO) install golang.org/x/tools/cmd/stringer@v0.32.0
 
 .PHONY: generate # Generate Go code
 generate:
