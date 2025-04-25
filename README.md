@@ -2,10 +2,10 @@ Go SQL/JSON Path Playground
 ===========================
 
 The source for the [Go SQL/JSON Path Playground], a stateless single-page web
-site for experimenting with the [Go SQL/JSON Path] package. Compiled via [Go
-WebAssembly] into a ca. 4.5 MB (1.3 MB compressed) [Wasm] file and loaded
-directly into the page. All functionality implemented in JavaScript and Go,
-[Go JSONPath Playground], [Goldmark Playground] and [serde_json_path Sandbox].
+site for experimenting with the [Go SQL/JSON Path] package. Compiled via
+[TinyGo] into a ca. 930 K (350 K compressed) [Wasm] file and loaded directly
+into the page. All functionality implemented in JavaScript and Go, [Go
+JSONPath Playground], [Goldmark Playground] and [serde_json_path Sandbox].
 
 Usage
 -----
@@ -131,7 +131,7 @@ Based on [Goldmark Playground] the [serde_json_path Sandbox], with icons from
   [Go SQL/JSON Path]: https://pkg.go.dev/github.com/theory/sqljson/path
     "pkg.go.dev: github.com/theory/sqljson/path"
   [Wasm]: https://webassembly.org "WebAssembly"
-  [Go WebAssembly]: https://go.dev/wiki/WebAssembly
+  [TinyGo]: https://tinygo.org
   [Go JSONPath Playground]: https://theory.github.io/jsonpath/playground
   [Goldmark Playground]: https://yuin.github.io/goldmark/playground
   [serde_json_path Sandbox]: https://serdejsonpath.live
