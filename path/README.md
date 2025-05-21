@@ -7,8 +7,8 @@ check expressions.
 
 > 💡 Use the [🛝 Playground] links below to run the examples in this document,
 > and to experiment with jsonpath execution. The Go SQL/JSON Path Playground
-> is a single-page stateless JavaScript and [Go WebAssembly] app that offers
-> permalink generation to share examples, like [this one].
+> is a single-page stateless JavaScript and [TinyGo]-compiled [Wasm] app that
+> offers permalink generation to share examples, like [this one].
 
 ## The SQL/JSON Path Language
 
@@ -1174,12 +1174,13 @@ unavoidable differences and to-dos. These include:
 
 ## Copyright
 
-Copyright © 1996-2024 The PostgreSQL Global Development Group
+Copyright © 1996-2025 The PostgreSQL Global Development Group
 
-Copyright © 2024 David E. Wheeler
+Copyright © 2024-2025 David E. Wheeler
 
   [🛝 Playground]: https://theory.github.io/sqljson "Go SQL/JSON Path Playground"
-  [Go WebAssembly]: https://go.dev/wiki/WebAssembly
+  [TinyGo]: https://tinygo.org
+  [Wasm]: https://webassembly.org "WebAssembly"
   [this one]: https://theory.github.io/sqljson/?p=%2524.track.segments%255B*%255D.location&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1
   [PostgreSQL docs]: https://www.postgresql.org/docs/devel/functions-json.html#FUNCTIONS-SQLJSON-PATH
     "PostgreSQL Documentation: “The SQL/JSON Path Language”"

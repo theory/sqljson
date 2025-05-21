@@ -57,15 +57,17 @@ See the [path README](./path/README.md) for a complete description of the
 SQL/JSON path language, and the [Go doc] for usage and examples.
 
 Or take the [🛝 Playground] for a spin ([direct link for above example]).
-Implemented as a single-page stateless JavaScript and [Go WebAssembly] app.
+Implemented as a single-page stateless JavaScript and [TinyGo]-compiled [Wasm]
+app.
 
 ## Copyright
 
-Copyright © 1996-2024 The PostgreSQL Global Development Group
+Copyright © 1996-2025 The PostgreSQL Global Development Group
 
-Copyright © 2024 David E. Wheeler
+Copyright © 2024-2025 David E. Wheeler
 
   [Go doc]: https://pkg.go.dev/github.com/theory/sqljson/path
   [🛝 Playground]: https://theory.github.io/sqljson/playground
   [direct link for above example]: https://theory.github.io/sqljson/playground/?p=%2524.track.segments%255B*%255D%2520%253F%2520%28%2540.HR%2520%253E%2520130%29.%2522start%2520time%2522&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=1&v=v0.1.0
-  [Go WebAssembly]: https://go.dev/wiki/WebAssembly
+  [TinyGo]: https://tinygo.org
+  [Wasm]: https://webassembly.org "WebAssembly"
