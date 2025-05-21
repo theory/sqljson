@@ -122,7 +122,7 @@ the above Path expression successfully executes against:
 
 ## Copyright and License
 
-Copyright (c) 2024 David E. Wheeler. Distributed under the [PostgreSQL License].
+Copyright (c) 2024-2025 David E. Wheeler. Distributed under the [PostgreSQL License].
 
 Based on [Goldmark Playground] the [serde_json_path Sandbox], with icons from
 [Boxicons], all distributed under the [MIT License].

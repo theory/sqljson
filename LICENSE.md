@@ -1,4 +1,4 @@
-Portions Copyright © 1996-2024, The PostgreSQL Global Development Group
+Portions Copyright © 1996-2025, The PostgreSQL Global Development Group
 
 Permission to use, copy, modify, and distribute this software and its
 documentation for any purpose, without fee, and without a written agreement is
