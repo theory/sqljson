@@ -2191,6 +2191,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 
 	for _, tc := range []struct {
 		methodTestCase
+
 		intCB   intCallback
 		floatCB floatCallback
 	}{

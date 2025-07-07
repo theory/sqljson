@@ -12,6 +12,8 @@ linters:
     - testpackage
     - varnamelen
     - wsl
+    - wsl_v5
+    - noinlineerr
   settings:
     errcheck:
       disable-default-exclusions: false
@@ -35,6 +37,10 @@ linters:
         - generic
         - ast\.Node$
         - types\.DateTime$
+    revive:
+      rules:
+        - name: var-naming
+          arguments: [[], [], [{ skip-package-name-checks: true }]]
   exclusions:
     generated: lax
     rules:

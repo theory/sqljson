@@ -79,6 +79,15 @@ const (
 
 // lexer lexes a path.
 type lexer struct {
+	// Start position of most recently scanned token; set by Scan.
+	// Calling Init or Next invalidates the position (Line == 0).
+	// The Filename field is always left untouched by the Scanner.
+	// If an error is reported (via Error) and position is invalid,
+	// the scanner is not inside a token. Call Pos to obtain an error
+	// position in that case, or to obtain the position immediately
+	// after the most recently scanned token.
+	position
+
 	// Collects errors while lexing.
 	errors []string
 
@@ -113,15 +122,6 @@ type lexer struct {
 
 	// One character look-ahead
 	ch rune // character before current srcPos
-
-	// Start position of most recently scanned token; set by Scan.
-	// Calling Init or Next invalidates the position (Line == 0).
-	// The Filename field is always left untouched by the Scanner.
-	// If an error is reported (via Error) and position is invalid,
-	// the scanner is not inside a token. Call Pos to obtain an error
-	// position in that case, or to obtain the position immediately
-	// after the most recently scanned token.
-	position
 }
 
 // newLexer creates a new lexer configured to lex path.

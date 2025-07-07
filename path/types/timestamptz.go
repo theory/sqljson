@@ -10,6 +10,7 @@ import (
 type TimestampTZ struct {
 	// Time is the underlying time.Time value.
 	time.Time
+
 	// tz is the time zone read from the context passed to NewTimestampTZ.
 	tz *time.Location
 }
