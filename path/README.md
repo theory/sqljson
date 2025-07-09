@@ -15,7 +15,7 @@ check expressions.
 > This section was ported from the [PostgreSQL docs].
 
 <!-- See ./tests/example_test.go for runnable versions of all the examples. -->
-<!-- https://github.com/postgres/postgres/blob/REL_17_2/doc/src/sgml/func.sgml#L17343-#L18662 -->
+<!-- https://github.com/postgres/postgres/blob/7bd752c/doc/src/sgml/func.sgml#L17709-L19028 -->
 
 SQL/JSON Path is a query language for JSON values. A path expression applied
 to a JSON value produces a JSON result.
@@ -368,7 +368,7 @@ As an extension to the SQL standard, a PostgreSQL path expression can be a
 Boolean predicate, whereas the SQL standard allows predicates only within
 filters. While SQL-standard path expressions return the relevant element(s) of
 the queried JSON value, predicate check expressions return the single
-three-valued result of the predicate: `true`, `false`, or `unknown`. For
+three-valued JSON result of the predicate: `true`, `false`, or `nil`. For
 example, we could write this SQL-standard filter expression
 ([playground][play10]):
 

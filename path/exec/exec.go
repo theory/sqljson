@@ -11,8 +11,6 @@ import (
 
 // Things to improve or document as different:
 //   - .datetime(template)
-//   - Write full docs, including examples and notes on incompatibilities
-//   - Some time_tz comparisons still not quite right
 //   - Allow single-digit tz offsets, e.g., `+1` instead of `+01`
 //   - Allow space between seconds and offset
 //   - Years > 9999?
@@ -21,7 +19,8 @@ import (
 //     github.com/shopspring/decimal?
 //   - Go regexp package varies from Postgres regex
 //   - Implement interfaces to be compatible with the SQL-standard
-//     json_exists(), json_query(), and json_value() functions added in Postgres 17.
+//     json_exists(), json_query(), and json_value() functions added in
+//     PostgreSQL 17.
 
 // Vars represents JSON path variables and their values.
 type Vars map[string]any

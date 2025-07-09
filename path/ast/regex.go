@@ -13,7 +13,7 @@ import (
 // regexFlag represents a single JSON Path regex flag.
 type regexFlag uint16
 
-// https://github.com/postgres/postgres/blob/REL_17_2/src/include/utils/jsonpath.h#L120-L125
+// https://github.com/postgres/postgres/blob/7bd752c/src/include/utils/jsonpath.h#L120-L125
 //
 //nolint:godot
 const (
@@ -110,7 +110,7 @@ func (f regexFlags) _syntaxFlags() (syntax.Flags, error) {
 	}
 
 	// From the Postgres source
-	// https://github.com/postgres/postgres/blob/REL_17_2/src/backend/utils/adt/jsonpath_gram.y#L667-L673:
+	// https://github.com/postgres/postgres/blob/7bd752c/src/backend/utils/adt/jsonpath_gram.y#L669-L675
 	//
 	// > XQuery's 'x' mode is related to Spencer's expanded mode, but it's
 	// > not really enough alike to justify treating JSP_REGEX_WSPACE as

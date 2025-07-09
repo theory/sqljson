@@ -13,7 +13,7 @@ jobs:
           - { icon: 🍎, name: AMD64 macOS, on: macos-13 }
           - { icon: 🪟, name: AMD64 Windows, on: windows-latest }
         go: ["1.24", "1.23", "1.22"]
-    name: ${{ matrix.os.icon }} ${{ matrix.os.name }}
+    name: ${{ matrix.os.icon }} ${{ matrix.os.name }}, Go ${{ matrix.go }}
     runs-on: ${{ matrix.os.on }}
     steps:
       - name: Checkout Repo

@@ -19,13 +19,13 @@ import (
 )
 
 func main() {
-	goRegex := regexp.MustCompile(`[.]go`)
-	//  https://github.com/postgres/postgres/blob/REL_17_2/src/test/regress/sql/jsonpath.sql#L52-L64
+	srcRegex := regexp.MustCompile(`[.](?:go|md)`)
+	//  https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath.sql#L52-L64
 	pgRegex := regexp.MustCompile(`postgres/postgres/blob/([^/]+)/([^#]+)`)
 
 	found := map[string][]string{}
 	logErr(filepath.WalkDir("path", func(path string, info fs.DirEntry, err error) error {
-		if err == nil && goRegex.MatchString(info.Name()) {
+		if err == nil && srcRegex.MatchString(info.Name()) {
 			file, err := os.Open(path)
 			logErr(err)
 			defer file.Close()

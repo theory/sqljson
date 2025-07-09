@@ -1,5 +1,5 @@
 /*
-Package path provides PostgreSQL 17-compatible SQL/JSON path parsing and
+Package path provides PostgreSQL 18-compatible SQL/JSON path parsing and
 execution. It supports both SQL-standard path expressions and
 PostgreSQL-specific predicate check expressions. See the README for a
 description of the SQL/JSON Path language.

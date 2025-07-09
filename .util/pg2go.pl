@@ -7,6 +7,7 @@ use v5.30;
 # Functions to cause SQL `true` and `false` args to jsonb_path_query() to evaluate.
 sub true { 1 }
 sub false { 0 }
+sub NULL { undef }
 
 my $num = 0;
 
@@ -40,12 +41,12 @@ sub jsonb_path_query {
         my $param = shift @opts;
         my $val = shift @opts;
         if ($param eq 'silent') {
-            push @options => 'WithSilence()' if $val;
+            push @options => 'WithSilent()' if $val;
         } elsif ($param eq 'vars') {
-            push @options => "WithVars(jv(\`$val\`))";
+            push @options => "WithVars(jv(\`$val\`))" if $val;
         } else {
             push @options => "WithVars(jv(\`$param\`))";
-            push @options => 'WithSilence()' if $val;
+            push @options => 'WithSilent()' if $val;
         }
     }
     return $json, $path, "\n			opt:  []Option{" . join(',', @options) . '},';

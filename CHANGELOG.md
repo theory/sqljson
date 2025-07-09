@@ -7,6 +7,20 @@ All notable changes to this project will be documented in this file. It uses the
   [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
     "Semantic Versioning 2.0.0"
 
+## [v0.3.2] — Unreleased
+
+### 📚 Improvements
+
+Updated with all changes for PostgreSQL 18, which adds no new functionality
+but adds a few new tests, adjusts the formatting of error messages, and tweaks
+some documentation wording.
+
+### ⬆️ Dependency Updates
+
+*   Upgraded dependencies to the latest versions that still support Go v1.22.
+
+  [v0.3.2]: https://github.com/theory/sqljson/compare/v0.3.1...v0.3.2
+
 ## [v0.3.1] — 2025-04-25
 
 ### ⚡ Improvements

@@ -118,7 +118,7 @@ func (exec *Executor) execMethodSize(
 		size = len(value)
 	default:
 		if !exec.autoWrap() && !exec.ignoreStructuralErrors {
-			// https://github.com/postgres/postgres/blob/REL_17_2/src/backend/utils/adt/jsonpath_exec.c#L1114
+			// https://github.com/postgres/postgres/blob/7bd752c/src/backend/utils/adt/jsonpath_exec.c#L1112
 			return exec.returnVerboseError(fmt.Errorf(
 				"%w: jsonpath item method %v can only be applied to an array",
 				ErrVerbose, node.Name(),
@@ -160,8 +160,8 @@ func (exec *Executor) execMethodDouble(
 		double, err = val.Float64()
 		if err != nil {
 			return statusFailed, fmt.Errorf(
-				`%w: argument %q of jsonpath item method %v is invalid for type double precision`,
-				ErrExecution, val, name,
+				`%w: argument %q of jsonpath item method %v is invalid for type %v`,
+				ErrExecution, val, name, "double precision",
 			)
 		}
 	case string:
@@ -169,8 +169,8 @@ func (exec *Executor) execMethodDouble(
 		double, err = strconv.ParseFloat(val, 64)
 		if err != nil {
 			return statusFailed, fmt.Errorf(
-				`%w: argument %q of jsonpath item method %v is invalid for type double precision`,
-				ErrExecution, val, name,
+				`%w: argument %q of jsonpath item method %v is invalid for type %v`,
+				ErrExecution, val, name, "double precision",
 			)
 		}
 	default:
@@ -241,8 +241,8 @@ func (exec *Executor) execMethodInteger(
 
 	if err != nil || integer > math.MaxInt32 || integer < math.MinInt32 {
 		return exec.returnVerboseError(fmt.Errorf(
-			`%w: argument "%v" of jsonpath item method %v is invalid for type integer`,
-			ErrVerbose, value, node.Name(),
+			`%w: argument "%v" of jsonpath item method %v is invalid for type %v`,
+			ErrVerbose, value, node.Name(), "integer",
 		))
 	}
 
@@ -276,8 +276,8 @@ func (exec *Executor) execMethodBigInt(
 	case float64:
 		if val > math.MaxInt64 || val < math.MinInt64 || math.IsInf(val, 0) || math.IsNaN(val) {
 			return exec.returnVerboseError(fmt.Errorf(
-				`%w: argument "%v" of jsonpath item method %v is invalid for type bigint`,
-				ErrVerbose, val, node.Name(),
+				`%w: argument "%v" of jsonpath item method %v is invalid for type %v`,
+				ErrVerbose, val, node.Name(), "bigint",
 			))
 		}
 		bigInt = int64(math.Round(val))
@@ -289,8 +289,8 @@ func (exec *Executor) execMethodBigInt(
 			f, err = val.Float64()
 			if err != nil || f > math.MaxInt64 || f < math.MinInt64 || math.IsInf(f, 0) || math.IsNaN(f) {
 				return exec.returnVerboseError(fmt.Errorf(
-					`%w: argument "%v" of jsonpath item method %v is invalid for type bigint`,
-					ErrVerbose, val, node.Name(),
+					`%w: argument "%v" of jsonpath item method %v is invalid for type %v`,
+					ErrVerbose, val, node.Name(), "bigint",
 				))
 			}
 			bigInt = int64(math.Round(f))
@@ -300,8 +300,8 @@ func (exec *Executor) execMethodBigInt(
 		bigInt, err = strconv.ParseInt(val, 10, 64)
 		if err != nil {
 			return exec.returnVerboseError(fmt.Errorf(
-				`%w: argument "%v" of jsonpath item method %v is invalid for type bigint`,
-				ErrVerbose, val, node.Name(),
+				`%w: argument "%v" of jsonpath item method %v is invalid for type %v`,
+				ErrVerbose, val, node.Name(), "bigint",
 			))
 		}
 	default:
@@ -381,7 +381,7 @@ func (exec *Executor) execMethodBoolean(
 		if unwrap {
 			return exec.executeItemUnwrapTargetArray(ctx, node, value, found)
 		}
-		// https://github.com/postgres/postgres/blob/REL_17_2/src/backend/utils/adt/jsonpath_exec.c#L1386
+		// https://github.com/postgres/postgres/blob/7bd752c/src/backend/utils/adt/jsonpath_exec.c#L1385
 		return exec.returnVerboseError(fmt.Errorf(
 			"%w: jsonpath item method %v can only be applied to a boolean, string, or numeric value",
 			ErrVerbose, name,
@@ -393,12 +393,11 @@ func (exec *Executor) execMethodBoolean(
 	case float64:
 		if val != math.Trunc(val) {
 			return exec.returnVerboseError(fmt.Errorf(
-				`%w: argument "%v" of jsonpath item method %v is invalid for type boolean`,
-				ErrVerbose, val, name,
+				`%w: argument "%v" of jsonpath item method %v is invalid for type %v`,
+				ErrVerbose, val, name, "boolean",
 			))
 		}
 		boolean = val != 0
-
 	case json.Number:
 		num, err := val.Float64()
 		if err != nil || num != math.Trunc(num) {
@@ -443,8 +442,8 @@ func execBooleanString(val string, name ast.MethodName) (bool, error) {
 	size := len(val)
 	if size == 0 {
 		return false, fmt.Errorf(
-			`%w: argument %q of jsonpath item method %v is invalid for type boolean`,
-			ErrVerbose, val, name,
+			`%w: argument %q of jsonpath item method %v is invalid for type %v`,
+			ErrVerbose, val, name, "boolean",
 		)
 	}
 
@@ -482,8 +481,8 @@ func execBooleanString(val string, name ast.MethodName) (bool, error) {
 	}
 
 	return false, fmt.Errorf(
-		`%w: argument %q of jsonpath item method %v is invalid for type boolean`,
-		ErrVerbose, val, name,
+		`%w: argument %q of jsonpath item method %v is invalid for type %v`,
+		ErrVerbose, val, name, "boolean",
 	)
 }
 
@@ -534,8 +533,8 @@ func (exec *Executor) executeNumberMethod(
 
 	if err != nil {
 		return exec.returnVerboseError(fmt.Errorf(
-			`%w: argument "%v" of jsonpath item method %v is invalid for type numeric`,
-			ErrVerbose, value, method,
+			`%w: argument "%v" of jsonpath item method %v is invalid for type %v`,
+			ErrVerbose, value, method, "numeric",
 		))
 	}
 
@@ -556,7 +555,7 @@ func (exec *Executor) executeNumberMethod(
 	return exec.executeNextItem(ctx, node, nil, num, found)
 }
 
-// https://github.com/postgres/postgres/blob/REL_17_2/src/include/utils/numeric.h#L32-L35
+// https://github.com/postgres/postgres/blob/7bd752c/src/include/utils/numeric.h#L32-L35
 const (
 	numericMaxPrecision = 1000
 	numericMinScale     = -1000
@@ -583,7 +582,7 @@ func (exec *Executor) executeDecimalMethod(
 	}
 
 	// Verify the precision
-	// https://github.com/postgres/postgres/blob/REL_17_2/src/backend/utils/adt/numeric.c#L1333-L1337
+	// https://github.com/postgres/postgres/blob/7bd752c/src/backend/utils/adt/numeric.c#L1335-L1339
 	if precision < 1 || precision > numericMaxPrecision {
 		return 0, fmt.Errorf(
 			"%w: NUMERIC precision %d must be between 1 and %d",
@@ -600,7 +599,7 @@ func (exec *Executor) executeDecimalMethod(
 		}
 
 		// Verify the scale.
-		// https://github.com/postgres/postgres/blob/REL_17_2/src/backend/utils/adt/numeric.c#L1338-L1342
+		// https://github.com/postgres/postgres/blob/7bd752c/src/backend/utils/adt/numeric.c#L1340-L1344
 		if scale < numericMinScale || scale > numericMaxScale {
 			return 0, fmt.Errorf(
 				"%w: NUMERIC scale %d must be between %d and %d",
@@ -628,8 +627,8 @@ func (exec *Executor) executeDecimalMethod(
 	// Make sure it's got no more than precision digits.
 	if count > 0 && count > precision-scale {
 		return 0, fmt.Errorf(
-			`%w: argument "%v" of jsonpath item method %v is invalid for type numeric`,
-			ErrVerbose, value, op,
+			`%w: argument "%v" of jsonpath item method %v is invalid for type %v`,
+			ErrVerbose, value, op, "numeric",
 		)
 	}
 	return rounded, nil
