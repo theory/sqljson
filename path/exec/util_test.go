@@ -13,7 +13,6 @@ import (
 
 func TestCastJSONNumber(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	doubleInt := func(i int64) int64 { return i * 2 }
 	doubleFloat := func(i float64) float64 { return i * 2 }
@@ -44,6 +43,8 @@ func TestCastJSONNumber(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			val, ok := castJSONNumber(tc.num, doubleInt, doubleFloat)
 			a.Equal(tc.exp, val)
 			a.Equal(ok, tc.ok)
@@ -53,8 +54,6 @@ func TestCastJSONNumber(t *testing.T) {
 
 func TestGetNodeInt32(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -105,6 +104,9 @@ func TestGetNodeInt32(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			val, err := getNodeInt32(tc.node, tc.meth, tc.field)
 			a.Equal(tc.exp, val)
 			if tc.isErr == nil {
@@ -119,8 +121,6 @@ func TestGetNodeInt32(t *testing.T) {
 
 func TestGetJSONInt32(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -239,6 +239,9 @@ func TestGetJSONInt32(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			val, err := getJSONInt32(tc.val, tc.op)
 			a.Equal(tc.exp, val)
 			if tc.isErr == nil {

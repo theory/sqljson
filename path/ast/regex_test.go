@@ -10,7 +10,6 @@ import (
 
 func TestRegexFlag(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		flag regexFlag
@@ -26,6 +25,8 @@ func TestRegexFlag(t *testing.T) {
 	} {
 		t.Run(tc.str+"_flag", func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			a.Equal(regexFlag(tc.val), tc.flag)
 			a.Equal(tc.str, tc.flag.String())
 		})
@@ -34,8 +35,6 @@ func TestRegexFlag(t *testing.T) {
 
 func TestRegexFlags(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -140,6 +139,8 @@ func TestRegexFlags(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			flags, err := newRegexFlags(tc.expr)
 			a.Equal(tc.exp, flags)
@@ -157,7 +158,6 @@ func TestRegexFlags(t *testing.T) {
 
 func TestValidateRegex(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -192,6 +192,7 @@ func TestValidateRegex(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			r := require.New(t)
 
 			err := validateRegex(tc.re, tc.flags)
 			if tc.err == "" {

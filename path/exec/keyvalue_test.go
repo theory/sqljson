@@ -14,7 +14,6 @@ import (
 
 func TestAddrOf(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -55,6 +54,8 @@ func TestAddrOf(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			ptr := addrOf(tc.value)
 			if tc.noID {
 				a.Zero(ptr)
@@ -79,8 +80,6 @@ func deltaBetween(collection, item any) int64 {
 
 func TestKVBaseObject(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	const tenTen = int64(10000000000) // 10^10
 
@@ -114,6 +113,8 @@ func TestKVBaseObject(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Use path to fetch the object from base
 			path, err := parser.Parse(tc.path)
@@ -272,6 +273,7 @@ func TestExecuteKeyValueMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			tc.run(t)
 		})
 	}

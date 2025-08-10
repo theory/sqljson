@@ -9,9 +9,10 @@ import (
 
 //nolint:paralleltest // Setting a global so cannot run in parallel.
 func TestGrammarStuff(t *testing.T) {
+	a := assert.New(t)
+
 	pathErrorVerbose = true
 	t.Cleanup(func() { pathErrorVerbose = false })
-	a := assert.New(t)
 
 	p := &pathParserImpl{char: 42}
 	a.Equal(42, p.Lookahead())

@@ -21,8 +21,6 @@ func mkAST(t *testing.T, lax, pred bool, node ast.Node) *ast.AST {
 
 func TestParser(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -53,6 +51,9 @@ func TestParser(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			ast, err := Parse(tc.path)
 			if tc.err == "" {
 				r.NoError(err)

@@ -14,8 +14,6 @@ import (
 
 func TestExecuteIntegerMath(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -86,6 +84,8 @@ func TestExecuteIntegerMath(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			res, err := executeIntegerMath(tc.left, tc.right, tc.op)
 			a.Equal(tc.exp, res)
@@ -101,8 +101,6 @@ func TestExecuteIntegerMath(t *testing.T) {
 
 func TestExecuteFloatMath(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -173,6 +171,8 @@ func TestExecuteFloatMath(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			res, err := executeFloatMath(tc.left, tc.right, tc.op)
 			//nolint:testifylint
@@ -189,7 +189,6 @@ func TestExecuteFloatMath(t *testing.T) {
 
 func TestMathOperandErr(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -209,6 +208,8 @@ func TestMathOperandErr(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			r := require.New(t)
+
 			err := mathOperandErr(tc.op, tc.pos)
 			r.EqualError(err, fmt.Sprintf(
 				"exec: %v operand of jsonpath operator %v is not a single numeric value",
@@ -221,8 +222,6 @@ func TestMathOperandErr(t *testing.T) {
 
 func TestExecUnaryMathExpr(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	path, _ := parser.Parse("$")
 	icb := func(i int64) int64 { return i * 2 }
@@ -322,6 +321,8 @@ func TestExecUnaryMathExpr(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Make sure we have a unary node.
 			node, ok := tc.node.(*ast.UnaryNode)
@@ -366,8 +367,6 @@ func TestExecUnaryMathExpr(t *testing.T) {
 
 func TestExecBinaryMathExpr(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	path, _ := parser.Parse("$")
 
@@ -445,6 +444,8 @@ func TestExecBinaryMathExpr(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Make sure we have a binary node.
 			node, ok := tc.node.(*ast.BinaryNode)
@@ -484,8 +485,6 @@ func TestExecBinaryMathExpr(t *testing.T) {
 
 func TestExecMathOp(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -629,6 +628,9 @@ func TestExecMathOp(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			res, err := execMathOp(tc.left, tc.right, tc.op)
 			a.Equal(tc.exp, res)
 			if tc.isErr == nil {

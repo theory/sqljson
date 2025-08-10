@@ -13,7 +13,6 @@ import (
 
 func TestConstNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name     string
@@ -33,6 +32,8 @@ func TestConstNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			node := NewConst(tc.kind)
 			a.Implements((*Node)(nil), node)
 			a.Equal(tc.str, node.String())
@@ -63,7 +64,6 @@ func TestConstNode(t *testing.T) {
 
 func TestBinaryOperator(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -91,6 +91,8 @@ func TestBinaryOperator(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			a.Equal(tc.str, tc.op.String())
 			a.Equal(tc.prior, tc.op.priority())
 		})
@@ -99,7 +101,6 @@ func TestBinaryOperator(t *testing.T) {
 
 func TestUnaryOperator(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -123,6 +124,8 @@ func TestUnaryOperator(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			a.Equal(tc.str, tc.op.String())
 			a.Equal(tc.prior, tc.op.priority())
 		})
@@ -131,7 +134,6 @@ func TestUnaryOperator(t *testing.T) {
 
 func TestMethodNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -153,6 +155,8 @@ func TestMethodNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			node := NewMethod(tc.meth)
 			a.Implements((*Node)(nil), node)
 			a.Equal(tc.meth, node.name)
@@ -177,7 +181,6 @@ func TestMethodNode(t *testing.T) {
 
 func TestStringNodes(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -201,6 +204,7 @@ func TestStringNodes(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
 
 			str := NewString(tc.expr)
 			a.Implements((*Node)(nil), str)
@@ -241,7 +245,6 @@ func TestStringNodes(t *testing.T) {
 //nolint:dupl
 func TestNumericNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -283,6 +286,7 @@ func TestNumericNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
 
 			if tc.err != "" {
 				a.PanicsWithError(tc.err, func() { NewNumeric(tc.num) })
@@ -320,7 +324,6 @@ func TestNumericNode(t *testing.T) {
 //nolint:dupl
 func TestIntegerNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -356,6 +359,7 @@ func TestIntegerNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
 
 			if tc.err != "" {
 				a.PanicsWithError(tc.err, func() { NewInteger(tc.num) })
@@ -391,7 +395,6 @@ func TestIntegerNode(t *testing.T) {
 
 func TestBinaryNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -560,6 +563,8 @@ func TestBinaryNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			node := NewBinary(tc.op, tc.left, tc.right)
 			a.Implements((*Node)(nil), node)
 			a.Equal(node.op.priority(), node.priority())
@@ -603,7 +608,6 @@ func TestBinaryNode(t *testing.T) {
 
 func TestUnaryNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -702,6 +706,8 @@ func TestUnaryNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			node := NewUnary(tc.op, tc.node)
 			a.Implements((*Node)(nil), node)
 			a.Equal(node.op.priority(), node.priority())
@@ -737,7 +743,6 @@ func TestUnaryNode(t *testing.T) {
 
 func TestArrayIndexNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -774,6 +779,8 @@ func TestArrayIndexNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			node := NewArrayIndex(tc.nodes)
 			a.Implements((*Node)(nil), node)
 			a.Equal(tc.nodes, node.subscripts)
@@ -798,7 +805,6 @@ func TestArrayIndexNode(t *testing.T) {
 
 func TestAnyNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -845,6 +851,8 @@ func TestAnyNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			node := NewAny(tc.first, tc.last)
 			a.Implements((*Node)(nil), node)
 			a.Equal(lowestPriority, node.priority())
@@ -879,8 +887,6 @@ func TestAnyNode(t *testing.T) {
 
 func TestRegexNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name    string
@@ -955,6 +961,9 @@ func TestRegexNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			node, err := NewRegex(tc.node, tc.re, tc.flag)
 			if tc.err != "" {
 				r.EqualError(err, tc.err)
@@ -1008,7 +1017,6 @@ func TestRegexNode(t *testing.T) {
 
 func TestNewUnaryOrNumber(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -1104,6 +1112,8 @@ func TestNewUnaryOrNumber(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			if tc.err != "" {
 				a.PanicsWithValue(tc.err, func() { NewUnaryOrNumber(tc.op, tc.node) })
 				return
@@ -1115,7 +1125,6 @@ func TestNewUnaryOrNumber(t *testing.T) {
 
 func TestWriteToNext(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -1140,6 +1149,8 @@ func TestWriteToNext(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			buf := new(strings.Builder)
 			tc.node.writeTo(buf, false, false)
 			a.Equal(tc.exp, buf.String())
@@ -1149,8 +1160,6 @@ func TestWriteToNext(t *testing.T) {
 
 func TestAST(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -1163,6 +1172,8 @@ func TestAST(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			if tc.err != "" {
 				tree, err := New(true, false, tc.node)
@@ -1196,7 +1207,6 @@ func TestAST(t *testing.T) {
 
 func TestValidateNode(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
 	goodRegex, _ := NewRegex(NewConst(ConstRoot), ".", "")
 	badRegex, _ := NewRegex(NewConst(ConstCurrent), ".", "")
 
@@ -1336,6 +1346,8 @@ func TestValidateNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			r := require.New(t)
+
 			err := validateNode(tc.node, tc.depth, tc.inSub)
 			if tc.err == "" {
 				r.NoError(err)
@@ -1348,7 +1360,6 @@ func TestValidateNode(t *testing.T) {
 
 func TestNodes(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -1369,6 +1380,8 @@ func TestNodes(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			a.Implements((*Node)(nil), tc.node)
 		})
 	}
@@ -1376,18 +1389,20 @@ func TestNodes(t *testing.T) {
 
 func TestLinkNodes(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	// Test for empty list of nodes
 	t.Run("empty", func(t *testing.T) {
 		t.Parallel()
 		r := require.New(t)
+
 		r.PanicsWithValue("No nodes passed to LinkNodes", func() { LinkNodes(nil) })
 		r.PanicsWithValue("No nodes passed to LinkNodes", func() { LinkNodes([]Node{}) })
 	})
 
 	t.Run("simple", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		nodes := []Node{
 			NewConst(ConstRoot),
 			NewMethod(MethodAbs),
@@ -1407,6 +1422,8 @@ func TestLinkNodes(t *testing.T) {
 
 	t.Run("append", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		nodes := []Node{
 			&ConstNode{
 				kind: ConstRoot,

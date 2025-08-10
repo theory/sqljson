@@ -17,7 +17,6 @@ import (
 
 func TestResultStatus(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -30,6 +29,8 @@ func TestResultStatus(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			a.Equal(tc.name, tc.res.String())
 			a.Equal(tc.res == statusFailed, tc.res.failed())
 		})
@@ -58,7 +59,6 @@ func TestValueList(t *testing.T) {
 
 func TestOptions(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -88,6 +88,8 @@ func TestOptions(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			e := &Executor{verbose: true}
 			tc.opt(e)
 			a.Equal(tc.exp, e)
@@ -97,7 +99,6 @@ func TestOptions(t *testing.T) {
 
 func TestNewExec(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 	lax, _ := parser.Parse("$")
 	strict, _ := parser.Parse("strict $")
 
@@ -158,6 +159,8 @@ func TestNewExec(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			e := newExec(tc.path, tc.opts...)
 			a.Equal(tc.exp, e)
 		})
@@ -166,8 +169,6 @@ func TestNewExec(t *testing.T) {
 
 func TestQueryAndFirstAndExists(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -222,12 +223,16 @@ func TestQueryAndFirstAndExists(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			r := require.New(t)
+
 			// Parse the path.
 			path, err := parser.Parse(tc.path)
 			r.NoError(err)
 
 			t.Run("query", func(t *testing.T) {
 				t.Parallel()
+				a := assert.New(t)
+
 				// Run the query.
 				res, err := Query(ctx, path, tc.value, tc.opts...)
 				a.Equal(tc.exp, res)
@@ -243,6 +248,8 @@ func TestQueryAndFirstAndExists(t *testing.T) {
 
 			t.Run("first", func(t *testing.T) {
 				t.Parallel()
+				a := assert.New(t)
+
 				// Run the query.
 				res, err := First(ctx, path, tc.value, tc.opts...)
 				if len(tc.exp) > 0 {
@@ -262,6 +269,8 @@ func TestQueryAndFirstAndExists(t *testing.T) {
 
 			t.Run("exists", func(t *testing.T) {
 				t.Parallel()
+				a := assert.New(t)
+
 				// Run the query.
 				res, err := Exists(ctx, path, tc.value, tc.opts...)
 				a.Equal(len(tc.exp) > 0, res)
@@ -285,8 +294,6 @@ func TestQueryAndFirstAndExists(t *testing.T) {
 
 func TestMatch(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -355,6 +362,9 @@ func TestMatch(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			// Parse the path.
 			path, err := parser.Parse(tc.path)
 			r.NoError(err)
@@ -453,8 +463,9 @@ func newTestExecutor(path *ast.AST, vars Vars, throwErrors, useTZ bool) *Executo
 
 func (tc execTestCase) run(t *testing.T) {
 	t.Helper()
-	r := require.New(t)
 	a := assert.New(t)
+	r := require.New(t)
+
 	path, err := parser.Parse(tc.path)
 	r.NoError(err)
 	exec := newTestExecutor(path, tc.vars, !tc.silent, tc.useTZ)

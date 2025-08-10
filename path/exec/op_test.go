@@ -13,8 +13,6 @@ import (
 
 func TestExecBinaryNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -142,6 +140,9 @@ func TestExecBinaryNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			e := newTestExecutor(laxRootPath, nil, true, false)
 			list := newList()
 			res, err := e.execBinaryNode(ctx, tc.node, tc.value, list, tc.unwrap)
@@ -162,8 +163,6 @@ func TestExecBinaryNode(t *testing.T) {
 
 func TestExecUnaryNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -347,6 +346,9 @@ func TestExecUnaryNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			e := newTestExecutor(laxRootPath, nil, true, false)
 			e.root = tc.value
 			list := newList()
@@ -368,8 +370,6 @@ func TestExecUnaryNode(t *testing.T) {
 
 func TestExecRegexNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -405,6 +405,9 @@ func TestExecRegexNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			rx, err := ast.NewRegex(ast.NewConst(ast.ConstRoot), tc.regex, "")
 			r.NoError(err)
 
@@ -429,8 +432,6 @@ func TestExecRegexNode(t *testing.T) {
 
 func TestExecAnyNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -545,6 +546,8 @@ func TestExecAnyNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Should have an AnyNode.
 			node, ok := tc.node.(*ast.AnyNode)
@@ -586,7 +589,6 @@ func TestExecAnyNode(t *testing.T) {
 
 func TestCollection(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -618,6 +620,8 @@ func TestCollection(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			a.Equal(tc.exp, collection(tc.value))
 		})
 	}
@@ -625,8 +629,6 @@ func TestCollection(t *testing.T) {
 
 func TestExecuteAnyItem(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -791,6 +793,8 @@ func TestExecuteAnyItem(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Should have an AnyNode.
 			node, ok := tc.node.(*ast.AnyNode)
@@ -854,8 +858,6 @@ func TestExecuteLikeRegexErrors(t *testing.T) {
 
 func TestExecuteStartsWith(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -896,6 +898,9 @@ func TestExecuteStartsWith(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			res, err := executeStartsWith(ctx, nil, tc.str, tc.prefix)
 			a.Equal(tc.exp, res)
 			r.NoError(err)

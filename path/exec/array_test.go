@@ -12,8 +12,6 @@ import (
 
 func TestExecSubscript(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	lax, _ := parser.Parse("$")
 	strict, _ := parser.Parse("strict $")
@@ -113,6 +111,9 @@ func TestExecSubscript(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			e := newTestExecutor(tc.path, nil, true, false)
 			from, to, err := e.execSubscript(ctx, tc.node, nil, tc.size)
 			a.Equal(tc.from, from)
@@ -130,8 +131,6 @@ func TestExecSubscript(t *testing.T) {
 
 func TestExecArrayIndex(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	lax, _ := parser.Parse("$")
 	strict, _ := parser.Parse("strict $")
@@ -280,6 +279,9 @@ func TestExecArrayIndex(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			e := newTestExecutor(tc.path, nil, true, false)
 			e.innermostArraySize = 12
 			found := newList()
@@ -306,8 +308,6 @@ func TestExecArrayIndex(t *testing.T) {
 
 func TestExecuteItemUnwrapTargetArray(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	path, _ := parser.Parse("$")
 
@@ -352,6 +352,9 @@ func TestExecuteItemUnwrapTargetArray(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			e := newTestExecutor(path, nil, true, false)
 			found := newList()
 			res, err := e.executeItemUnwrapTargetArray(ctx, tc.node, tc.value, found)
@@ -369,8 +372,6 @@ func TestExecuteItemUnwrapTargetArray(t *testing.T) {
 
 func TestGetArrayIndex(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	path, _ := parser.Parse("$[*]")
 
@@ -404,6 +405,9 @@ func TestGetArrayIndex(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			e := newTestExecutor(path, nil, true, false)
 			e.root = tc.value
 			integer, err := e.getArrayIndex(ctx, tc.node, tc.value)

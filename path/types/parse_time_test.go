@@ -227,14 +227,15 @@ func timestampTestCases(t *testing.T) []TSTestCase {
 
 func TestParseTime(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 	for _, tc := range timestampTestCases(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			for _, zc := range zoneTestCases() {
 				t.Run(zc.name, func(t *testing.T) {
-					ctx := ContextWithTZ(context.Background(), zc.loc)
 					t.Parallel()
+					a := assert.New(t)
+
+					ctx := ContextWithTZ(context.Background(), zc.loc)
 					tim, ok := ParseTime(ctx, tc.value, -1)
 					a.True(ok)
 					a.Equal(tc.ctor(tc.time, TZFromContext(ctx)), tim)
@@ -246,7 +247,6 @@ func TestParseTime(t *testing.T) {
 
 func TestParseFail(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -258,6 +258,8 @@ func TestParseFail(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			tim, ok := ParseTime(ctx, tc.value, -1)
 			a.False(ok)
 			a.Nil(tim)
@@ -267,7 +269,6 @@ func TestParseFail(t *testing.T) {
 
 func TestParseTimePrecision(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -353,6 +354,8 @@ func TestParseTimePrecision(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			cmpNano(a, tc.value, 0, 0)
 			cmpNano(a, tc.value, 1, tc.one)
 			cmpNano(a, tc.value, 2, tc.two)

@@ -12,13 +12,14 @@ import (
 
 func TestTimestamp(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range timestampTestCases(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			// Don't test Time and TimeTZ
 			switch tc.ctor(time.Time{}, &time.Location{}).(type) {
 			case *Time, *TimeTZ:
@@ -68,6 +69,7 @@ func TestTimestampInvalidJSON(t *testing.T) {
 func TestTimestampCompare(t *testing.T) {
 	t.Parallel()
 	a := assert.New(t)
+
 	now := time.Now().UTC()
 	ts := &Timestamp{Time: now}
 	a.Equal(-1, ts.Compare(now.Add(1*time.Hour)))

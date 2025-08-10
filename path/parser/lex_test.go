@@ -47,7 +47,6 @@ func TestNewLexer(t *testing.T) {
 
 func TestIsIdentRune(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -81,6 +80,8 @@ func TestIsIdentRune(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			a.Equal(tc.exp, isIdentRune(tc.val, tc.char))
 		})
 	}
@@ -113,7 +114,6 @@ func TestScanError(t *testing.T) {
 
 func TestScanIdent(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -304,6 +304,7 @@ func TestScanIdent(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
 
 			// Append a '.' to check that scanIdent doesn't slurp it up.
 			l := newLexer(tc.word + ".")
@@ -323,7 +324,6 @@ func TestScanIdent(t *testing.T) {
 
 func TestScanString(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -493,6 +493,7 @@ func TestScanString(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
 
 			l := newLexer(tc.str)
 			a.Equal(tc.tok, l.Lex(&pathSymType{}))
@@ -509,7 +510,6 @@ func TestScanString(t *testing.T) {
 
 func TestScanNumbers(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -794,6 +794,7 @@ func TestScanNumbers(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
 
 			sym := &pathSymType{}
 			l := newLexer(tc.num)
@@ -819,7 +820,6 @@ func TestScanNumbers(t *testing.T) {
 
 func TestScanVariable(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name     string
@@ -860,6 +860,7 @@ func TestScanVariable(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
 
 			l := newLexer(tc.variable)
 			a.Equal(l.Lex(&pathSymType{}), tc.tok)
@@ -876,7 +877,6 @@ func TestScanVariable(t *testing.T) {
 
 func TestScanComment(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -896,6 +896,7 @@ func TestScanComment(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
 
 			l := newLexer(tc.path)
 			a.Equal('/', l.next())
@@ -913,7 +914,6 @@ func TestScanComment(t *testing.T) {
 
 func TestScanOperator(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -954,6 +954,8 @@ func TestScanOperator(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			l := newLexer(tc.op)
 			tok := l.Lex(&pathSymType{})
 			a.Equal(tc.tok, tok)
@@ -965,7 +967,6 @@ func TestScanOperator(t *testing.T) {
 
 func TestLexer(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -997,6 +998,7 @@ func TestLexer(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
 
 			sym := &pathSymType{}
 			l := newLexer(tc.path)
@@ -1014,8 +1016,6 @@ func TestLexer(t *testing.T) {
 
 func TestSetResult(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -1052,6 +1052,9 @@ func TestSetResult(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			if tc.pred {
 				tc.lex.setPred()
 			}
@@ -1072,7 +1075,6 @@ func TestSetResult(t *testing.T) {
 
 func TestLitName(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name   string
@@ -1084,6 +1086,6 @@ func TestLitName(t *testing.T) {
 		{"hexadecimal", 'x'},
 		{"binary", 'b'},
 	} {
-		a.Equal(tc.name+" literal", litName(tc.prefix))
+		assert.Equal(t, tc.name+" literal", litName(tc.prefix))
 	}
 }

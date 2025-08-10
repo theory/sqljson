@@ -12,8 +12,6 @@ import (
 
 func TestExecConstNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	path, _ := parser.Parse("$")
 	base := kvBaseObject{addr: uintptr(42), id: -1}
@@ -113,6 +111,8 @@ func TestExecConstNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Construct found.
 			var found *valueList
@@ -153,8 +153,6 @@ func TestExecConstNode(t *testing.T) {
 
 func TestExecLiteralConst(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	path, _ := parser.Parse("$")
 
@@ -198,6 +196,9 @@ func TestExecLiteralConst(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			// Construct found.
 			var found *valueList
 			if tc.find != nil {
@@ -233,8 +234,6 @@ func TestExecLiteralConst(t *testing.T) {
 
 func TestExecAnyKey(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	lax, _ := parser.Parse("$")
 	strict, _ := parser.Parse("strict $")
@@ -316,6 +315,8 @@ func TestExecAnyKey(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Construct found.
 			var found *valueList
@@ -348,8 +349,6 @@ func TestExecAnyKey(t *testing.T) {
 
 func TestExecAnyArray(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	lax, _ := parser.Parse("$")
 	strict, _ := parser.Parse("strict $")
@@ -421,6 +420,9 @@ func TestExecAnyArray(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			// Construct found.
 			var found *valueList
 			if tc.find != nil {
@@ -459,8 +461,6 @@ func TestExecAnyArray(t *testing.T) {
 
 func TestExecLastConst(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	path, _ := parser.Parse("$")
 
@@ -511,6 +511,9 @@ func TestExecLastConst(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			// Construct found.
 			var found *valueList
 			if tc.find != nil {

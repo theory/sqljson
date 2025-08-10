@@ -14,8 +14,6 @@ import (
 
 func TestQuery(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -101,6 +99,8 @@ func TestQuery(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Set up executor.
 			path, err := parser.Parse(tc.path)
@@ -139,8 +139,6 @@ func TestQuery(t *testing.T) {
 
 func TestExecuteItem(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -198,6 +196,8 @@ func TestExecuteItem(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Set up executor.
 			path, err := parser.Parse(tc.path)
@@ -236,8 +236,6 @@ func TestExecuteItem(t *testing.T) {
 
 func TestExecuteItemOptUnwrapResult(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -308,6 +306,8 @@ func TestExecuteItemOptUnwrapResult(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Set up executor.
 			path, err := parser.Parse(tc.path)
@@ -344,8 +344,6 @@ func TestExecuteItemOptUnwrapResult(t *testing.T) {
 
 func TestExecuteItemOptUnwrapTarget(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	rx, _ := ast.NewRegex(ast.NewConst(ast.ConstRoot), "x", "")
 	type wrapNode struct{ ast.Node }
@@ -463,6 +461,8 @@ func TestExecuteItemOptUnwrapTarget(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Set up executor.
 			e := newTestExecutor(laxRootPath, tc.vars, true, false)
@@ -500,8 +500,6 @@ func TestExecuteItemOptUnwrapTarget(t *testing.T) {
 
 func TestExecuteNextItem(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -552,6 +550,9 @@ func TestExecuteNextItem(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			// Set up executor.
 			e := newTestExecutor(laxRootPath, nil, true, false)
 			e.root = tc.value

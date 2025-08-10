@@ -12,8 +12,6 @@ import (
 
 func TestExecLiteral(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	path, _ := parser.Parse("$")
 	ctx := context.Background()
 
@@ -53,6 +51,8 @@ func TestExecLiteral(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			e := newTestExecutor(path, nil, true, false)
 			list := newList()
@@ -83,8 +83,6 @@ func TestExecLiteral(t *testing.T) {
 
 func TestExecVariable(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	path, _ := parser.Parse("$")
 	ctx := context.Background()
 
@@ -133,6 +131,8 @@ func TestExecVariable(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Make sure we have a variable node.
 			node, ok := tc.node.(*ast.VariableNode)
@@ -178,8 +178,6 @@ func TestExecVariable(t *testing.T) {
 
 func TestExecKeyNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	lax, _ := parser.Parse("$")
 	strict, _ := parser.Parse("strict $")
@@ -283,6 +281,8 @@ func TestExecKeyNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Make sure we have a key node.
 			node, ok := tc.node.(*ast.KeyNode)

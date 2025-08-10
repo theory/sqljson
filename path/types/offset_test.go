@@ -38,11 +38,11 @@ func zoneTestCases() []zoneTestCase {
 
 func TestOffsetLocationForAndOnlyTimeFor(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range zoneTestCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
 
 			// Create a time in the location.
 			local := time.Date(2024, 6, 24, 10, 17, 32, 0, tc.loc)
@@ -69,11 +69,12 @@ func TestOffsetLocationForAndOnlyTimeFor(t *testing.T) {
 
 func TestContextWithTZ(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range zoneTestCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			ctx := ContextWithTZ(context.Background(), tc.loc)
 			loc := TZFromContext(ctx)
 			a.Equal(tc.loc, loc)
@@ -82,6 +83,8 @@ func TestContextWithTZ(t *testing.T) {
 
 	t.Run("no_tz", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		loc := TZFromContext(context.Background())
 		a.Equal(time.UTC, loc)
 		loc = TZFromContext(ContextWithTZ(context.Background(), nil))

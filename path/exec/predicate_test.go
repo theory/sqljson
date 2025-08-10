@@ -11,7 +11,6 @@ import (
 
 func TestPredOutcome(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -24,12 +23,16 @@ func TestPredOutcome(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			a.Equal(tc.name, tc.out.String())
 		})
 	}
 
 	t.Run("predFrom", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		a.Equal(predTrue, predFrom(true))
 		a.Equal(predFalse, predFrom(false))
 	})
@@ -47,8 +50,6 @@ func TestPredicateCallback(t *testing.T) {
 
 func TestExecutePredicate(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	rx, _ := ast.NewRegex(ast.NewConst(ast.ConstRoot), ".", "")
 
@@ -145,6 +146,8 @@ func TestExecutePredicate(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			e := newTestExecutor(tc.path, nil, true, false)
 			cb := tc.callback(e)

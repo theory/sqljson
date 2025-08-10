@@ -8,7 +8,6 @@ import (
 
 func TestDateTime(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -22,6 +21,8 @@ func TestDateTime(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			a.Implements((*DateTime)(nil), tc.obj)
 		})
 	}

@@ -16,7 +16,6 @@ import (
 
 func TestTZRequiredCast(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -41,6 +40,8 @@ func TestTZRequiredCast(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			r := require.New(t)
+
 			err := tzRequiredCast(tc.t1, tc.t2)
 			r.EqualError(err, fmt.Sprintf(
 				"exec: cannot convert value from %v to %v without time zone usage."+tzHint,
@@ -53,8 +54,6 @@ func TestTZRequiredCast(t *testing.T) {
 
 func TestUnknownDateTime(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -75,6 +74,9 @@ func TestUnknownDateTime(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			res, err := unknownDateTime(tc.val)
 			a.Equal(0, res)
 			r.EqualError(
@@ -99,6 +101,7 @@ func (tc testDatetimeCompare) checkCompare(t *testing.T, res int, err error) {
 	t.Helper()
 	a := assert.New(t)
 	r := require.New(t)
+
 	a.Equal(tc.exp, res)
 	if tc.err == nil {
 		a.NoError(err)
@@ -236,6 +239,7 @@ func TestCompareDatetime(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			res, err := compareDatetime(ctx, tc.val1, tc.val2, tc.useTZ)
 			tc.checkCompare(t, res, err)
 		})
@@ -244,7 +248,6 @@ func TestCompareDatetime(t *testing.T) {
 
 func TestCompareDate(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 	moment := stableTime()
 	ctx := context.Background()
 
@@ -294,6 +297,8 @@ func TestCompareDate(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			val1, ok := tc.val1.(*types.Date)
 			a.True(ok)
 			res, err := compareDate(ctx, val1, tc.val2, tc.useTZ)
@@ -304,12 +309,10 @@ func TestCompareDate(t *testing.T) {
 
 func TestCompareTime(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	moment := stableTime()
 	loc, err := time.LoadLocation("PST8PDT")
-	r.NoError(err)
+	require.NoError(t, err)
 	ctx := types.ContextWithTZ(context.Background(), loc)
 
 	for _, tc := range []testDatetimeCompare{
@@ -358,6 +361,8 @@ func TestCompareTime(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			val1, ok := tc.val1.(*types.Time)
 			a.True(ok)
 			res, err := compareTime(ctx, val1, tc.val2, tc.useTZ)
@@ -368,12 +373,10 @@ func TestCompareTime(t *testing.T) {
 
 func TestCompareTimeTZ(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	moment := stableTime()
 	loc, err := time.LoadLocation("PST8PDT")
-	r.NoError(err)
+	require.NoError(t, err)
 	ctx := types.ContextWithTZ(context.Background(), loc)
 
 	for _, tc := range []testDatetimeCompare{
@@ -422,6 +425,8 @@ func TestCompareTimeTZ(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			val1, ok := tc.val1.(*types.TimeTZ)
 			a.True(ok)
 			res, err := compareTimeTZ(ctx, val1, tc.val2, tc.useTZ)
@@ -432,7 +437,6 @@ func TestCompareTimeTZ(t *testing.T) {
 
 func TestCompareTimestamp(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 	moment := stableTime()
 	ctx := context.Background()
 
@@ -481,6 +485,8 @@ func TestCompareTimestamp(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			val1, ok := tc.val1.(*types.Timestamp)
 			a.True(ok)
 			res, err := compareTimestamp(ctx, val1, tc.val2, tc.useTZ)
@@ -491,7 +497,6 @@ func TestCompareTimestamp(t *testing.T) {
 
 func TestCompareTimestampTZ(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 	moment := stableTime()
 	ctx := context.Background()
 
@@ -547,6 +552,8 @@ func TestCompareTimestampTZ(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			val1, ok := tc.val1.(*types.TimestampTZ)
 			a.True(ok)
 			res, err := compareTimestampTZ(ctx, val1, tc.val2, tc.useTZ)
@@ -557,8 +564,6 @@ func TestCompareTimestampTZ(t *testing.T) {
 
 func TestExecuteDateTimeMethod(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	path, _ := parser.Parse("$")
 
@@ -785,6 +790,8 @@ func TestExecuteDateTimeMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Construct found.
 			var found *valueList
@@ -833,8 +840,6 @@ func TestParseDateTimeFormat(t *testing.T) {
 
 func TestParseDateTime(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 	path, _ := parser.Parse("$")
 
@@ -885,6 +890,8 @@ func TestParseDateTime(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Test parseDateTime.
 			e := newTestExecutor(path, nil, true, false)
@@ -904,7 +911,6 @@ func TestParseDateTime(t *testing.T) {
 
 func TestNotRecognized(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -933,6 +939,8 @@ func TestNotRecognized(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			r := require.New(t)
+
 			err := notRecognized(tc.op, tc.val)
 			r.EqualError(
 				err,
@@ -1034,6 +1042,7 @@ func TestCastDate(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			tc.run(t, func(e *Executor) (types.DateTime, error) {
 				return e.castDate(ctx, tc.val, tc.str)
 			})
@@ -1102,6 +1111,7 @@ func TestCastTime(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			tc.run(t, func(e *Executor) (types.DateTime, error) {
 				return e.castTime(ctx, tc.val, tc.str)
 			})
@@ -1169,6 +1179,7 @@ func TestCastTimeTZ(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			tc.run(t, func(e *Executor) (types.DateTime, error) {
 				return e.castTimeTZ(ctx, tc.val, tc.str)
 			})
@@ -1232,6 +1243,7 @@ func TestCastTimestamp(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			tc.run(t, func(e *Executor) (types.DateTime, error) {
 				return e.castTimestamp(ctx, tc.val, tc.str)
 			})
@@ -1303,6 +1315,7 @@ func TestCastTimestampTZ(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			tc.run(t, func(e *Executor) (types.DateTime, error) {
 				return e.castTimestampTZ(ctx, tc.val, tc.str)
 			})

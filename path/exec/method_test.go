@@ -18,8 +18,6 @@ import (
 
 func TestExecMethodNode(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	path, _ := parser.Parse("$")
 	ctx := context.Background()
 
@@ -325,6 +323,8 @@ func TestExecMethodNode(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Make sure we have a method node.
 			node, ok := tc.node.(*ast.MethodNode)
@@ -526,6 +526,7 @@ func TestExecMethodType(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			// Make sure we have a .type() node.
 			node, ok := tc.node.(*ast.MethodNode)
 			tc.checkNode(t, ok, node, ast.MethodType)
@@ -599,6 +600,7 @@ func TestExecMethodSize(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			// Make sure we have a .size() node.
 			node, ok := tc.node.(*ast.MethodNode)
 			tc.checkNode(t, ok, node, ast.MethodSize)
@@ -747,6 +749,7 @@ func TestExecMethodDouble(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			// Make sure we have a .double() node.
 			node, ok := tc.node.(*ast.MethodNode)
 			tc.checkNode(t, ok, node, ast.MethodDouble)
@@ -939,6 +942,7 @@ func TestExecMethodInteger(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			// Make sure we have a .Integer() node.
 			node, ok := tc.node.(*ast.MethodNode)
 			tc.checkNode(t, ok, node, ast.MethodInteger)
@@ -1162,6 +1166,7 @@ func TestExecMethodBigInt(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			// Make sure we have a .BigInt() node.
 			node, ok := tc.node.(*ast.MethodNode)
 			tc.checkNode(t, ok, node, ast.MethodBigInt)
@@ -1300,6 +1305,7 @@ func TestExecMethodString(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			// Make sure we have a .String() node.
 			node, ok := tc.node.(*ast.MethodNode)
 			tc.checkNode(t, ok, node, ast.MethodString)
@@ -1577,6 +1583,7 @@ func TestExecMethodBoolean(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			// Make sure we have a .Boolean() node.
 			node, ok := tc.node.(*ast.MethodNode)
 			tc.checkNode(t, ok, node, ast.MethodBoolean)
@@ -1591,8 +1598,6 @@ func TestExecMethodBoolean(t *testing.T) {
 
 func TestExecBooleanString(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -1799,6 +1804,9 @@ func TestExecBooleanString(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			res, err := execBooleanString(tc.val, ast.MethodBoolean)
 			a.Equal(tc.exp, res)
 			if tc.isErr == nil {
@@ -2000,6 +2008,7 @@ func TestExecuteNumberMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			// Determine the method.
 			var meth any
 			meth = tc.node
@@ -2017,8 +2026,6 @@ func TestExecuteNumberMethod(t *testing.T) {
 
 func TestExecuteDecimalMethod(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -2120,6 +2127,9 @@ func TestExecuteDecimalMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			e := newTestExecutor(laxRootPath, nil, true, false)
 			res, err := e.executeDecimalMethod(tc.node, tc.value, tc.num)
 
@@ -2137,10 +2147,11 @@ func TestExecuteDecimalMethod(t *testing.T) {
 
 func TestNumericCallbacks(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	t.Run("intAbs", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		a.IsType((intCallback)(nil), intCallback(intAbs))
 		for i, n := range []int64{0, -1, 2, -3, 4, 5} {
 			a.Equal(int64(i), intAbs(n))
@@ -2149,6 +2160,8 @@ func TestNumericCallbacks(t *testing.T) {
 
 	t.Run("intSelf", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		a.IsType((intCallback)(nil), intCallback(intSelf))
 		for _, n := range []int64{4, 42, -99, -100323, 4, 10030} {
 			a.Equal(n, intSelf(n))
@@ -2157,6 +2170,8 @@ func TestNumericCallbacks(t *testing.T) {
 
 	t.Run("floatSelf", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		a.IsType((floatCallback)(nil), floatCallback(floatSelf))
 		for _, n := range []float64{-1, 12, 53, 98.6, 42.3, 100.99} {
 			//nolint:testifylint
@@ -2166,6 +2181,8 @@ func TestNumericCallbacks(t *testing.T) {
 
 	t.Run("intUMinus", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		a.IsType((intCallback)(nil), intCallback(intUMinus))
 		for _, n := range []int64{4, 42, -99, -100323, 4, 10030} {
 			a.Equal(-n, intUMinus(n))
@@ -2174,6 +2191,8 @@ func TestNumericCallbacks(t *testing.T) {
 
 	t.Run("floatSelf", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		a.IsType((floatCallback)(nil), floatCallback(floatUMinus))
 		for _, n := range []float64{-1, 12, 53, 98.6, 42.3, 100.99} {
 			//nolint:testifylint
@@ -2425,6 +2444,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+
 			e, list := tc.prep()
 			res, err := e.executeNumericItemMethod(ctx, tc.node, tc.value, tc.unwrap, tc.intCB, tc.floatCB, list)
 			tc.checkResults(t, res, list, err)

@@ -11,10 +11,9 @@ import (
 	"github.com/theory/sqljson/path/parser"
 )
 
+//nolint:dupl
 func TestExecuteBinaryBoolItem(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -277,6 +276,8 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Parse the path and make sure the root node is what we expect to
 			// be testing.
@@ -301,10 +302,9 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 	}
 }
 
+//nolint:dupl
 func TestExecuteUnaryBoolItem(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -417,6 +417,8 @@ func TestExecuteUnaryBoolItem(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Parse the path and make sure the root node is what we expect to
 			// be testing.
@@ -426,7 +428,7 @@ func TestExecuteUnaryBoolItem(t *testing.T) {
 			r.True(ok)
 			a.Equal(tc.op, node.Operator())
 
-			// Test executeBinaryBoolItem with the root node set to tc.value.
+			// Test executeUnaryBoolItem with the root node set to tc.value.
 			e := newTestExecutor(path, nil, true, false)
 			e.root = tc.value
 			res, err := e.executeUnaryBoolItem(ctx, node, tc.value)
@@ -443,8 +445,6 @@ func TestExecuteUnaryBoolItem(t *testing.T) {
 
 func TestExecuteBoolItem(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -516,6 +516,8 @@ func TestExecuteBoolItem(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Parse the path.
 			path, err := parser.Parse(tc.path)
@@ -538,8 +540,6 @@ func TestExecuteBoolItem(t *testing.T) {
 
 func TestAppendBoolResult(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -606,6 +606,8 @@ func TestAppendBoolResult(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Parse the path.
 			path, err := parser.Parse(tc.path)
@@ -637,8 +639,6 @@ func TestAppendBoolResult(t *testing.T) {
 
 func TestExecuteNestedBoolItem(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range []struct {
@@ -662,6 +662,8 @@ func TestExecuteNestedBoolItem(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Parse the path.
 			path, err := parser.Parse(tc.path)

@@ -166,8 +166,6 @@ func (tc firstTestCase) run(ctx context.Context, a *assert.Assertions, r *requir
 
 func TestPgAtQuestion(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L1-L40
@@ -393,6 +391,9 @@ func TestPgAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtQuestion(ctx, a, r)
 		})
 	}
@@ -400,8 +401,6 @@ func TestPgAtQuestion(t *testing.T) {
 
 func TestPgQueryCompareAtQuestion(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L21-L26
@@ -434,6 +433,9 @@ func TestPgQueryCompareAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -441,8 +443,6 @@ func TestPgQueryCompareAtQuestion(t *testing.T) {
 
 func TestPgExists(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L42-L45
@@ -476,6 +476,9 @@ func TestPgExists(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -483,8 +486,6 @@ func TestPgExists(t *testing.T) {
 
 func TestPgQueryModes(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L47-L57
@@ -562,6 +563,9 @@ func TestPgQueryModes(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -569,8 +573,6 @@ func TestPgQueryModes(t *testing.T) {
 
 func TestPgQueryStrict(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L59-L66
@@ -630,6 +632,9 @@ func TestPgQueryStrict(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -637,8 +642,6 @@ func TestPgQueryStrict(t *testing.T) {
 
 func TestPgQueryBasics(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L68-L97
@@ -832,6 +835,9 @@ func TestPgQueryBasics(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -839,8 +845,6 @@ func TestPgQueryBasics(t *testing.T) {
 
 func TestPgQueryBinaryOps(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L99-L115
@@ -962,6 +966,9 @@ func TestPgQueryBinaryOps(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -969,8 +976,6 @@ func TestPgQueryBinaryOps(t *testing.T) {
 
 func TestPgQueryAny(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L117-L138
@@ -1110,6 +1115,9 @@ func TestPgQueryAny(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -1117,8 +1125,6 @@ func TestPgQueryAny(t *testing.T) {
 
 func TestPgAtQuestionAny(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L140-L152
@@ -1204,6 +1210,9 @@ func TestPgAtQuestionAny(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtQuestion(ctx, a, r)
 		})
 	}
@@ -1211,8 +1220,6 @@ func TestPgAtQuestionAny(t *testing.T) {
 
 func TestPgQueryExists(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L154-L163
@@ -1280,6 +1287,9 @@ func TestPgQueryExists(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -1287,8 +1297,6 @@ func TestPgQueryExists(t *testing.T) {
 
 func TestPgQueryTernaryLogic(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L166-L190
@@ -1430,6 +1438,9 @@ func TestPgQueryTernaryLogic(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -1437,8 +1448,6 @@ func TestPgQueryTernaryLogic(t *testing.T) {
 
 func TestPgAtQuestionFilter(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L192-L198
@@ -1488,6 +1497,9 @@ func TestPgAtQuestionFilter(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtQuestion(ctx, a, r)
 		})
 	}
@@ -1495,8 +1507,6 @@ func TestPgAtQuestionFilter(t *testing.T) {
 
 func TestPgQueryAnyMath(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L200-L203
@@ -1528,6 +1538,9 @@ func TestPgQueryAnyMath(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -1535,8 +1548,6 @@ func TestPgQueryAnyMath(t *testing.T) {
 
 func TestPgAtQuestionAnyMath(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L204-L215
@@ -1616,6 +1627,9 @@ func TestPgAtQuestionAnyMath(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtQuestion(ctx, a, r)
 		})
 	}
@@ -1623,8 +1637,6 @@ func TestPgAtQuestionAnyMath(t *testing.T) {
 
 func TestPgQueryMathErrors(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L218-L230
@@ -1714,6 +1726,9 @@ func TestPgQueryMathErrors(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -1721,8 +1736,6 @@ func TestPgQueryMathErrors(t *testing.T) {
 
 func TestPgAtQuestionMathErrors(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L231-L234
@@ -1754,6 +1767,9 @@ func TestPgAtQuestionMathErrors(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtQuestion(ctx, a, r)
 		})
 	}
@@ -1761,8 +1777,6 @@ func TestPgAtQuestionMathErrors(t *testing.T) {
 
 func TestPgQueryUnwrapping(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L236-L242
@@ -1802,6 +1816,9 @@ func TestPgQueryUnwrapping(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -1810,8 +1827,6 @@ func TestPgQueryUnwrapping(t *testing.T) {
 // https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L244-L253
 func TestPgArrayWildcardUnwrapping(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 	for _, tc := range []queryTestCase{
 		{
@@ -1852,6 +1867,9 @@ func TestPgArrayWildcardUnwrapping(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -1887,6 +1905,9 @@ func TestPgArrayWildcardUnwrapping(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -1895,8 +1916,6 @@ func TestPgArrayWildcardUnwrapping(t *testing.T) {
 // Insert https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L255-L264
 func TestPgQueryBoolean(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L256-L258
@@ -1922,6 +1941,9 @@ func TestPgQueryBoolean(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -1929,8 +1951,6 @@ func TestPgQueryBoolean(t *testing.T) {
 
 func TestPgAtQuestionBoolean(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L259
@@ -1944,6 +1964,9 @@ func TestPgAtQuestionBoolean(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtQuestion(ctx, a, r)
 		})
 	}
@@ -1951,8 +1974,6 @@ func TestPgAtQuestionBoolean(t *testing.T) {
 
 func TestPgAtAtBoolean(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L261-L268
@@ -2008,6 +2029,9 @@ func TestPgAtAtBoolean(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtAt(ctx, a, r)
 		})
 	}
@@ -2015,8 +2039,6 @@ func TestPgAtAtBoolean(t *testing.T) {
 
 func TestPgMatch(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L269-L275
@@ -2064,6 +2086,9 @@ func TestPgMatch(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -2071,8 +2096,6 @@ func TestPgMatch(t *testing.T) {
 
 func TestPgQueryTypeMethod(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L278-L284
@@ -2122,6 +2145,9 @@ func TestPgQueryTypeMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -2129,8 +2155,6 @@ func TestPgQueryTypeMethod(t *testing.T) {
 
 func TestPgQueryAbsFloorType(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L286-L291
@@ -2174,6 +2198,9 @@ func TestPgQueryAbsFloorType(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -2181,8 +2208,6 @@ func TestPgQueryAbsFloorType(t *testing.T) {
 
 func TestPgQuerySizeMethod(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L293-L295
@@ -2212,6 +2237,9 @@ func TestPgQuerySizeMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -2219,8 +2247,6 @@ func TestPgQuerySizeMethod(t *testing.T) {
 
 func TestPgQueryMethodChain(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L297-L301
@@ -2258,6 +2284,9 @@ func TestPgQueryMethodChain(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -2274,15 +2303,13 @@ func offset(a, b any) int64 {
 
 func TestPgQueryKeyValue(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// Go can have different array offsets when executing stuff in parallel,
 	// so create the data here so we can calculate the correct IDs in tests 5
 	// and 7 below.
 	array, ok := js(`[{"a": 1, "b": [1, 2]}, {"c": {"a": "bbb"}}]`).([]any)
-	r.True(ok)
+	require.True(t, ok)
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L303-L310
 	for _, tc := range []queryTestCase{
@@ -2352,6 +2379,9 @@ func TestPgQueryKeyValue(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -2359,8 +2389,6 @@ func TestPgQueryKeyValue(t *testing.T) {
 
 func TestPgAtQuestionKeyValue(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L311-L312
@@ -2380,6 +2408,9 @@ func TestPgAtQuestionKeyValue(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtQuestion(ctx, a, r)
 		})
 	}
@@ -2387,8 +2418,6 @@ func TestPgAtQuestionKeyValue(t *testing.T) {
 
 func TestPgQueryDoubleMethod(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L314-L332
@@ -2518,6 +2547,9 @@ func TestPgQueryDoubleMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -2525,8 +2557,6 @@ func TestPgQueryDoubleMethod(t *testing.T) {
 
 func TestPgQueryAbsFloorCeilErr(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L334-L339
@@ -2573,6 +2603,9 @@ func TestPgQueryAbsFloorCeilErr(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -2580,8 +2613,6 @@ func TestPgQueryAbsFloorCeilErr(t *testing.T) {
 
 func TestPgQueryStartsWith(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L341-L348
@@ -2637,6 +2668,9 @@ func TestPgQueryStartsWith(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -2644,8 +2678,6 @@ func TestPgQueryStartsWith(t *testing.T) {
 
 func TestPgQueryLikeRegex(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L350-L359
@@ -2715,6 +2747,9 @@ func TestPgQueryLikeRegex(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -2722,8 +2757,6 @@ func TestPgQueryLikeRegex(t *testing.T) {
 
 func TestPgQueryDateTimeErr(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L361-L369
@@ -2787,6 +2820,9 @@ func TestPgQueryDateTimeErr(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -2794,8 +2830,6 @@ func TestPgQueryDateTimeErr(t *testing.T) {
 
 func TestPgQueryDateTimeAtQuestion(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L371
@@ -2810,6 +2844,9 @@ func TestPgQueryDateTimeAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtQuestion(ctx, a, r)
 		})
 	}
@@ -2825,8 +2862,6 @@ func pt(ctx context.Context, ts string) types.DateTime {
 
 func TestPgQueryDateTimeFormat(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L372-L384
@@ -2900,6 +2935,9 @@ func TestPgQueryDateTimeFormat(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.err = `exec: .datetime(template) is not yet supported`
 			tc.run(ctx, a, r)
 		})
@@ -2908,8 +2946,6 @@ func TestPgQueryDateTimeFormat(t *testing.T) {
 
 func TestPgQueryBigInt(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L386-L416
@@ -3106,6 +3142,9 @@ func TestPgQueryBigInt(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -3113,8 +3152,6 @@ func TestPgQueryBigInt(t *testing.T) {
 
 func TestPgQueryBooleanMethod(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L418-L458
@@ -3371,6 +3408,9 @@ func TestPgQueryBooleanMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -3378,11 +3418,9 @@ func TestPgQueryBooleanMethod(t *testing.T) {
 
 func TestPgQueryDateMethod(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 
 	loc, err := time.LoadLocation("PST8PDT")
-	r.NoError(err)
+	require.NoError(t, err)
 	ctx := types.ContextWithTZ(context.Background(), loc)
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L460-L477
@@ -3476,6 +3514,9 @@ func TestPgQueryDateMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -3483,8 +3524,6 @@ func TestPgQueryDateMethod(t *testing.T) {
 
 func TestPgQueryDateAtQuestion(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L469
@@ -3498,6 +3537,9 @@ func TestPgQueryDateAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtQuestion(ctx, a, r)
 		})
 	}
@@ -3505,12 +3547,13 @@ func TestPgQueryDateAtQuestion(t *testing.T) {
 
 func TestPgQueryDateMethodSyntaxError(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L479
 	t.Run("test_16", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+		r := require.New(t)
+
 		path, err := parser.Parse("$.date(2)")
 		r.EqualError(err, `parser: syntax error at 1:9`)
 		r.ErrorIs(err, parser.ErrParse)
@@ -3520,8 +3563,6 @@ func TestPgQueryDateMethodSyntaxError(t *testing.T) {
 
 func TestPgQueryDecimalMethod(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L481-L525
@@ -3801,6 +3842,9 @@ func TestPgQueryDecimalMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -3808,8 +3852,6 @@ func TestPgQueryDecimalMethod(t *testing.T) {
 
 func TestPgQueryIntegerMethod(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L527-L555
@@ -3994,6 +4036,9 @@ func TestPgQueryIntegerMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -4001,8 +4046,6 @@ func TestPgQueryIntegerMethod(t *testing.T) {
 
 func TestPgQueryNumberMethod(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L557-L584
@@ -4180,6 +4223,9 @@ func TestPgQueryNumberMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -4187,11 +4233,9 @@ func TestPgQueryNumberMethod(t *testing.T) {
 
 func TestPgQueryStringMethod(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 
 	loc, err := time.LoadLocation("PST8PDT")
-	r.NoError(err)
+	require.NoError(t, err)
 	ctx := types.ContextWithTZ(context.Background(), loc)
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L586-L616
@@ -4357,6 +4401,9 @@ func TestPgQueryStringMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -4364,8 +4411,6 @@ func TestPgQueryStringMethod(t *testing.T) {
 
 func TestPgQueryStringMethodTZ10(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	// We use +10 here, because the POSIX syntax used in the test, UTC-10,
 	// uses the opposite meaning for +/-.
 	// https://www.postgresql.org/docs/current/datetime-posix-timezone-specs.html
@@ -4383,6 +4428,9 @@ func TestPgQueryStringMethodTZ10(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -4390,8 +4438,6 @@ func TestPgQueryStringMethodTZ10(t *testing.T) {
 
 func TestPgQueryNoDateStyle(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := types.ContextWithTZ(context.Background(), time.UTC)
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L618-L624
@@ -4411,6 +4457,9 @@ func TestPgQueryNoDateStyle(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -4418,11 +4467,9 @@ func TestPgQueryNoDateStyle(t *testing.T) {
 
 func TestPgQueryTimeMethod(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 
 	loc, err := time.LoadLocation("PST8PDT")
-	r.NoError(err)
+	require.NoError(t, err)
 	ctx := types.ContextWithTZ(context.Background(), loc)
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L626-L651
@@ -4547,6 +4594,9 @@ func TestPgQueryTimeMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -4554,8 +4604,6 @@ func TestPgQueryTimeMethod(t *testing.T) {
 
 func TestPgQueryTimeAtQuestion(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L635
@@ -4569,6 +4617,9 @@ func TestPgQueryTimeAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtQuestion(ctx, a, r)
 		})
 	}
@@ -4576,8 +4627,6 @@ func TestPgQueryTimeAtQuestion(t *testing.T) {
 
 func TestPgQueryTimeMethodSyntaxError(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L644-L645
 	for _, tc := range []queryTestCase{
@@ -4596,6 +4645,9 @@ func TestPgQueryTimeMethodSyntaxError(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			path, err := parser.Parse(tc.path)
 			r.EqualError(err, tc.err)
 			r.ErrorIs(err, parser.ErrParse)
@@ -4606,8 +4658,6 @@ func TestPgQueryTimeMethodSyntaxError(t *testing.T) {
 
 func TestPgQueryTimeTZMethod(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L653-L676
@@ -4719,6 +4769,9 @@ func TestPgQueryTimeTZMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -4726,8 +4779,6 @@ func TestPgQueryTimeTZMethod(t *testing.T) {
 
 func TestPgQueryTimeTZAtQuestion(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L662
@@ -4741,6 +4792,9 @@ func TestPgQueryTimeTZAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtQuestion(ctx, a, r)
 		})
 	}
@@ -4748,8 +4802,6 @@ func TestPgQueryTimeTZAtQuestion(t *testing.T) {
 
 func TestPgQueryTimeTZMethodSyntaxError(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L669-L670
 	for _, tc := range []queryTestCase{
@@ -4768,6 +4820,9 @@ func TestPgQueryTimeTZMethodSyntaxError(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			path, err := parser.Parse(tc.path)
 			r.EqualError(err, tc.err)
 			r.ErrorIs(err, parser.ErrParse)
@@ -4778,11 +4833,9 @@ func TestPgQueryTimeTZMethodSyntaxError(t *testing.T) {
 
 func TestPgQueryTimestampMethod(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 
 	loc, err := time.LoadLocation("PST8PDT")
-	r.NoError(err)
+	require.NoError(t, err)
 	ctx := types.ContextWithTZ(context.Background(), loc)
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L678-L702
@@ -4900,6 +4953,9 @@ func TestPgQueryTimestampMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -4907,8 +4963,6 @@ func TestPgQueryTimestampMethod(t *testing.T) {
 
 func TestPgQueryTimestampAtQuestion(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L687
@@ -4922,6 +4976,9 @@ func TestPgQueryTimestampAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtQuestion(ctx, a, r)
 		})
 	}
@@ -4929,8 +4986,6 @@ func TestPgQueryTimestampAtQuestion(t *testing.T) {
 
 func TestPgQueryTimestampMethodSyntaxError(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L695-L696
 	for _, tc := range []queryTestCase{
@@ -4949,6 +5004,9 @@ func TestPgQueryTimestampMethodSyntaxError(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			path, err := parser.Parse(tc.path)
 			r.EqualError(err, tc.err)
 			r.ErrorIs(err, parser.ErrParse)
@@ -4959,11 +5017,9 @@ func TestPgQueryTimestampMethodSyntaxError(t *testing.T) {
 
 func TestPgQueryTimestampTZMethod(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 
 	loc, err := time.LoadLocation("PST8PDT")
-	r.NoError(err)
+	require.NoError(t, err)
 	ctx := types.ContextWithTZ(context.Background(), loc)
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L704-L729
@@ -5090,6 +5146,9 @@ func TestPgQueryTimestampTZMethod(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -5097,8 +5156,6 @@ func TestPgQueryTimestampTZMethod(t *testing.T) {
 
 func TestPgQueryTimestampTZAtQuestion(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L713
@@ -5112,6 +5169,9 @@ func TestPgQueryTimestampTZAtQuestion(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtQuestion(ctx, a, r)
 		})
 	}
@@ -5119,8 +5179,6 @@ func TestPgQueryTimestampTZAtQuestion(t *testing.T) {
 
 func TestPgQueryTimestampTZMethodSyntaxError(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L722-L723
 	for _, tc := range []queryTestCase{
@@ -5139,6 +5197,9 @@ func TestPgQueryTimestampTZMethodSyntaxError(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			path, err := parser.Parse(tc.path)
 			r.EqualError(err, tc.err)
 			r.ErrorIs(err, parser.ErrParse)
@@ -5149,8 +5210,6 @@ func TestPgQueryTimestampTZMethodSyntaxError(t *testing.T) {
 
 func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L732-L755
@@ -5301,6 +5360,9 @@ func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -5308,8 +5370,6 @@ func TestPgQueryDateTimeMethodsUTC(t *testing.T) {
 
 func TestPgQueryDateTimeMethodsPlus10(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 10*3600))
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L757-L779
@@ -5454,6 +5514,9 @@ func TestPgQueryDateTimeMethodsPlus10(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -5461,11 +5524,9 @@ func TestPgQueryDateTimeMethodsPlus10(t *testing.T) {
 
 func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 
 	loc, err := time.LoadLocation("PST8PDT")
-	r.NoError(err)
+	require.NoError(t, err)
 	ctx := types.ContextWithTZ(context.Background(), loc)
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L781-L810
@@ -5637,6 +5698,9 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -5644,8 +5708,6 @@ func TestPgQueryDateTimeMethodsDefaultTZ(t *testing.T) {
 
 func TestPgQueryDateComparison(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L814-L860
@@ -5758,6 +5820,9 @@ func TestPgQueryDateComparison(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -5765,8 +5830,6 @@ func TestPgQueryDateComparison(t *testing.T) {
 
 func TestPgQueryTimeComparison(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L862-L914
@@ -5892,6 +5955,9 @@ func TestPgQueryTimeComparison(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -5899,8 +5965,6 @@ func TestPgQueryTimeComparison(t *testing.T) {
 
 func TestPgQueryTimeTZComparison(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L917-L969
@@ -6027,6 +6091,9 @@ func TestPgQueryTimeTZComparison(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -6034,8 +6101,6 @@ func TestPgQueryTimeTZComparison(t *testing.T) {
 
 func TestPgQueryTimestampComparison(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L917-L1023
@@ -6161,6 +6226,9 @@ func TestPgQueryTimestampComparison(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -6168,8 +6236,6 @@ func TestPgQueryTimestampComparison(t *testing.T) {
 
 func TestPgQueryTimestampTZComparison(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := types.ContextWithTZ(context.Background(), time.FixedZone("", 0))
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L1025-L1077
@@ -6295,6 +6361,9 @@ func TestPgQueryTimestampTZComparison(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -6302,8 +6371,6 @@ func TestPgQueryTimestampTZComparison(t *testing.T) {
 
 func TestPgQueryComparisonOverflow(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L1080-L1081
@@ -6317,6 +6384,9 @@ func TestPgQueryComparisonOverflow(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -6324,8 +6394,6 @@ func TestPgQueryComparisonOverflow(t *testing.T) {
 
 func TestPgQueryOperators(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L1087-L1097
@@ -6397,6 +6465,9 @@ func TestPgQueryOperators(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -6404,8 +6475,6 @@ func TestPgQueryOperators(t *testing.T) {
 
 func TestPgFirst(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L1099-L1107
@@ -6470,6 +6539,9 @@ func TestPgFirst(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -6477,8 +6549,6 @@ func TestPgFirst(t *testing.T) {
 
 func TestPgAtQuestionOperators(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L1109-L1110
@@ -6498,6 +6568,9 @@ func TestPgAtQuestionOperators(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtQuestion(ctx, a, r)
 		})
 	}
@@ -6505,8 +6578,6 @@ func TestPgAtQuestionOperators(t *testing.T) {
 
 func TestPgExistsOperators(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L1111-L1115
@@ -6546,6 +6617,9 @@ func TestPgExistsOperators(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -6553,8 +6627,6 @@ func TestPgExistsOperators(t *testing.T) {
 
 func TestPgMatchOperators(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L1117-L1133
@@ -6665,6 +6737,9 @@ func TestPgMatchOperators(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.run(ctx, a, r)
 		})
 	}
@@ -6672,8 +6747,6 @@ func TestPgMatchOperators(t *testing.T) {
 
 func TestPgAtAtOperators(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L1129-L1130
@@ -6693,6 +6766,9 @@ func TestPgAtAtOperators(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			tc.runAtAt(ctx, a, r)
 		})
 	}
@@ -6700,8 +6776,6 @@ func TestPgAtAtOperators(t *testing.T) {
 
 func TestPgFirstStringComparison(t *testing.T) {
 	t.Parallel()
-	r := require.New(t)
-	a := assert.New(t)
 	ctx := context.Background()
 
 	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonb_jsonpath.sql#L1135-L1149
@@ -6874,6 +6948,9 @@ func TestPgFirstStringComparison(t *testing.T) {
 			i++
 			t.Run(fmt.Sprintf("test_%v", i), func(t *testing.T) {
 				t.Parallel()
+				a := assert.New(t)
+				r := require.New(t)
+
 				firstTestCase{
 					json: tc.obj1,
 					path: "$.s" + opCase.op + " $s",

@@ -20,13 +20,14 @@ func TestTimeTZCompareIss(t *testing.T) {
 
 func TestTimeTZ(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	ctx := context.Background()
 
 	for _, tc := range timestampTestCases(t) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			// Only test Time and TimeTZ
 			switch tc.ctor(time.Time{}, &time.Location{}).(type) {
 			case *Timestamp, *TimestampTZ, *Date:
@@ -77,14 +78,16 @@ func TestTimeTZInvalidJSON(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			r := require.New(t)
+
 			ts := new(TimeTZ)
 			err := ts.UnmarshalJSON([]byte(tc.value))
-			require.Error(t, err)
-			require.EqualError(t, err, fmt.Sprintf(
+			r.Error(err)
+			r.EqualError(err, fmt.Sprintf(
 				"type: Cannot parse %v as %q",
 				tc.value, tc.format,
 			))
-			require.ErrorIs(t, err, ErrSQLType)
+			r.ErrorIs(err, ErrSQLType)
 		})
 	}
 }

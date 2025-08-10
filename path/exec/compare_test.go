@@ -15,8 +15,6 @@ import (
 
 func TestCompareItems(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	now := time.Now()
 	ctx := context.Background()
 
@@ -233,6 +231,8 @@ func TestCompareItems(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Parse the path.
 			path, err := parser.Parse(tc.path)
@@ -254,7 +254,6 @@ func TestCompareItems(t *testing.T) {
 
 func TestCompareBool(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -302,6 +301,8 @@ func TestCompareBool(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			res, ok := compareBool(tc.left, tc.right)
 			a.Equal(tc.exp, res)
 			a.Equal(tc.ok, ok)
@@ -311,8 +312,6 @@ func TestCompareBool(t *testing.T) {
 
 func TestApplyCompare(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -358,6 +357,9 @@ func TestApplyCompare(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			for i, cmp := range []int{-1, 0, 1} {
 				res, err := applyCompare(tc.op, cmp)
 				if tc.err {
@@ -375,10 +377,11 @@ func TestApplyCompare(t *testing.T) {
 
 func TestCompareNumbers(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	t.Run("int_int", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		a.Equal(0, compareNumbers(42, 42))
 		a.Equal(-1, compareNumbers(42, 43))
 		a.Equal(1, compareNumbers(42, 41))
@@ -386,6 +389,8 @@ func TestCompareNumbers(t *testing.T) {
 
 	t.Run("int_int64", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		a.Equal(0, compareNumbers(42, int64(42)))
 		a.Equal(-1, compareNumbers(42, int64(43)))
 		a.Equal(1, compareNumbers(42, int64(41)))
@@ -393,6 +398,8 @@ func TestCompareNumbers(t *testing.T) {
 
 	t.Run("int_float64", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		a.Equal(0, compareNumbers(42, float64(42.0)))
 		a.Equal(-1, compareNumbers(42, float64(42.1)))
 		a.Equal(1, compareNumbers(42, float64(41.9)))
@@ -400,6 +407,8 @@ func TestCompareNumbers(t *testing.T) {
 
 	t.Run("int64_int", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		a.Equal(0, compareNumbers(int64(42), 42))
 		a.Equal(-1, compareNumbers(int64(42), 43))
 		a.Equal(1, compareNumbers(int64(42), 41))
@@ -407,6 +416,8 @@ func TestCompareNumbers(t *testing.T) {
 
 	t.Run("int64_int64", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		a.Equal(0, compareNumbers(int64(42), int64(42)))
 		a.Equal(-1, compareNumbers(int64(42), int64(43)))
 		a.Equal(1, compareNumbers(int64(42), int64(41)))
@@ -414,6 +425,8 @@ func TestCompareNumbers(t *testing.T) {
 
 	t.Run("float64_int", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		a.Equal(0, compareNumbers(float64(42.0), 42))
 		a.Equal(-1, compareNumbers(float64(41.9), 42))
 		a.Equal(1, compareNumbers(float64(42.1), 42))
@@ -421,6 +434,8 @@ func TestCompareNumbers(t *testing.T) {
 
 	t.Run("float64_float64", func(t *testing.T) {
 		t.Parallel()
+		a := assert.New(t)
+
 		a.Equal(0, compareNumbers(float64(42.0), float64(42.00)))
 		a.Equal(-1, compareNumbers(float64(42), float64(42.1)))
 		a.Equal(1, compareNumbers(float64(42.0), float64(41.9)))
@@ -429,7 +444,6 @@ func TestCompareNumbers(t *testing.T) {
 
 func TestCompareNumeric(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
 
 	for _, tc := range []struct {
 		name  string
@@ -643,6 +657,8 @@ func TestCompareNumeric(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+
 			if tc.panic {
 				a.Panics(func() { compareNumeric(tc.left, tc.right) })
 			} else {

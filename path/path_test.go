@@ -12,8 +12,6 @@ import (
 
 func TestPath(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	jMap := map[string]any{"foo": int64(1)}
 	ctx := context.Background()
 
@@ -26,6 +24,9 @@ func TestPath(t *testing.T) {
 	}
 
 	checkPath := func(tc testCase, path *Path) {
+		a := assert.New(t)
+		r := require.New(t)
+
 		a.NotNil(path)
 		a.NotNil(path.AST)
 		a.Equal(path.AST.String(), path.String())
@@ -101,6 +102,8 @@ func TestPath(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Test Parse
 			path, err := Parse(tc.path)
@@ -151,8 +154,6 @@ func TestPath(t *testing.T) {
 
 func TestQueryErrors(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 	for _, tc := range []struct {
 		name string
 		path string
@@ -168,6 +169,8 @@ func TestQueryErrors(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			path, err := Parse(tc.path)
 			r.NoError(err)
@@ -217,8 +220,6 @@ func TestQueryErrors(t *testing.T) {
 
 func TestPathParseErrors(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -238,6 +239,8 @@ func TestPathParseErrors(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
 
 			// Test Parse
 			path, err := Parse(tc.path)
@@ -283,8 +286,6 @@ func TestPathParseErrors(t *testing.T) {
 
 func TestScanNilPath(t *testing.T) {
 	t.Parallel()
-	a := assert.New(t)
-	r := require.New(t)
 
 	for _, tc := range []struct {
 		name string
@@ -296,6 +297,9 @@ func TestScanNilPath(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			a := assert.New(t)
+			r := require.New(t)
+
 			newPath := &Path{}
 			r.NoError(newPath.Scan(tc.path))
 			a.Nil(newPath.AST)
@@ -304,6 +308,8 @@ func TestScanNilPath(t *testing.T) {
 
 	t.Run("unknown_type", func(t *testing.T) {
 		t.Parallel()
+		r := require.New(t)
+
 		newPath := &Path{}
 		err := newPath.Scan(42)
 		r.EqualError(err, "scan: unable to scan type int into Path")
