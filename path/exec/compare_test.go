@@ -19,7 +19,7 @@ func TestCompareItems(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		path  string
 		left  any
 		right any
@@ -28,176 +28,176 @@ func TestCompareItems(t *testing.T) {
 		isErr error
 	}{
 		{
-			name:  "not_binary",
+			test:  "not_binary",
 			path:  "$",
 			exp:   predUnknown,
 			err:   `exec invalid: invalid node type *ast.ConstNode passed to compareItems`,
 			isErr: ErrInvalid,
 		},
 		{
-			name:  "left_eq_null",
+			test:  "left_eq_null",
 			path:  "$ == $",
 			right: int64(6),
 			exp:   predFalse,
 		},
 		{
-			name:  "left_ne_null",
+			test:  "left_ne_null",
 			path:  "$ != $",
 			right: int64(6),
 			exp:   predTrue,
 		},
 		{
-			name: "right_eq_null",
+			test: "right_eq_null",
 			path: "$ == $",
 			left: int64(6),
 			exp:  predFalse,
 		},
 		{
-			name: "right_ne_null",
+			test: "right_ne_null",
 			path: "$ != $",
 			left: int64(6),
 			exp:  predTrue,
 		},
 		{
-			name: "both_null",
+			test: "both_null",
 			path: "$ == $",
 			exp:  predTrue,
 		},
 		{
-			name:  "bool_true",
+			test:  "bool_true",
 			path:  "$ == $",
 			left:  true,
 			right: true,
 			exp:   predTrue,
 		},
 		{
-			name:  "bool_false",
+			test:  "bool_false",
 			path:  "$ == $",
 			left:  true,
 			right: false,
 			exp:   predFalse,
 		},
 		{
-			name:  "bool_unknown",
+			test:  "bool_unknown",
 			path:  "$ == $",
 			left:  true,
 			right: "true",
 			exp:   predUnknown,
 		},
 		{
-			name:  "int_true",
+			test:  "int_true",
 			path:  "$ == $",
 			left:  int64(3),
 			right: int64(3),
 			exp:   predTrue,
 		},
 		{
-			name:  "int_false",
+			test:  "int_false",
 			path:  "$ == $",
 			left:  int64(3),
 			right: int64(4),
 			exp:   predFalse,
 		},
 		{
-			name:  "int_unknown",
+			test:  "int_unknown",
 			path:  "$ == $",
 			left:  int64(3),
 			right: "4",
 			exp:   predUnknown,
 		},
 		{
-			name:  "float_true",
+			test:  "float_true",
 			path:  "$ == $",
 			left:  float64(3.0),
 			right: float64(3.0),
 			exp:   predTrue,
 		},
 		{
-			name:  "float_false",
+			test:  "float_false",
 			path:  "$ == $",
 			left:  float64(3.1),
 			right: float64(4.2),
 			exp:   predFalse,
 		},
 		{
-			name:  "float_unknown",
+			test:  "float_unknown",
 			path:  "$ == $",
 			left:  float64(3.0),
 			right: "3.0",
 			exp:   predUnknown,
 		},
 		{
-			name:  "json_number_true",
+			test:  "json_number_true",
 			path:  "$ == $",
 			left:  json.Number("3"),
 			right: json.Number("3"),
 			exp:   predTrue,
 		},
 		{
-			name:  "json_number_false",
+			test:  "json_number_false",
 			path:  "$ == $",
 			left:  json.Number("3"),
 			right: json.Number("3.1"),
 			exp:   predFalse,
 		},
 		{
-			name:  "json_number_unknown",
+			test:  "json_number_unknown",
 			path:  "$ == $",
 			left:  json.Number("3"),
 			right: "3",
 			exp:   predUnknown,
 		},
 		{
-			name:  "string_true",
+			test:  "string_true",
 			path:  "$ == $",
 			left:  "abc",
 			right: "abc",
 			exp:   predTrue,
 		},
 		{
-			name:  "string_false",
+			test:  "string_false",
 			path:  "$ == $",
 			left:  "abc",
 			right: "abd",
 			exp:   predFalse,
 		},
 		{
-			name:  "string_unknown",
+			test:  "string_unknown",
 			path:  "$ == $",
 			left:  "abc",
 			right: false,
 			exp:   predUnknown,
 		},
 		{
-			name:  "string_ne_true",
+			test:  "string_ne_true",
 			path:  "$ != $",
 			left:  "abc",
 			right: "abd",
 			exp:   predTrue,
 		},
 		{
-			name:  "datetime_true",
+			test:  "datetime_true",
 			path:  "$ == $",
 			left:  types.NewDate(now),
 			right: types.NewDate(now),
 			exp:   predTrue,
 		},
 		{
-			name:  "datetime_false",
+			test:  "datetime_false",
 			path:  "$ == $",
 			left:  types.NewDate(now),
 			right: types.NewTimestamp(now),
 			exp:   predFalse,
 		},
 		{
-			name:  "datetime_unknown",
+			test:  "datetime_unknown",
 			path:  "$ == $",
 			left:  types.NewDate(now),
 			right: types.NewTime(now),
 			exp:   predUnknown,
 		},
 		{
-			name:  "datetime_unknown_err",
+			test:  "datetime_unknown_err",
 			path:  "$ == $",
 			left:  types.NewDate(now),
 			right: "not a date",
@@ -206,21 +206,21 @@ func TestCompareItems(t *testing.T) {
 			isErr: ErrInvalid,
 		},
 		{
-			name:  "object_unknown",
+			test:  "object_unknown",
 			path:  "$ == $",
 			left:  map[string]any{},
 			right: false,
 			exp:   predUnknown,
 		},
 		{
-			name:  "array_unknown",
+			test:  "array_unknown",
 			path:  "$ == $",
 			left:  []any{},
 			right: false,
 			exp:   predUnknown,
 		},
 		{
-			name:  "anything_else",
+			test:  "anything_else",
 			path:  "$ == $",
 			left:  int32(3),
 			right: false,
@@ -229,7 +229,7 @@ func TestCompareItems(t *testing.T) {
 			isErr: ErrInvalid,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -256,7 +256,7 @@ func TestCompareBool(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		path  string
 		left  bool
 		right any
@@ -264,42 +264,42 @@ func TestCompareBool(t *testing.T) {
 		ok    bool
 	}{
 		{
-			name:  "true_true",
+			test:  "true_true",
 			left:  true,
 			right: true,
 			exp:   0,
 			ok:    true,
 		},
 		{
-			name:  "true_false",
+			test:  "true_false",
 			left:  true,
 			right: false,
 			exp:   1,
 			ok:    true,
 		},
 		{
-			name:  "false_true",
+			test:  "false_true",
 			left:  false,
 			right: true,
 			exp:   -1,
 			ok:    true,
 		},
 		{
-			name:  "false_false",
+			test:  "false_false",
 			left:  false,
 			right: false,
 			exp:   0,
 			ok:    true,
 		},
 		{
-			name:  "right_not_bool",
+			test:  "right_not_bool",
 			left:  false,
 			right: "false",
 			exp:   0,
 			ok:    false,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -314,48 +314,48 @@ func TestApplyCompare(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		op   ast.BinaryOperator
 		exp  []predOutcome
 		err  bool
 	}{
 		{
-			name: "equal",
+			test: "equal",
 			op:   ast.BinaryEqual,
 			exp:  []predOutcome{predFalse, predTrue, predFalse},
 		},
 		{
-			name: "not_equal",
+			test: "not_equal",
 			op:   ast.BinaryNotEqual,
 			exp:  []predOutcome{predTrue, predFalse, predTrue},
 		},
 		{
-			name: "lt",
+			test: "lt",
 			op:   ast.BinaryLess,
 			exp:  []predOutcome{predTrue, predFalse, predFalse},
 		},
 		{
-			name: "gt",
+			test: "gt",
 			op:   ast.BinaryGreater,
 			exp:  []predOutcome{predFalse, predFalse, predTrue},
 		},
 		{
-			name: "le",
+			test: "le",
 			op:   ast.BinaryLessOrEqual,
 			exp:  []predOutcome{predTrue, predTrue, predFalse},
 		},
 		{
-			name: "ge",
+			test: "ge",
 			op:   ast.BinaryGreaterOrEqual,
 			exp:  []predOutcome{predFalse, predTrue, predTrue},
 		},
 		{
-			name: "add",
+			test: "add",
 			op:   ast.BinaryAdd,
 			err:  true,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -446,216 +446,216 @@ func TestCompareNumeric(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		left  any
 		right any
 		exp   int
 		panic bool
 	}{
 		{
-			name:  "int64_int64_eq",
+			test:  "int64_int64_eq",
 			left:  int64(42),
 			right: int64(42),
 			exp:   0,
 		},
 		{
-			name:  "int64_int64_lt",
+			test:  "int64_int64_lt",
 			left:  int64(41),
 			right: int64(42),
 			exp:   -1,
 		},
 		{
-			name:  "int64_int64_gt",
+			test:  "int64_int64_gt",
 			left:  int64(43),
 			right: int64(42),
 			exp:   1,
 		},
 		{
-			name:  "int64_float64_eq",
+			test:  "int64_float64_eq",
 			left:  int64(42),
 			right: float64(42.0),
 			exp:   0,
 		},
 		{
-			name:  "int64_float64_lt",
+			test:  "int64_float64_lt",
 			left:  int64(42),
 			right: float64(42.1),
 			exp:   -1,
 		},
 		{
-			name:  "int64_float64_gt",
+			test:  "int64_float64_gt",
 			left:  int64(42),
 			right: float64(41.9),
 			exp:   1,
 		},
 		{
-			name:  "int64_json_int_eq",
+			test:  "int64_json_int_eq",
 			left:  int64(42),
 			right: json.Number("42"),
 			exp:   0,
 		},
 		{
-			name:  "int64_json_int_lt",
+			test:  "int64_json_int_lt",
 			left:  int64(42),
 			right: json.Number("43"),
 			exp:   -1,
 		},
 		{
-			name:  "int64_json_int_gt",
+			test:  "int64_json_int_gt",
 			left:  int64(42),
 			right: json.Number("41"),
 			exp:   1,
 		},
 		{
-			name:  "int64_json_float_eq",
+			test:  "int64_json_float_eq",
 			left:  int64(42),
 			right: json.Number("42.0"),
 			exp:   0,
 		},
 		{
-			name:  "int64_json_float_lt",
+			test:  "int64_json_float_lt",
 			left:  int64(42),
 			right: json.Number("42.1"),
 			exp:   -1,
 		},
 		{
-			name:  "int64_json_float_gt",
+			test:  "int64_json_float_gt",
 			left:  int64(42),
 			right: json.Number("41.9"),
 			exp:   1,
 		},
 		{
-			name:  "int64_json_err",
+			test:  "int64_json_err",
 			left:  int64(42),
 			right: json.Number("nope"),
 			panic: true,
 		},
 		{
-			name:  "float64_float64_eq",
+			test:  "float64_float64_eq",
 			left:  float64(42),
 			right: float64(42.0),
 			exp:   0,
 		},
 		{
-			name:  "float64_float64_lt",
+			test:  "float64_float64_lt",
 			left:  float64(42),
 			right: float64(42.1),
 			exp:   -1,
 		},
 		{
-			name:  "float64_float64_gt",
+			test:  "float64_float64_gt",
 			left:  float64(42),
 			right: float64(41.9),
 			exp:   1,
 		},
 		{
-			name:  "float64_int64_eq",
+			test:  "float64_int64_eq",
 			left:  float64(42.0),
 			right: int64(42),
 			exp:   0,
 		},
 		{
-			name:  "float64_int64_lt",
+			test:  "float64_int64_lt",
 			left:  float64(41.9),
 			right: int64(42),
 			exp:   -1,
 		},
 		{
-			name:  "float64_int64_gt",
+			test:  "float64_int64_gt",
 			left:  float64(42.1),
 			right: int64(42),
 			exp:   1,
 		},
 		{
-			name:  "float64_json_eq",
+			test:  "float64_json_eq",
 			left:  float64(42.0),
 			right: json.Number("42"),
 			exp:   0,
 		},
 		{
-			name:  "float64_json_lt",
+			test:  "float64_json_lt",
 			left:  float64(41.9),
 			right: json.Number("42.1"),
 			exp:   -1,
 		},
 		{
-			name:  "float64_json_gt",
+			test:  "float64_json_gt",
 			left:  float64(42.1),
 			right: json.Number("41.9"),
 			exp:   1,
 		},
 		{
-			name:  "float64_json_err",
+			test:  "float64_json_err",
 			left:  float64(42.1),
 			right: json.Number("nope"),
 			panic: true,
 		},
 		{
-			name:  "json_json_eq",
+			test:  "json_json_eq",
 			left:  json.Number("42.0"),
 			right: json.Number("42"),
 			exp:   0,
 		},
 		{
-			name:  "json_json_lt",
+			test:  "json_json_lt",
 			left:  json.Number("42.0"),
 			right: json.Number("42.1"),
 			exp:   -1,
 		},
 		{
-			name:  "json_json_gt",
+			test:  "json_json_gt",
 			left:  json.Number("42.1"),
 			right: json.Number("42"),
 			exp:   1,
 		},
 		{
-			name:  "json_int64_eq",
+			test:  "json_int64_eq",
 			left:  json.Number("42"),
 			right: int64(42),
 			exp:   0,
 		},
 		{
-			name:  "json_int64_lt",
+			test:  "json_int64_lt",
 			left:  json.Number("42.0"),
 			right: int64(43),
 			exp:   -1,
 		},
 		{
-			name:  "json_int64_gt",
+			test:  "json_int64_gt",
 			left:  json.Number("42.1"),
 			right: int64(42),
 			exp:   1,
 		},
 		{
-			name:  "json_float64_eq",
+			test:  "json_float64_eq",
 			left:  json.Number("42.0"),
 			right: float64(42),
 			exp:   0,
 		},
 		{
-			name:  "json_float64_lt",
+			test:  "json_float64_lt",
 			left:  json.Number("41.9"),
 			right: float64(42),
 			exp:   -1,
 		},
 		{
-			name:  "json_float64_gt",
+			test:  "json_float64_gt",
 			left:  json.Number("42.1"),
 			right: float64(42),
 			exp:   1,
 		},
 		{
-			name:  "json_err",
+			test:  "json_err",
 			left:  json.Number("nope"),
 			panic: true,
 		},
 		{
-			name:  "not_numeric",
+			test:  "not_numeric",
 			left:  "hi",
 			panic: true,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 

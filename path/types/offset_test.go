@@ -17,7 +17,7 @@ func loadTZ(name string) *time.Location {
 }
 
 type zoneTestCase struct {
-	name   string
+	test   string
 	zone   string
 	loc    *time.Location
 	offset int
@@ -40,7 +40,7 @@ func TestOffsetLocationForAndOnlyTimeFor(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range zoneTestCases() {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -71,7 +71,7 @@ func TestContextWithTZ(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range zoneTestCases() {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 

@@ -15,7 +15,7 @@ func TestConstNode(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name     string
+		test     string
 		kind     Constant
 		str      string
 		inKeyStr string
@@ -30,7 +30,7 @@ func TestConstNode(t *testing.T) {
 		{"null", ConstNull, "null", ""},
 		{"unknown", -1, "Constant(-1)", ""},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -66,7 +66,7 @@ func TestBinaryOperator(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		op    BinaryOperator
 		str   string
 		prior uint8
@@ -89,7 +89,7 @@ func TestBinaryOperator(t *testing.T) {
 		{"decimal", BinaryDecimal, ".decimal()", 6},
 		{"unknown", -1, "BinaryOperator(-1)", 6},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -103,7 +103,7 @@ func TestUnaryOperator(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		op    UnaryOperator
 		str   string
 		prior uint8
@@ -122,7 +122,7 @@ func TestUnaryOperator(t *testing.T) {
 		{"timestamp_tz", UnaryTimestampTZ, ".timestamp_tz", 6},
 		{"unknown", -1, "UnaryOperator(-1)", 6},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -136,7 +136,7 @@ func TestMethodNode(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		meth MethodName
 		str  string
 	}{
@@ -153,7 +153,7 @@ func TestMethodNode(t *testing.T) {
 		{"string", MethodString, ".string()"},
 		{"unknown", -1, "MethodName(-1)"},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -183,7 +183,7 @@ func TestStringNodes(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		expr string
 		val  string
 		str  string
@@ -202,7 +202,7 @@ func TestStringNodes(t *testing.T) {
 		{"emoji", "🤘🏻🎉🐳", "🤘🏻🎉🐳", `"🤘🏻🎉🐳"`},
 		{"multibyte", "\U0001D11E", "𝄞", `"𝄞"`},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -247,7 +247,7 @@ func TestNumericNode(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		num  string
 		val  float64
 		str  string
@@ -265,26 +265,26 @@ func TestNumericNode(t *testing.T) {
 		{"one_expo_3", "1e3", 1000, "1000", ""},
 		{"1_dot_2e3", "1.2e3", 1200, "1200", ""},
 		{
-			name: "max_float",
+			test: "max_float",
 			num:  fmt.Sprintf("%v", math.MaxFloat64),
 			val:  math.MaxFloat64,
 			str:  fmt.Sprintf("%v", math.MaxFloat64),
 		},
 		{
-			name: "min_float",
+			test: "min_float",
 			num:  fmt.Sprintf("%v", math.SmallestNonzeroFloat64),
 			val:  math.SmallestNonzeroFloat64,
 			str:  fmt.Sprintf("%v", math.SmallestNonzeroFloat64),
 		},
 		{
-			name: "invalid_float",
+			test: "invalid_float",
 			num:  "xyz.4",
 			val:  0,
 			str:  "xyz.4",
 			err:  `strconv.ParseFloat: parsing "xyz.4": invalid syntax`,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -326,7 +326,7 @@ func TestIntegerNode(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		num  string
 		val  int64
 		str  string
@@ -338,26 +338,26 @@ func TestIntegerNode(t *testing.T) {
 		{"octal", "0o273", 187, "187", ""},
 		{"hex", "0x42F", 1071, "1071", ""},
 		{
-			name: "max_int",
+			test: "max_int",
 			num:  strconv.FormatInt(math.MaxInt64, 10),
 			val:  math.MaxInt,
 			str:  strconv.FormatInt(math.MaxInt64, 10),
 		},
 		{
-			name: "min_int",
+			test: "min_int",
 			num:  strconv.Itoa(math.MinInt32),
 			val:  math.MinInt32,
 			str:  strconv.Itoa(math.MinInt32),
 		},
 		{
-			name: "invalid_int",
+			test: "invalid_int",
 			num:  "123x",
 			val:  0,
 			str:  "123x",
 			err:  `strconv.ParseInt: parsing "123x": invalid syntax`,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -397,7 +397,7 @@ func TestBinaryNode(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		left  Node
 		op    BinaryOperator
 		right Node
@@ -405,105 +405,105 @@ func TestBinaryNode(t *testing.T) {
 		err   string
 	}{
 		{
-			name:  "equal",
+			test:  "equal",
 			left:  NewInteger("42"),
 			op:    BinaryEqual,
 			right: NewInteger("99"),
 			str:   "42 == 99",
 		},
 		{
-			name:  "equal_string",
+			test:  "equal_string",
 			left:  NewConst(ConstCurrent),
 			op:    BinaryEqual,
 			right: NewString("xyz"),
 			str:   `@ == "xyz"`,
 		},
 		{
-			name:  "not_equal",
+			test:  "not_equal",
 			left:  NewInteger("42"),
 			op:    BinaryNotEqual,
 			right: NewInteger("99"),
 			str:   "42 != 99",
 		},
 		{
-			name:  "lt",
+			test:  "lt",
 			left:  NewInteger("42"),
 			op:    BinaryLess,
 			right: NewInteger("99"),
 			str:   "42 < 99",
 		},
 		{
-			name:  "le",
+			test:  "le",
 			left:  NewInteger("42"),
 			op:    BinaryLessOrEqual,
 			right: NewInteger("99"),
 			str:   "42 <= 99",
 		},
 		{
-			name:  "gt",
+			test:  "gt",
 			left:  NewInteger("42"),
 			op:    BinaryGreater,
 			right: NewInteger("99"),
 			str:   "42 > 99",
 		},
 		{
-			name:  "ge",
+			test:  "ge",
 			left:  NewInteger("42"),
 			op:    BinaryGreaterOrEqual,
 			right: NewInteger("99"),
 			str:   "42 >= 99",
 		},
 		{
-			name:  "and",
+			test:  "and",
 			left:  NewBinary(BinaryEqual, NewConst(ConstCurrent), NewConst(ConstTrue)),
 			op:    BinaryAnd,
 			right: NewBinary(BinaryEqual, NewVariable("xxx"), NewInteger("42")),
 			str:   `@ == true && $"xxx" == 42`,
 		},
 		{
-			name:  "or",
+			test:  "or",
 			left:  NewBinary(BinaryEqual, NewConst(ConstCurrent), NewConst(ConstTrue)),
 			op:    BinaryOr,
 			right: NewBinary(BinaryEqual, NewVariable("xxx"), NewInteger("42")),
 			str:   `@ == true || $"xxx" == 42`,
 		},
 		{
-			name:  "add",
+			test:  "add",
 			left:  NewInteger("42"),
 			op:    BinaryAdd,
 			right: NewNumeric("98.6"),
 			str:   `42 + 98.6`,
 		},
 		{
-			name:  "subtract",
+			test:  "subtract",
 			left:  NewInteger("42"),
 			op:    BinarySub,
 			right: NewNumeric("98.6"),
 			str:   `42 - 98.6`,
 		},
 		{
-			name:  "multiply",
+			test:  "multiply",
 			left:  NewInteger("42"),
 			op:    BinaryMul,
 			right: NewNumeric("98.6"),
 			str:   `42 * 98.6`,
 		},
 		{
-			name:  "divide",
+			test:  "divide",
 			left:  NewInteger("42"),
 			op:    BinaryDiv,
 			right: NewNumeric("98.6"),
 			str:   `42 / 98.6`,
 		},
 		{
-			name:  "modulo",
+			test:  "modulo",
 			left:  NewInteger("42"),
 			op:    BinaryMod,
 			right: NewInteger("12"),
 			str:   `42 % 12`,
 		},
 		{
-			name:  "starts_with",
+			test:  "starts_with",
 			left:  NewString("food"),
 			op:    BinaryStartsWith,
 			right: NewString("foo"),
@@ -511,57 +511,57 @@ func TestBinaryNode(t *testing.T) {
 		},
 		// case jpiStartsWith:
 		{
-			name:  "subscript",
+			test:  "subscript",
 			left:  NewInteger("42"),
 			op:    BinarySubscript,
 			right: NewInteger("99"),
 			str:   "42 to 99",
 		},
 		{
-			name:  "left_subscript",
+			test:  "left_subscript",
 			left:  NewInteger("42"),
 			op:    BinarySubscript,
 			right: nil,
 			str:   "42",
 		},
 		{
-			name:  "decimal_l_r",
+			test:  "decimal_l_r",
 			left:  NewInteger("42"),
 			op:    BinaryDecimal,
 			right: NewInteger("99"),
 			str:   ".decimal(42,99)",
 		},
 		{
-			name: "decimal_l",
+			test: "decimal_l",
 			left: NewInteger("42"),
 			op:   BinaryDecimal,
 			str:  ".decimal(42)",
 		},
 		{
-			name:  "decimal_r",
+			test:  "decimal_r",
 			op:    BinaryDecimal,
 			right: NewInteger("99"),
 			str:   ".decimal(,99)",
 		},
 		{
-			name: "decimal",
+			test: "decimal",
 			op:   BinaryDecimal,
 			str:  ".decimal()",
 		},
 		{
-			name: "unknown_op",
+			test: "unknown_op",
 			op:   BinaryOperator(-1),
 			err:  "Unknown binary operator BinaryOperator(-1)",
 		},
 		{
-			name:  "priority_parens",
+			test:  "priority_parens",
 			op:    BinaryAnd,
 			left:  NewBinary(BinaryOr, NewConst(ConstCurrent), NewConst(ConstCurrent)),
 			right: NewBinary(BinaryOr, NewConst(ConstCurrent), NewConst(ConstCurrent)),
 			str:   "(@ || @) && (@ || @)",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -610,101 +610,101 @@ func TestUnaryNode(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		op   UnaryOperator
 		node Node
 		str  string
 	}{
 		{
-			name: "exists",
+			test: "exists",
 			op:   UnaryExists,
 			node: NewInteger("99"),
 			str:  "exists (99)",
 		},
 		{
-			name: "is_unknown",
+			test: "is_unknown",
 			op:   UnaryIsUnknown,
 			node: NewInteger("99"),
 			str:  "(99) is unknown",
 		},
 		{
-			name: "not",
+			test: "not",
 			op:   UnaryNot,
 			node: NewInteger("99"),
 			str:  "!(99)",
 		},
 		{
-			name: "plus",
+			test: "plus",
 			op:   UnaryPlus,
 			node: NewInteger("99"),
 			str:  "+99",
 		},
 		{
-			name: "minus",
+			test: "minus",
 			op:   UnaryMinus,
 			node: NewInteger("99"),
 			str:  "-99",
 		},
 		{
-			name: "filter",
+			test: "filter",
 			op:   UnaryFilter,
 			node: NewInteger("99"),
 			str:  "?(99)",
 		},
 		{
-			name: "datetime",
+			test: "datetime",
 			op:   UnaryDateTime,
 			node: NewInteger("99"),
 			str:  ".datetime(99)",
 		},
 		{
-			name: "datetime_nil",
+			test: "datetime_nil",
 			op:   UnaryDateTime,
 			str:  ".datetime()",
 		},
 		{
-			name: "date",
+			test: "date",
 			op:   UnaryDate,
 			str:  ".date()",
 		},
 		{
-			name: "time",
+			test: "time",
 			op:   UnaryTime,
 			node: NewInteger("99"),
 			str:  ".time(99)",
 		},
 		{
-			name: "time_tz",
+			test: "time_tz",
 			op:   UnaryTimeTZ,
 			node: NewInteger("99"),
 			str:  ".time_tz(99)",
 		},
 		{
-			name: "timestamp",
+			test: "timestamp",
 			op:   UnaryTimestamp,
 			node: NewInteger("99"),
 			str:  ".timestamp(99)",
 		},
 		{
-			name: "timestamp_tz",
+			test: "timestamp_tz",
 			op:   UnaryTimestampTZ,
 			node: NewInteger("99"),
 			str:  ".timestamp_tz(99)",
 		},
 		{
-			name: "unknown_op",
+			test: "unknown_op",
 			op:   UnaryOperator(-1),
 			node: NewInteger("99"),
 			str:  "",
 		},
 		{
-			name: "priority_parens",
+			test: "priority_parens",
 			op:   UnaryPlus,
 			node: NewBinary(BinaryOr, NewConst(ConstCurrent), NewConst(ConstCurrent)),
 			str:  "+(@ || @)",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -745,22 +745,22 @@ func TestArrayIndexNode(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		nodes []Node
 		str   string
 	}{
 		{
-			name:  "single_subscript",
+			test:  "single_subscript",
 			nodes: []Node{NewBinary(BinarySubscript, NewInteger("1"), NewInteger("4"))},
 			str:   `[1 to 4]`,
 		},
 		{
-			name:  "start_only",
+			test:  "start_only",
 			nodes: []Node{NewBinary(BinarySubscript, NewInteger("4"), nil)},
 			str:   `[4]`,
 		},
 		{
-			name: "two_subscripts",
+			test: "two_subscripts",
 			nodes: []Node{
 				NewBinary(BinarySubscript, NewInteger("1"), NewInteger("4")),
 				NewBinary(BinarySubscript, NewInteger("6"), NewInteger("7")),
@@ -768,7 +768,7 @@ func TestArrayIndexNode(t *testing.T) {
 			str: `[1 to 4,6 to 7]`,
 		},
 		{
-			name: "complex_subscripts",
+			test: "complex_subscripts",
 			nodes: []Node{
 				NewBinary(BinarySubscript, NewInteger("1"), NewInteger("2")),
 				NewBinary(BinarySubscript, NewBinary(BinaryAdd, NewConst(ConstCurrent), NewInteger("3")), nil),
@@ -777,7 +777,7 @@ func TestArrayIndexNode(t *testing.T) {
 			str: `[1 to 2,@ + 3,6]`,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -807,49 +807,49 @@ func TestAnyNode(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		first int
 		last  int
 		str   string
 	}{
 		{
-			name:  "first_last",
+			test:  "first_last",
 			first: 0,
 			last:  4,
 			str:   `**{0 to 4}`,
 		},
 		{
-			name:  "neg_first_last",
+			test:  "neg_first_last",
 			first: -1,
 			last:  4,
 			str:   `**{last to 4}`,
 		},
 		{
-			name:  "first_neg_last",
+			test:  "first_neg_last",
 			first: 4,
 			last:  -1,
 			str:   `**{4 to last}`,
 		},
 		{
-			name:  "zero_neg",
+			test:  "zero_neg",
 			first: 0,
 			last:  -1,
 			str:   `**`,
 		},
 		{
-			name:  "neg_neg",
+			test:  "neg_neg",
 			first: -1,
 			last:  -1,
 			str:   `**{last}`,
 		},
 		{
-			name:  "equal",
+			test:  "equal",
 			first: 2,
 			last:  2,
 			str:   `**{2}`,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -889,7 +889,7 @@ func TestRegexNode(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name    string
+		test    string
 		node    Node
 		re      string
 		flag    string
@@ -900,7 +900,7 @@ func TestRegexNode(t *testing.T) {
 		noMatch []string
 	}{
 		{
-			name:    "dot",
+			test:    "dot",
 			node:    NewString("foo"),
 			re:      `.`,
 			str:     `"foo" like_regex "."`,
@@ -908,7 +908,7 @@ func TestRegexNode(t *testing.T) {
 			noMatch: []string{"", "\n"},
 		},
 		{
-			name:    "anchor",
+			test:    "anchor",
 			node:    NewString("foo"),
 			re:      `^a`,
 			str:     `"foo" like_regex "^a"`,
@@ -916,7 +916,7 @@ func TestRegexNode(t *testing.T) {
 			noMatch: []string{"", "\na\n"},
 		},
 		{
-			name:    "flags",
+			test:    "flags",
 			node:    NewString("fOo"),
 			re:      `^o.`,
 			flag:    "ims",
@@ -926,7 +926,7 @@ func TestRegexNode(t *testing.T) {
 			noMatch: []string{"xoxo", "a\nxo"},
 		},
 		{
-			name:    "quote",
+			test:    "quote",
 			node:    NewString("foo"),
 			re:      `xa+`,
 			flag:    "iqsm",
@@ -936,20 +936,20 @@ func TestRegexNode(t *testing.T) {
 			noMatch: []string{`xa\+`, "x"},
 		},
 		{
-			name: "bad_flags",
+			test: "bad_flags",
 			node: NewString("foo"),
 			re:   `.`,
 			flag: "x",
 			err:  `XQuery "x" flag (expanded regular expressions) is not implemented`,
 		},
 		{
-			name: "bad_pattern",
+			test: "bad_pattern",
 			node: NewString("foo"),
 			re:   `.(hi`,
 			err:  "error parsing regexp: missing closing ): `.(hi`",
 		},
 		{
-			name:    "priority_parens",
+			test:    "priority_parens",
 			node:    NewBinary(BinaryOr, NewConst(ConstCurrent), NewConst(ConstCurrent)),
 			re:      `xa+`,
 			flag:    "iqsm",
@@ -959,7 +959,7 @@ func TestRegexNode(t *testing.T) {
 			noMatch: []string{`xa\+`, "x"},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -1019,98 +1019,98 @@ func TestNewUnaryOrNumber(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		op   UnaryOperator
 		node Node
 		exp  Node
 		err  string
 	}{
 		{
-			name: "plus_integer",
+			test: "plus_integer",
 			op:   UnaryPlus,
 			node: NewInteger("42"),
 			exp:  NewInteger("42"),
 		},
 		{
-			name: "minus_integer",
+			test: "minus_integer",
 			op:   UnaryMinus,
 			node: NewInteger("42"),
 			exp:  NewInteger("-42"),
 		},
 		{
-			name: "other_integer",
+			test: "other_integer",
 			op:   UnaryExists,
 			node: NewInteger("42"),
 			err:  "Operator must be + or - but is exists",
 		},
 		{
-			name: "plus_accessor_integer",
+			test: "plus_accessor_integer",
 			op:   UnaryPlus,
 			node: LinkNodes([]Node{NewInteger("42")}),
 			exp:  NewInteger("42"),
 		},
 		{
-			name: "minus_accessor_integer",
+			test: "minus_accessor_integer",
 			op:   UnaryMinus,
 			node: LinkNodes([]Node{NewInteger("42")}),
 			exp:  NewInteger("-42"),
 		},
 		{
-			name: "minus_accessor_multi",
+			test: "minus_accessor_multi",
 			op:   UnaryMinus,
 			node: LinkNodes([]Node{NewInteger("42"), NewInteger("42")}),
 			exp:  NewUnary(UnaryMinus, LinkNodes([]Node{NewInteger("42"), NewInteger("42")})),
 		},
 		{
-			name: "plus_numeric",
+			test: "plus_numeric",
 			op:   UnaryPlus,
 			node: NewNumeric("42.0"),
 			exp:  NewNumeric("42.0"),
 		},
 		{
-			name: "minus_numeric",
+			test: "minus_numeric",
 			op:   UnaryMinus,
 			node: NewNumeric("42.0"),
 			exp:  NewNumeric("-42.0"),
 		},
 		{
-			name: "other_numeric",
+			test: "other_numeric",
 			op:   UnaryNot,
 			node: NewNumeric("42"),
 			err:  "Operator must be + or - but is !",
 		},
 		{
-			name: "plus_accessor_numeric",
+			test: "plus_accessor_numeric",
 			op:   UnaryPlus,
 			node: LinkNodes([]Node{NewNumeric("42.1")}),
 			exp:  NewNumeric("42.1"),
 		},
 		{
-			name: "minus_accessor_numeric",
+			test: "minus_accessor_numeric",
 			op:   UnaryMinus,
 			node: LinkNodes([]Node{NewNumeric("42")}),
 			exp:  NewNumeric("-42"),
 		},
 		{
-			name: "minus_accessor_multi_numeric",
+			test: "minus_accessor_multi_numeric",
 			op:   UnaryMinus,
 			node: LinkNodes([]Node{NewNumeric("42"), NewConst(ConstCurrent)}),
 			exp:  NewUnary(UnaryMinus, LinkNodes([]Node{NewNumeric("42"), NewConst(ConstCurrent)})),
 		},
 		{
-			name: "plus_other",
+			test: "plus_other",
 			op:   UnaryPlus,
 			node: NewConst(ConstCurrent),
 			exp:  NewUnary(UnaryPlus, NewConst(ConstCurrent)),
 		},
 		{
-			name: "minus_other",
+			test: "minus_other",
 			op:   UnaryMinus,
 			node: NewConst(ConstCurrent),
 			exp:  NewUnary(UnaryMinus, NewConst(ConstCurrent)),
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -1127,27 +1127,27 @@ func TestWriteToNext(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		node Node
 		exp  string
 	}{
 		{
-			name: "string_string",
+			test: "string_string",
 			node: LinkNodes([]Node{NewString("hi"), NewString("there")}),
 			exp:  `"hi""there"`,
 		},
 		{
-			name: "variable_string",
+			test: "variable_string",
 			node: LinkNodes([]Node{NewVariable("hi"), NewString("there")}),
 			exp:  `$"hi""there"`,
 		},
 		{
-			name: "key_key",
+			test: "key_key",
 			node: LinkNodes([]Node{NewKey("hi"), NewKey("there")}),
 			exp:  `"hi"."there"`,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -1162,7 +1162,7 @@ func TestAST(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		node Node
 		err  string
 	}{
@@ -1170,7 +1170,7 @@ func TestAST(t *testing.T) {
 		{"accessor", LinkNodes([]Node{NewConst(ConstRoot)}), ""},
 		{"current", NewConst(ConstCurrent), "@ is not allowed in root expressions"},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -1211,140 +1211,140 @@ func TestValidateNode(t *testing.T) {
 	badRegex, _ := NewRegex(NewConst(ConstCurrent), ".", "")
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		node  Node
 		depth int
 		inSub bool
 		err   string
 	}{
 		{
-			name: "string",
+			test: "string",
 			node: NewString("foo"),
 		},
 		{
-			name: "variable",
+			test: "variable",
 			node: NewVariable("foo"),
 		},
 		{
-			name: "key",
+			test: "key",
 			node: NewKey("foo"),
 		},
 		{
-			name: "numeric",
+			test: "numeric",
 			node: NewNumeric("42"),
 		},
 		{
-			name: "integer",
+			test: "integer",
 			node: NewInteger("42"),
 		},
 		{
-			name: "binary",
+			test: "binary",
 			node: NewBinary(BinaryAdd, NewInteger("42"), NewInteger("99")),
 		},
 		{
-			name: "binary_left_fail",
+			test: "binary_left_fail",
 			node: NewBinary(BinaryAdd, NewConst(ConstCurrent), NewConst(ConstRoot)),
 			err:  "@ is not allowed in root expressions",
 		},
 		{
-			name: "binary_right_fail",
+			test: "binary_right_fail",
 			node: NewBinary(BinaryAdd, NewConst(ConstRoot), NewConst(ConstCurrent)),
 			err:  "@ is not allowed in root expressions",
 		},
 		{
-			name:  "binary_current_okay_depth",
+			test:  "binary_current_okay_depth",
 			node:  NewBinary(BinaryAdd, NewConst(ConstRoot), NewConst(ConstCurrent)),
 			depth: 1,
 		},
 		{
-			name: "unary",
+			test: "unary",
 			node: NewUnary(UnaryNot, NewConst(ConstRoot)),
 		},
 		{
-			name: "unary_fail",
+			test: "unary_fail",
 			node: NewUnary(UnaryNot, NewConst(ConstLast)),
 			err:  "LAST is allowed only in array subscripts",
 		},
 		{
-			name:  "unary_current_okay_depth",
+			test:  "unary_current_okay_depth",
 			node:  NewUnary(UnaryNot, NewConst(ConstCurrent)),
 			depth: 1,
 		},
 		{
-			name: "regex",
+			test: "regex",
 			node: goodRegex,
 		},
 		{
-			name: "bad_regex",
+			test: "bad_regex",
 			node: badRegex,
 			err:  "@ is not allowed in root expressions",
 		},
 		{
-			name:  "regex_current_okay_depth",
+			test:  "regex_current_okay_depth",
 			node:  badRegex,
 			depth: 1,
 		},
 		{
-			name: "current",
+			test: "current",
 			node: NewConst(ConstCurrent),
 			err:  "@ is not allowed in root expressions",
 		},
 		{
-			name:  "current_depth",
+			test:  "current_depth",
 			node:  NewConst(ConstCurrent),
 			depth: 1,
 		},
 		{
-			name: "last",
+			test: "last",
 			node: NewConst(ConstLast),
 			err:  "LAST is allowed only in array subscripts",
 		},
 		{
-			name:  "last_in_sub",
+			test:  "last_in_sub",
 			node:  NewConst(ConstLast),
 			inSub: true,
 		},
 		{
-			name: "array",
+			test: "array",
 			node: NewArrayIndex([]Node{NewBinary(BinarySubscript, NewConst(ConstRoot), NewConst(ConstRoot))}),
 		},
 		{
-			name: "array_last",
+			test: "array_last",
 			node: NewArrayIndex([]Node{NewBinary(BinarySubscript, NewConst(ConstRoot), NewConst(ConstLast))}),
 		},
 		{
-			name: "array_current",
+			test: "array_current",
 			node: NewArrayIndex([]Node{NewBinary(BinarySubscript, NewConst(ConstRoot), NewConst(ConstCurrent))}),
 			err:  "@ is not allowed in root expressions",
 		},
 		{
-			name: "accessor",
+			test: "accessor",
 			node: LinkNodes([]Node{NewConst(ConstRoot)}),
 		},
 		{
-			name: "accessor_current",
+			test: "accessor_current",
 			node: LinkNodes([]Node{NewConst(ConstCurrent)}),
 			err:  "@ is not allowed in root expressions",
 		},
 		{
-			name: "accessor_filter_current",
+			test: "accessor_filter_current",
 			node: LinkNodes([]Node{NewConst(ConstRoot), NewUnary(UnaryFilter, NewConst(ConstCurrent))}),
 		},
 		{
-			name: "nil",
+			test: "nil",
 			node: nil,
 		},
 		{
-			name: "next_nil",
+			test: "next_nil",
 			node: LinkNodes([]Node{NewConst(ConstRoot), nil}),
 		},
 		{
-			name: "next_fail",
+			test: "next_fail",
 			node: LinkNodes([]Node{NewConst(ConstRoot), NewBinary(BinaryAdd, NewConst(ConstRoot), NewConst(ConstCurrent))}),
 			err:  "@ is not allowed in root expressions",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			r := require.New(t)
 
@@ -1362,7 +1362,7 @@ func TestNodes(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		node any
 	}{
 		{"ConstNode", NewConst(ConstRoot)},
@@ -1378,7 +1378,7 @@ func TestNodes(t *testing.T) {
 		{"RegexNode", &RegexNode{}},
 		{"ArrayIndexNode", &ArrayIndexNode{}},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 

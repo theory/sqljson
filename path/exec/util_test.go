@@ -18,30 +18,30 @@ func TestCastJSONNumber(t *testing.T) {
 	doubleFloat := func(i float64) float64 { return i * 2 }
 
 	for _, tc := range []struct {
-		name string
+		test string
 		num  json.Number
 		exp  any
 		ok   bool
 	}{
 		{
-			name: "int",
+			test: "int",
 			num:  json.Number("42"),
 			exp:  doubleInt(42),
 			ok:   true,
 		},
 		{
-			name: "float",
+			test: "float",
 			num:  json.Number("98.6"),
 			exp:  doubleFloat(98.6),
 			ok:   true,
 		},
 		{
-			name: "nan",
+			test: "nan",
 			num:  json.Number("foo"),
 			ok:   false,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -56,7 +56,7 @@ func TestGetNodeInt32(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		node  ast.Node
 		meth  string
 		field string
@@ -65,12 +65,12 @@ func TestGetNodeInt32(t *testing.T) {
 		isErr error
 	}{
 		{
-			name: "int",
+			test: "int",
 			node: ast.NewInteger("42"),
 			exp:  42,
 		},
 		{
-			name:  "numeric",
+			test:  "numeric",
 			node:  ast.NewNumeric("98.6"),
 			meth:  ".hi()",
 			field: "xxx",
@@ -78,7 +78,7 @@ func TestGetNodeInt32(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "string",
+			test:  "string",
 			node:  ast.NewString("foo"),
 			meth:  ".hi()",
 			field: "xxx",
@@ -86,7 +86,7 @@ func TestGetNodeInt32(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "too_big",
+			test:  "too_big",
 			node:  ast.NewInteger(strconv.FormatInt(int64(math.MaxInt32+1), 10)),
 			meth:  ".go()",
 			field: "aaa",
@@ -94,7 +94,7 @@ func TestGetNodeInt32(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "too_small",
+			test:  "too_small",
 			node:  ast.NewInteger(strconv.FormatInt(int64(math.MinInt32-1), 10)),
 			meth:  ".go()",
 			field: "aaa",
@@ -102,7 +102,7 @@ func TestGetNodeInt32(t *testing.T) {
 			isErr: ErrExecution,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -123,7 +123,7 @@ func TestGetJSONInt32(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		val   any
 		op    string
 		exp   int
@@ -131,113 +131,113 @@ func TestGetJSONInt32(t *testing.T) {
 		isErr error
 	}{
 		{
-			name: "int",
+			test: "int",
 			val:  int64(42),
 			exp:  42,
 		},
 		{
-			name: "float",
+			test: "float",
 			val:  float64(42),
 			exp:  42,
 		},
 		{
-			name: "float_trunc_2",
+			test: "float_trunc_2",
 			val:  float64(42.2),
 			exp:  42,
 		},
 		{
-			name: "float_trunc_5",
+			test: "float_trunc_5",
 			val:  float64(42.5),
 			exp:  42,
 		},
 		{
-			name: "float_trunc_9",
+			test: "float_trunc_9",
 			val:  float64(42.9),
 			exp:  42,
 		},
 		{
-			name: "json_num_int",
+			test: "json_num_int",
 			val:  json.Number("99"),
 			exp:  99,
 		},
 		{
-			name: "json_num_float",
+			test: "json_num_float",
 			val:  json.Number("99.0"),
 			exp:  99,
 		},
 		{
-			name: "json_num_float_trunc_2",
+			test: "json_num_float_trunc_2",
 			val:  json.Number("99.2"),
 			exp:  99,
 		},
 		{
-			name: "json_num_float_trunc_5",
+			test: "json_num_float_trunc_5",
 			val:  json.Number("99.5"),
 			exp:  99,
 		},
 		{
-			name: "json_num_float_trunc_9",
+			test: "json_num_float_trunc_9",
 			val:  json.Number("99.999"),
 			exp:  99,
 		},
 		{
-			name:  "float_nan",
+			test:  "float_nan",
 			val:   math.NaN(),
 			op:    "myThing",
 			err:   `exec: NaN or Infinity is not allowed for jsonpath myThing`,
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "float_inf",
+			test:  "float_inf",
 			val:   math.Inf(1),
 			op:    "myThing",
 			err:   `exec: NaN or Infinity is not allowed for jsonpath myThing`,
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "json_invalid",
+			test:  "json_invalid",
 			val:   json.Number("oof"),
 			op:    "oof",
 			err:   `exec invalid: jsonpath oof is not a single numeric value`,
 			isErr: ErrInvalid,
 		},
 		{
-			name:  "json_nan",
+			test:  "json_nan",
 			val:   json.Number("nan"),
 			op:    "xyz",
 			err:   `exec: NaN or Infinity is not allowed for jsonpath xyz`,
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "json_inf",
+			test:  "json_inf",
 			val:   json.Number("-inf"),
 			op:    "xyz",
 			err:   `exec: NaN or Infinity is not allowed for jsonpath xyz`,
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "string",
+			test:  "string",
 			val:   "hi",
 			op:    "xxx",
 			err:   `exec: jsonpath xxx is not a single numeric value`,
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "too_big",
+			test:  "too_big",
 			val:   int64(math.MaxInt32 + 1),
 			op:    "max",
 			err:   `exec: jsonpath max is out of integer range`,
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "too_small",
+			test:  "too_small",
 			val:   int64(math.MinInt32 - 1),
 			op:    "max",
 			err:   `exec: jsonpath max is out of integer range`,
 			isErr: ErrVerbose,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)

@@ -19,7 +19,7 @@ func neg(h, m, s int) *time.Location {
 }
 
 type TSTestCase struct {
-	name  string
+	test  string
 	value string
 	time  time.Time
 	ctor  func(t time.Time, tz *time.Location) DateTime
@@ -36,137 +36,137 @@ func timestampTestCases(t *testing.T) []TSTestCase {
 	return []TSTestCase{
 		// Date
 		{
-			name:  "date",
+			test:  "date",
 			value: "2024-04-29",
 			time:  time.Date(2024, 4, 29, 0, 0, 0, 0, offsetZero),
 			ctor:  newTestDate,
 		},
 		// time with time zone
 		{
-			name:  "time_tz_hm",
+			test:  "time_tz_hm",
 			value: "14:15:31+01:22",
 			time:  time.Date(0, 1, 1, 14, 15, 31, 0, pos(1, 22, 0)),
 			ctor:  newTestTimeTZ,
 		},
 		{
-			name:  "time_tz_sub_hm",
+			test:  "time_tz_sub_hm",
 			value: "14:15:31.785996+01:22",
 			time:  time.Date(0, 1, 1, 14, 15, 31, 785996000, pos(1, 22, 0)),
 			ctor:  newTestTimeTZ,
 		},
 		{
-			name:  "time_tz_pos_hm",
+			test:  "time_tz_pos_hm",
 			value: "14:15:31.785996+03:14",
 			time:  time.Date(0, 1, 1, 14, 15, 31, 785996000, pos(3, 14, 0)),
 			ctor:  newTestTimeTZ,
 		},
 		{
-			name:  "time_tz_sub_neg_hm",
+			test:  "time_tz_sub_neg_hm",
 			value: "14:15:31.785996-03:14",
 			time:  time.Date(0, 1, 1, 14, 15, 31, 785996000, neg(3, 14, 0)),
 			ctor:  newTestTimeTZ,
 		},
 		{
-			name:  "time_tz_neg_hm",
+			test:  "time_tz_neg_hm",
 			value: "14:15:31-03:14",
 			time:  time.Date(0, 1, 1, 14, 15, 31, 0, neg(3, 14, 0)),
 			ctor:  newTestTimeTZ,
 		},
 		{
-			name:  "time_tz_sub_h",
+			test:  "time_tz_sub_h",
 			value: "14:15:31.785996+01",
 			time:  time.Date(0, 1, 1, 14, 15, 31, 785996000, pos(1, 0, 0)),
 			ctor:  newTestTimeTZ,
 		},
 		{
-			name:  "time_tz_h",
+			test:  "time_tz_h",
 			value: "14:15:31+01",
 			time:  time.Date(0, 1, 1, 14, 15, 31, 0, pos(1, 0, 0)),
 			ctor:  newTestTimeTZ,
 		},
 		{
-			name:  "time_tz_sub_neg_h",
+			test:  "time_tz_sub_neg_h",
 			value: "14:15:31.785996-11",
 			time:  time.Date(0, 1, 1, 14, 15, 31, 785996000, neg(11, 0, 0)),
 			ctor:  newTestTimeTZ,
 		},
 		{
-			name:  "time_tz_neg_h",
+			test:  "time_tz_neg_h",
 			value: "14:15:31-11",
 			time:  time.Date(0, 1, 1, 14, 15, 31, 0, neg(11, 0, 0)),
 			ctor:  newTestTimeTZ,
 		},
 		{
-			name:  "time_tz_sub_z",
+			test:  "time_tz_sub_z",
 			value: "14:15:31.785996Z",
 			time:  time.Date(0, 1, 1, 14, 15, 31, 785996000, offsetZero),
 			ctor:  newTestTimeTZ,
 		},
 		{
-			name:  "time_tz_z",
+			test:  "time_tz_z",
 			value: "14:15:31Z",
 			time:  time.Date(0, 1, 1, 14, 15, 31, 0, offsetZero),
 			ctor:  newTestTimeTZ,
 		},
 		// time without time zone
 		{
-			name:  "time_sub",
+			test:  "time_sub",
 			value: "14:15:31.785996",
 			time:  time.Date(0, 1, 1, 14, 15, 31, 785996000, offsetZero),
 			ctor:  newTestTime,
 		},
 		{
-			name:  "time_no_sub",
+			test:  "time_no_sub",
 			value: "14:15:31",
 			time:  time.Date(0, 1, 1, 14, 15, 31, 0, offsetZero),
 			ctor:  newTestTime,
 		},
 		// timestamp "T" with time zone
 		{
-			name:  "timestamp_t_tz_sub_hm",
+			test:  "timestamp_t_tz_sub_hm",
 			value: "2024-04-29T15:11:38.06318+02:30",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 63180000, pos(2, 30, 0)),
 			ctor:  newTestTimestampTZ,
 		},
 		{
-			name:  "timestamp_t_tz_hm",
+			test:  "timestamp_t_tz_hm",
 			value: "2024-04-29T15:11:38+02:30",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 0, pos(2, 30, 0)),
 			ctor:  newTestTimestampTZ,
 		},
 		{
-			name:  "timestamp_t_tz_sub_neg_hm",
+			test:  "timestamp_t_tz_sub_neg_hm",
 			value: "2024-04-29T15:11:38.06318-02:30",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 63180000, neg(2, 30, 0)),
 			ctor:  newTestTimestampTZ,
 		},
 		{
-			name:  "timestamp_t_tz_neg_hm",
+			test:  "timestamp_t_tz_neg_hm",
 			value: "2024-04-29T15:11:38-02:30",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 0, neg(2, 30, 0)),
 			ctor:  newTestTimestampTZ,
 		},
 		{
-			name:  "timestamp_t_tz_sub_z",
+			test:  "timestamp_t_tz_sub_z",
 			value: "2024-04-29T15:11:38.06318Z",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 63180000, offsetZero),
 			ctor:  newTestTimestampTZ,
 		},
 		{
-			name:  "timestamp_t_tz_z",
+			test:  "timestamp_t_tz_z",
 			value: "2024-04-29T15:11:38Z",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 0, offsetZero),
 			ctor:  newTestTimestampTZ,
 		},
 		// timestamp "T" without time zone
 		{
-			name:  "timestamp_t_sub_hms",
+			test:  "timestamp_t_sub_hms",
 			value: "2024-04-29T15:11:38.06318",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 63180000, offsetZero),
 			ctor:  newTestTimestamp,
 		},
 		{
-			name:  "timestamp_t_hms",
+			test:  "timestamp_t_hms",
 			value: "2024-04-29T15:11:38",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 0, offsetZero),
 			ctor:  newTestTimestamp,
@@ -174,50 +174,50 @@ func timestampTestCases(t *testing.T) []TSTestCase {
 
 		// timestamp " " with time zone
 		{
-			name:  "timestamp_tz_sub_hm",
+			test:  "timestamp_tz_sub_hm",
 			value: "2024-04-29 15:11:38.06318+02:30",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 63180000, pos(2, 30, 0)),
 			ctor:  newTestTimestampTZ,
 		},
 		{
-			name:  "timestamp_tz_hm",
+			test:  "timestamp_tz_hm",
 			value: "2024-04-29 15:11:38+02:30",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 0, pos(2, 30, 0)),
 			ctor:  newTestTimestampTZ,
 		},
 		{
-			name:  "timestamp_tz_sub_neg_hm",
+			test:  "timestamp_tz_sub_neg_hm",
 			value: "2024-04-29 15:11:38.06318-02:30",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 63180000, neg(2, 30, 0)),
 			ctor:  newTestTimestampTZ,
 		},
 		{
-			name:  "timestamp_tz_neg_hm",
+			test:  "timestamp_tz_neg_hm",
 			value: "2024-04-29 15:11:38-02:30",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 0, neg(2, 30, 0)),
 			ctor:  newTestTimestampTZ,
 		},
 		{
-			name:  "timestamp_tz_sub_z",
+			test:  "timestamp_tz_sub_z",
 			value: "2024-04-29 15:11:38.06318Z",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 63180000, offsetZero),
 			ctor:  newTestTimestampTZ,
 		},
 		{
-			name:  "timestamp_tz_z",
+			test:  "timestamp_tz_z",
 			value: "2024-04-29 15:11:38Z",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 0, offsetZero),
 			ctor:  newTestTimestampTZ,
 		},
 		// timestamp " " without time zone
 		{
-			name:  "timestamp_sub_hms",
+			test:  "timestamp_sub_hms",
 			value: "2024-04-29 15:11:38.06318",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 63180000, offsetZero),
 			ctor:  newTestTimestamp,
 		},
 		{
-			name:  "timestamp_hms",
+			test:  "timestamp_hms",
 			value: "2024-04-29 15:11:38",
 			time:  time.Date(2024, 4, 29, 15, 11, 38, 0, offsetZero),
 			ctor:  newTestTimestamp,
@@ -228,10 +228,10 @@ func timestampTestCases(t *testing.T) []TSTestCase {
 func TestParseTime(t *testing.T) {
 	t.Parallel()
 	for _, tc := range timestampTestCases(t) {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			for _, zc := range zoneTestCases() {
-				t.Run(zc.name, func(t *testing.T) {
+				t.Run(zc.test, func(t *testing.T) {
 					t.Parallel()
 					a := assert.New(t)
 
@@ -250,13 +250,13 @@ func TestParseFail(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		value string
 	}{
 		{"bogus", "bogus"},
 		{"bad_date", "2024-02-30"},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -271,88 +271,88 @@ func TestParseTimePrecision(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		value string
 		one   int
 		two   int
 		six   int
 	}{
 		{
-			name:  "time_nine_places",
+			test:  "time_nine_places",
 			value: "14:15:31.78599685301",
 			one:   800000000,
 			two:   790000000,
 			six:   785997000,
 		},
 		{
-			name:  "time_six_places",
+			test:  "time_six_places",
 			value: "14:15:31.785996",
 			one:   800000000,
 			two:   790000000,
 			six:   785996000,
 		},
 		{
-			name:  "time_three_places",
+			test:  "time_three_places",
 			value: "14:15:31.785",
 			one:   800000000,
 			two:   790000000,
 			six:   785000000,
 		},
 		{
-			name:  "time_two_places",
+			test:  "time_two_places",
 			value: "14:15:31.78",
 			one:   800000000,
 			two:   780000000,
 			six:   780000000,
 		},
 		{
-			name:  "time_one_place",
+			test:  "time_one_place",
 			value: "14:15:31.7",
 			one:   700000000,
 			two:   700000000,
 			six:   700000000,
 		},
 		{
-			name:  "ts_nine_places",
+			test:  "ts_nine_places",
 			value: "2020-03-11T11:22:42.465029739+01",
 			one:   500000000,
 			two:   470000000,
 			six:   465030000,
 		},
 		{
-			name:  "ts_six_places",
+			test:  "ts_six_places",
 			value: "2020-03-11T11:22:42.465029+01",
 			one:   500000000,
 			two:   470000000,
 			six:   465029000,
 		},
 		{
-			name:  "ts_three_places",
+			test:  "ts_three_places",
 			value: "2020-03-11T11:22:42.465+01",
 			one:   500000000,
 			two:   470000000,
 			six:   465000000,
 		},
 		{
-			name:  "ts_two_places",
+			test:  "ts_two_places",
 			value: "2020-03-11T11:22:42.46+01",
 			one:   500000000,
 			two:   460000000,
 			six:   460000000,
 		},
 		{
-			name:  "ts_one_place",
+			test:  "ts_one_place",
 			value: "2020-03-11T11:22:42.4+01",
 			one:   400000000,
 			two:   400000000,
 			six:   400000000,
 		},
 		{
-			name:  "ts_no_places",
+			test:  "ts_no_places",
 			value: "2020-03-11T11:22:42+01",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 

@@ -49,7 +49,7 @@ func TestIsIdentRune(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		val  rune
 		char int
 		exp  bool
@@ -78,7 +78,7 @@ func TestIsIdentRune(t *testing.T) {
 		{"space_second", ' ', 1, false},
 		{"eof", stopTok, 0, false},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -116,7 +116,7 @@ func TestScanIdent(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		word string
 		exp  string
 		tok  int
@@ -302,7 +302,7 @@ func TestScanIdent(t *testing.T) {
 			"invalid hexadecimal character sequence at 1:3",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -326,7 +326,7 @@ func TestScanString(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		str  string
 		exp  string
 		tok  int
@@ -491,7 +491,7 @@ func TestScanString(t *testing.T) {
 			"invalid character NULL at 1:2",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -512,7 +512,7 @@ func TestScanNumbers(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		num  string
 		exp  string
 		tok  int
@@ -792,7 +792,7 @@ func TestScanNumbers(t *testing.T) {
 			"invalid digit '9' in octal literal at 1:4",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -800,7 +800,7 @@ func TestScanNumbers(t *testing.T) {
 			l := newLexer(tc.num)
 
 			// // To-do tests.
-			// if tc.name == "go_float_example_12" || tc.name == "go_float_example_13" {
+			// if tc.test == "go_float_example_12" || tc.test == "go_float_example_13" {
 			// 	a.NotEqual(l.Lex(sym), tc.tok)
 			// 	a.NotEqual([]string{tc.err}, l.errors)
 			// 	return
@@ -822,7 +822,7 @@ func TestScanVariable(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name     string
+		test     string
 		variable string
 		exp      string
 		tok      int
@@ -858,7 +858,7 @@ func TestScanVariable(t *testing.T) {
 			"invalid hexadecimal character sequence at 1:7",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -879,7 +879,7 @@ func TestScanComment(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		path string
 		tok  rune
 		err  string
@@ -894,7 +894,7 @@ func TestScanComment(t *testing.T) {
 		{"EOF", "/* foo ", stopTok, "unexpected end of comment at 1:8"},
 		{"not_a_comment", "/", '/', ""},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -916,7 +916,7 @@ func TestScanOperator(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		op   string
 		tok  int
 		exp  string
@@ -952,7 +952,7 @@ func TestScanOperator(t *testing.T) {
 		{"star_stop", "*=", '*', "*"},
 		{"something_else", "^^", '^', "^"},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -969,7 +969,7 @@ func TestLexer(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		path string
 		exp  string
 		tok  int
@@ -996,7 +996,7 @@ func TestLexer(t *testing.T) {
 		{"not_comment", "/ foo", "/", '/', ""},
 		{"op", "==foo", "==", EQUAL_P, ""},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -1018,7 +1018,7 @@ func TestSetResult(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		lex  *lexer
 		lax  bool
 		pred bool
@@ -1026,31 +1026,31 @@ func TestSetResult(t *testing.T) {
 		err  string
 	}{
 		{
-			name: "legit_lax",
+			test: "legit_lax",
 			lex:  &lexer{},
 			lax:  true,
 			pred: true,
 			node: ast.NewConst(ast.ConstNull),
 		},
 		{
-			name: "no_lax",
+			test: "no_lax",
 			lex:  &lexer{},
 			node: ast.NewConst(ast.ConstNull),
 		},
 		{
-			name: "prev_err",
+			test: "prev_err",
 			lex:  &lexer{errors: []string{"oops"}},
 			node: ast.NewConst(ast.ConstNull),
 			err:  "oops",
 		},
 		{
-			name: "ast_err",
+			test: "ast_err",
 			lex:  &lexer{},
 			node: ast.NewConst(ast.ConstLast),
 			err:  "LAST is allowed only in array subscripts",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -1077,7 +1077,7 @@ func TestLitName(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name   string
+		test   string
 		prefix rune
 	}{
 		{"decimal", 0},
@@ -1086,6 +1086,6 @@ func TestLitName(t *testing.T) {
 		{"hexadecimal", 'x'},
 		{"binary", 'b'},
 	} {
-		assert.Equal(t, tc.name+" literal", litName(tc.prefix))
+		assert.Equal(t, tc.test+" literal", litName(tc.prefix))
 	}
 }

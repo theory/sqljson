@@ -18,7 +18,7 @@ func TestExecConstNode(t *testing.T) {
 	current := []any{"hi", true}
 
 	for _, tc := range []struct {
-		name   string
+		test   string
 		node   *ast.ConstNode
 		value  any
 		find   []any
@@ -28,51 +28,51 @@ func TestExecConstNode(t *testing.T) {
 		isErr  error
 	}{
 		{
-			name: "null",
+			test: "null",
 			node: ast.NewConst(ast.ConstNull),
 			exp:  statusOK,
 			find: []any{nil},
 		},
 		{
-			name: "true",
+			test: "true",
 			node: ast.NewConst(ast.ConstTrue),
 			exp:  statusOK,
 			find: []any{true},
 		},
 		{
-			name: "false",
+			test: "false",
 			node: ast.NewConst(ast.ConstFalse),
 			exp:  statusOK,
 			find: []any{false},
 		},
 		{
-			name: "root",
+			test: "root",
 			node: ast.NewConst(ast.ConstRoot),
 			exp:  statusOK,
 			find: []any{path.Root()},
 		},
 		{
-			name: "current",
+			test: "current",
 			node: ast.NewConst(ast.ConstCurrent),
 			exp:  statusOK,
 			find: []any{current},
 		},
 		{
-			name:  "any_key",
+			test:  "any_key",
 			node:  ast.NewConst(ast.ConstAnyKey),
 			value: map[string]any{"hi": "x", "there": "x"},
 			exp:   statusOK,
 			find:  []any{"x", "x"},
 		},
 		{
-			name:  "any_key_array",
+			test:  "any_key_array",
 			node:  ast.NewConst(ast.ConstAnyKey),
 			value: []any{"hi", "there"},
 			exp:   statusNotFound,
 			find:  []any{},
 		},
 		{
-			name:   "any_key_array_unwrap",
+			test:   "any_key_array_unwrap",
 			node:   ast.NewConst(ast.ConstAnyKey),
 			value:  []any{"hi", "there"},
 			unwrap: true,
@@ -80,7 +80,7 @@ func TestExecConstNode(t *testing.T) {
 			find:   []any{},
 		},
 		{
-			name:   "any_key_nested_array_unwrap",
+			test:   "any_key_nested_array_unwrap",
 			node:   ast.NewConst(ast.ConstAnyKey),
 			value:  []any{"hi", "there", map[string]any{"x": int64(1), "y": int64(1)}},
 			unwrap: true,
@@ -88,20 +88,20 @@ func TestExecConstNode(t *testing.T) {
 			find:   []any{int64(1), int64(1)},
 		},
 		{
-			name:  "any_array",
+			test:  "any_array",
 			node:  ast.NewConst(ast.ConstAnyArray),
 			value: []any{"hi", "there"},
 			exp:   statusOK,
 			find:  []any{"hi", "there"},
 		},
 		{
-			name: "last",
+			test: "last",
 			node: ast.NewConst(ast.ConstLast),
 			exp:  statusOK,
 			find: []any{int64(3)},
 		},
 		{
-			name:  "unknown_const",
+			test:  "unknown_const",
 			node:  ast.NewConst(ast.Constant(-1)),
 			exp:   statusFailed,
 			find:  []any{},
@@ -109,7 +109,7 @@ func TestExecConstNode(t *testing.T) {
 			isErr: ErrInvalid,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -157,7 +157,7 @@ func TestExecLiteralConst(t *testing.T) {
 	path, _ := parser.Parse("$")
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		node  ast.Node
 		find  []any
 		exp   resultStatus
@@ -165,36 +165,36 @@ func TestExecLiteralConst(t *testing.T) {
 		isErr error
 	}{
 		{
-			name: "no_found",
+			test: "no_found",
 			node: ast.NewConst(ast.ConstNull),
 			exp:  statusOK,
 		},
 		{
-			name: "null",
+			test: "null",
 			node: ast.NewConst(ast.ConstNull),
 			exp:  statusOK,
 			find: []any{nil},
 		},
 		{
-			name: "true",
+			test: "true",
 			node: ast.NewConst(ast.ConstTrue),
 			exp:  statusOK,
 			find: []any{true},
 		},
 		{
-			name: "false",
+			test: "false",
 			node: ast.NewConst(ast.ConstFalse),
 			exp:  statusOK,
 			find: []any{false},
 		},
 		{
-			name: "false_next",
+			test: "false_next",
 			node: ast.LinkNodes([]ast.Node{ast.NewConst(ast.ConstFalse), ast.NewMethod(ast.MethodString)}),
 			exp:  statusOK,
 			find: []any{"false"},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -239,7 +239,7 @@ func TestExecAnyKey(t *testing.T) {
 	strict, _ := parser.Parse("strict $")
 
 	for _, tc := range []struct {
-		name   string
+		test   string
 		path   *ast.AST
 		node   *ast.ConstNode
 		value  any
@@ -251,7 +251,7 @@ func TestExecAnyKey(t *testing.T) {
 		isErr  error
 	}{
 		{
-			name:  "any_key",
+			test:  "any_key",
 			path:  lax,
 			node:  ast.NewConst(ast.ConstAnyKey),
 			value: map[string]any{"hi": "x", "there": "x"},
@@ -259,7 +259,7 @@ func TestExecAnyKey(t *testing.T) {
 			find:  []any{"x", "x"},
 		},
 		{
-			name:  "any_key_array",
+			test:  "any_key_array",
 			path:  lax,
 			node:  ast.NewConst(ast.ConstAnyKey),
 			value: []any{"hi", "there"},
@@ -267,7 +267,7 @@ func TestExecAnyKey(t *testing.T) {
 			find:  []any{},
 		},
 		{
-			name:  "any_key_array_strict",
+			test:  "any_key_array_strict",
 			path:  strict,
 			node:  ast.NewConst(ast.ConstAnyKey),
 			value: []any{"hi", "there"},
@@ -277,7 +277,7 @@ func TestExecAnyKey(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:   "any_key_array_unwrap",
+			test:   "any_key_array_unwrap",
 			path:   lax,
 			node:   ast.NewConst(ast.ConstAnyKey),
 			value:  []any{"hi", "there"},
@@ -286,7 +286,7 @@ func TestExecAnyKey(t *testing.T) {
 			find:   []any{},
 		},
 		{
-			name:   "any_key_nested_array_unwrap",
+			test:   "any_key_nested_array_unwrap",
 			path:   lax,
 			node:   ast.NewConst(ast.ConstAnyKey),
 			value:  []any{"hi", "there", map[string]any{"x": int64(1), "y": int64(1)}},
@@ -295,7 +295,7 @@ func TestExecAnyKey(t *testing.T) {
 			find:   []any{int64(1), int64(1)},
 		},
 		{
-			name:  "any_key_scalar",
+			test:  "any_key_scalar",
 			path:  lax,
 			node:  ast.NewConst(ast.ConstAnyKey),
 			value: true,
@@ -303,7 +303,7 @@ func TestExecAnyKey(t *testing.T) {
 			find:  []any{},
 		},
 		{
-			name:  "any_key_scalar_strict",
+			test:  "any_key_scalar_strict",
 			path:  strict,
 			node:  ast.NewConst(ast.ConstAnyKey),
 			value: true,
@@ -313,7 +313,7 @@ func TestExecAnyKey(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -354,7 +354,7 @@ func TestExecAnyArray(t *testing.T) {
 	strict, _ := parser.Parse("strict $")
 
 	for _, tc := range []struct {
-		name   string
+		test   string
 		node   ast.Node
 		path   *ast.AST
 		ignore bool
@@ -365,7 +365,7 @@ func TestExecAnyArray(t *testing.T) {
 		isErr  error
 	}{
 		{
-			name:  "array",
+			test:  "array",
 			node:  ast.NewConst(ast.ConstNull),
 			path:  lax,
 			value: []any{true, false, nil},
@@ -373,7 +373,7 @@ func TestExecAnyArray(t *testing.T) {
 			find:  []any{true, false, nil},
 		},
 		{
-			name:  "array_next",
+			test:  "array_next",
 			node:  ast.LinkNodes([]ast.Node{ast.NewConst(ast.ConstNull), ast.NewMethod(ast.MethodString)}),
 			path:  lax,
 			value: []any{true, false, float64(98.6)},
@@ -381,7 +381,7 @@ func TestExecAnyArray(t *testing.T) {
 			find:  []any{"true", "false", "98.6"},
 		},
 		{
-			name:  "array_next_err",
+			test:  "array_next_err",
 			node:  ast.LinkNodes([]ast.Node{ast.NewConst(ast.ConstNull), ast.NewMethod(ast.MethodString)}),
 			path:  lax,
 			value: []any{true, false, nil},
@@ -391,7 +391,7 @@ func TestExecAnyArray(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "auto_wrap",
+			test:  "auto_wrap",
 			node:  ast.NewConst(ast.ConstNull),
 			path:  lax,
 			value: true,
@@ -399,7 +399,7 @@ func TestExecAnyArray(t *testing.T) {
 			find:  []any{true},
 		},
 		{
-			name:   "no_auto_wrap_no_error",
+			test:   "no_auto_wrap_no_error",
 			node:   ast.NewConst(ast.ConstNull),
 			path:   strict,
 			ignore: true,
@@ -408,7 +408,7 @@ func TestExecAnyArray(t *testing.T) {
 			find:   []any{},
 		},
 		{
-			name:  "no_auto_wrap_strict",
+			test:  "no_auto_wrap_strict",
 			node:  ast.NewConst(ast.ConstNull),
 			path:  strict,
 			value: true,
@@ -418,7 +418,7 @@ func TestExecAnyArray(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -465,7 +465,7 @@ func TestExecLastConst(t *testing.T) {
 	path, _ := parser.Parse("$")
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		node  ast.Node
 		size  int
 		find  []any
@@ -474,7 +474,7 @@ func TestExecLastConst(t *testing.T) {
 		isErr error
 	}{
 		{
-			name:  "outside_array_subscript",
+			test:  "outside_array_subscript",
 			node:  ast.NewConst(ast.ConstLast),
 			size:  -1,
 			exp:   statusFailed,
@@ -482,34 +482,34 @@ func TestExecLastConst(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name: "size_4",
+			test: "size_4",
 			node: ast.NewConst(ast.ConstLast),
 			size: 4,
 			exp:  statusOK,
 			find: []any{int64(3)},
 		},
 		{
-			name: "no_found",
+			test: "no_found",
 			node: ast.NewConst(ast.ConstLast),
 			size: 4,
 			exp:  statusOK,
 		},
 		{
-			name: "size_6",
+			test: "size_6",
 			node: ast.NewConst(ast.ConstLast),
 			size: 6,
 			exp:  statusOK,
 			find: []any{int64(5)},
 		},
 		{
-			name: "size_4_next",
+			test: "size_4_next",
 			node: ast.LinkNodes([]ast.Node{ast.NewConst(ast.ConstLast), ast.NewMethod(ast.MethodString)}),
 			size: 4,
 			exp:  statusOK,
 			find: []any{"3"},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)

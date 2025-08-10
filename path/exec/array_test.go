@@ -17,7 +17,7 @@ func TestExecSubscript(t *testing.T) {
 	strict, _ := parser.Parse("strict $")
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		path  *ast.AST
 		node  ast.Node
 		size  int
@@ -27,49 +27,49 @@ func TestExecSubscript(t *testing.T) {
 		errIs error
 	}{
 		{
-			name:  "not_binary_node",
+			test:  "not_binary_node",
 			path:  lax,
 			node:  ast.NewString("hi"),
 			err:   `exec: jsonpath array subscript is not a single numeric value`,
 			errIs: ErrExecution,
 		},
 		{
-			name:  "not_subscript",
+			test:  "not_subscript",
 			path:  lax,
 			node:  ast.NewBinary(ast.BinaryAdd, ast.NewInteger("1"), ast.NewInteger("2")),
 			err:   `exec: jsonpath array subscript is not a single numeric value`,
 			errIs: ErrExecution,
 		},
 		{
-			name:  "left_not_number",
+			test:  "left_not_number",
 			path:  lax,
 			node:  ast.NewBinary(ast.BinarySubscript, ast.NewString("1"), ast.NewInteger("2")),
 			err:   `exec: jsonpath array subscript is not a single numeric value`,
 			errIs: ErrVerbose,
 		},
 		{
-			name:  "right_not_number",
+			test:  "right_not_number",
 			path:  lax,
 			node:  ast.NewBinary(ast.BinarySubscript, ast.NewInteger("1"), ast.NewString("2")),
 			err:   `exec: jsonpath array subscript is not a single numeric value`,
 			errIs: ErrVerbose,
 		},
 		{
-			name:  "from_lt_0_strict",
+			test:  "from_lt_0_strict",
 			path:  strict,
 			node:  ast.NewBinary(ast.BinarySubscript, ast.NewInteger("-1"), nil),
 			err:   `exec: jsonpath array subscript is out of bounds`,
 			errIs: ErrVerbose,
 		},
 		{
-			name:  "from_gt_to_strict",
+			test:  "from_gt_to_strict",
 			path:  strict,
 			node:  ast.NewBinary(ast.BinarySubscript, ast.NewInteger("2"), ast.NewInteger("1")),
 			err:   `exec: jsonpath array subscript is out of bounds`,
 			errIs: ErrVerbose,
 		},
 		{
-			name:  "to_gt_size_strict",
+			test:  "to_gt_size_strict",
 			path:  strict,
 			node:  ast.NewBinary(ast.BinarySubscript, ast.NewInteger("1"), ast.NewInteger("4")),
 			size:  2,
@@ -77,7 +77,7 @@ func TestExecSubscript(t *testing.T) {
 			errIs: ErrVerbose,
 		},
 		{
-			name: "from_lt_0_lax",
+			test: "from_lt_0_lax",
 			path: lax,
 			node: ast.NewBinary(ast.BinarySubscript, ast.NewInteger("-1"), ast.NewInteger("1")),
 			size: 3,
@@ -85,7 +85,7 @@ func TestExecSubscript(t *testing.T) {
 			to:   1,
 		},
 		{
-			name: "from_gt_to_lax",
+			test: "from_gt_to_lax",
 			path: lax,
 			node: ast.NewBinary(ast.BinarySubscript, ast.NewInteger("2"), ast.NewInteger("4")),
 			size: 7,
@@ -93,7 +93,7 @@ func TestExecSubscript(t *testing.T) {
 			to:   4,
 		},
 		{
-			name: "to_gt_size_lax",
+			test: "to_gt_size_lax",
 			path: lax,
 			node: ast.NewBinary(ast.BinarySubscript, ast.NewInteger("1"), ast.NewInteger("14")),
 			size: 7,
@@ -101,7 +101,7 @@ func TestExecSubscript(t *testing.T) {
 			to:   6,
 		},
 		{
-			name: "no_right_operand",
+			test: "no_right_operand",
 			path: lax,
 			node: ast.NewBinary(ast.BinarySubscript, ast.NewInteger("1"), nil),
 			size: 10,
@@ -109,7 +109,7 @@ func TestExecSubscript(t *testing.T) {
 			to:   1,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -148,7 +148,7 @@ func TestExecArrayIndex(t *testing.T) {
 	}).(*ast.ArrayIndexNode)
 
 	for _, tc := range []struct {
-		name   string
+		test   string
 		path   *ast.AST
 		node   *ast.ArrayIndexNode
 		value  any
@@ -159,7 +159,7 @@ func TestExecArrayIndex(t *testing.T) {
 		errIs  error
 	}{
 		{
-			name:  "not_array_strict",
+			test:  "not_array_strict",
 			path:  strict,
 			value: "hi",
 			exp:   statusFailed,
@@ -168,7 +168,7 @@ func TestExecArrayIndex(t *testing.T) {
 			errIs: ErrVerbose,
 		},
 		{
-			name:  "not_array_lax",
+			test:  "not_array_lax",
 			path:  lax,
 			node:  ast.NewArrayIndex([]ast.Node{ast.NewBinary(ast.BinarySubscript, ast.NewInteger("0"), nil)}),
 			value: "hi",
@@ -176,7 +176,7 @@ func TestExecArrayIndex(t *testing.T) {
 			found: []any{"hi"},
 		},
 		{
-			name:  "not_found_lax",
+			test:  "not_found_lax",
 			path:  lax,
 			node:  ast.NewArrayIndex([]ast.Node{ast.NewBinary(ast.BinarySubscript, ast.NewInteger("1"), nil)}),
 			value: "hi",
@@ -184,7 +184,7 @@ func TestExecArrayIndex(t *testing.T) {
 			found: []any{},
 		},
 		{
-			name:  "is_array",
+			test:  "is_array",
 			path:  strict,
 			node:  ast.NewArrayIndex([]ast.Node{ast.NewBinary(ast.BinarySubscript, ast.NewInteger("0"), nil)}),
 			value: []any{"hi"},
@@ -192,7 +192,7 @@ func TestExecArrayIndex(t *testing.T) {
 			found: []any{"hi"},
 		},
 		{
-			name:  "is_array_second_item",
+			test:  "is_array_second_item",
 			path:  strict,
 			node:  ast.NewArrayIndex([]ast.Node{ast.NewBinary(ast.BinarySubscript, ast.NewInteger("1"), nil)}),
 			value: []any{"hi", "go"},
@@ -200,7 +200,7 @@ func TestExecArrayIndex(t *testing.T) {
 			found: []any{"go"},
 		},
 		{
-			name: "is_array_range",
+			test: "is_array_range",
 			path: strict,
 			node: ast.NewArrayIndex([]ast.Node{
 				ast.NewBinary(ast.BinarySubscript, ast.NewInteger("0"), ast.NewInteger("1")),
@@ -210,7 +210,7 @@ func TestExecArrayIndex(t *testing.T) {
 			found: []any{"hi", "go"},
 		},
 		{
-			name: "is_array_sub_range",
+			test: "is_array_sub_range",
 			path: strict,
 			node: ast.NewArrayIndex([]ast.Node{
 				ast.NewBinary(ast.BinarySubscript, ast.NewInteger("2"), ast.NewInteger("5")),
@@ -220,7 +220,7 @@ func TestExecArrayIndex(t *testing.T) {
 			found: []any{"on", true, "12", false},
 		},
 		{
-			name: "is_array_last",
+			test: "is_array_last",
 			path: strict,
 			node: ast.NewArrayIndex([]ast.Node{
 				ast.NewBinary(ast.BinarySubscript, ast.NewInteger("0"), ast.NewConst(ast.ConstLast)),
@@ -230,7 +230,7 @@ func TestExecArrayIndex(t *testing.T) {
 			found: []any{"hi", "go", "on"},
 		},
 		{
-			name:  "not_a_subscript",
+			test:  "not_a_subscript",
 			path:  strict,
 			node:  ast.NewArrayIndex([]ast.Node{ast.NewConst(ast.ConstRoot)}),
 			value: []any{"hi"},
@@ -240,7 +240,7 @@ func TestExecArrayIndex(t *testing.T) {
 			errIs: ErrExecution,
 		},
 		{
-			name: "skip_nil",
+			test: "skip_nil",
 			path: strict,
 			node: ast.NewArrayIndex([]ast.Node{
 				ast.NewBinary(ast.BinarySubscript, ast.NewInteger("0"), ast.NewConst(ast.ConstLast)),
@@ -250,7 +250,7 @@ func TestExecArrayIndex(t *testing.T) {
 			found: []any{"hi", "go", "on"},
 		},
 		{
-			name: "no_found_param",
+			test: "no_found_param",
 			path: strict,
 			node: ast.NewArrayIndex([]ast.Node{
 				ast.NewBinary(ast.BinarySubscript, ast.NewInteger("0"), ast.NewConst(ast.ConstLast)),
@@ -259,7 +259,7 @@ func TestExecArrayIndex(t *testing.T) {
 			exp:   statusOK,
 		},
 		{
-			name:  "next_item",
+			test:  "next_item",
 			path:  strict,
 			node:  linked,
 			value: []any{int64(2), true},
@@ -267,7 +267,7 @@ func TestExecArrayIndex(t *testing.T) {
 			found: []any{"2", "true"},
 		},
 		{
-			name:  "next_item_fail",
+			test:  "next_item_fail",
 			path:  strict,
 			node:  nextErr,
 			value: []any{int64(2), true},
@@ -277,7 +277,7 @@ func TestExecArrayIndex(t *testing.T) {
 			errIs: ErrExecution,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -312,7 +312,7 @@ func TestExecuteItemUnwrapTargetArray(t *testing.T) {
 	path, _ := parser.Parse("$")
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		node  ast.Node
 		value any
 		exp   resultStatus
@@ -321,7 +321,7 @@ func TestExecuteItemUnwrapTargetArray(t *testing.T) {
 		errIs error
 	}{
 		{
-			name:  "not_array",
+			test:  "not_array",
 			value: "hi",
 			exp:   statusFailed,
 			found: []any{},
@@ -329,7 +329,7 @@ func TestExecuteItemUnwrapTargetArray(t *testing.T) {
 			errIs: ErrInvalid,
 		},
 		{
-			name:  "invalid_array",
+			test:  "invalid_array",
 			value: []string{"hi"},
 			exp:   statusFailed,
 			found: []any{},
@@ -337,20 +337,20 @@ func TestExecuteItemUnwrapTargetArray(t *testing.T) {
 			errIs: ErrInvalid,
 		},
 		{
-			name:  "is_array_no_node",
+			test:  "is_array_no_node",
 			value: []any{float64(1), float64(2)},
 			exp:   statusOK,
 			found: []any{float64(1), float64(2)},
 		},
 		{
-			name:  "exec_node",
+			test:  "exec_node",
 			value: []any{float64(1), float64(2)},
 			node:  ast.NewMethod(ast.MethodString),
 			exp:   statusOK,
 			found: []any{"1", "2"},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -376,7 +376,7 @@ func TestGetArrayIndex(t *testing.T) {
 	path, _ := parser.Parse("$[*]")
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		node  ast.Node
 		value any
 		exp   int
@@ -384,26 +384,26 @@ func TestGetArrayIndex(t *testing.T) {
 		errIs error
 	}{
 		{
-			name:  "exec_item_fail",
+			test:  "exec_item_fail",
 			node:  ast.NewVariable("foo"),
 			err:   `exec: could not find jsonpath variable "foo"`,
 			errIs: ErrExecution,
 		},
 		{
-			name:  "too_many_found",
+			test:  "too_many_found",
 			node:  path.Root(),
 			value: []any{1, 2},
 			err:   `exec: jsonpath array subscript is not a single numeric value`,
 			errIs: ErrExecution,
 		},
 		{
-			name:  "success",
+			test:  "success",
 			node:  path.Root(),
 			value: []any{int64(1)},
 			exp:   1,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)

@@ -16,7 +16,7 @@ func TestPath(t *testing.T) {
 	ctx := context.Background()
 
 	type testCase struct {
-		name string
+		test string
 		path string
 		op   string
 		json any
@@ -72,35 +72,35 @@ func TestPath(t *testing.T) {
 
 	for _, tc := range []testCase{
 		{
-			name: "root",
+			test: "root",
 			path: "$",
 			op:   "@?",
 			json: jMap,
 			exp:  []any{jMap},
 		},
 		{
-			name: "predicate",
+			test: "predicate",
 			path: "$ == 1",
 			op:   "@@",
 			json: int64(1),
 			exp:  []any{true},
 		},
 		{
-			name: "filter",
+			test: "filter",
 			path: "$.a.b ?(@.x >= 42)",
 			op:   "@?",
 			json: map[string]any{"a": map[string]any{"b": map[string]any{"x": int64(42)}}},
 			exp:  []any{map[string]any{"x": int64(42)}},
 		},
 		{
-			name: "exists",
+			test: "exists",
 			path: "exists($.a.b ?(@.x >= 42))",
 			op:   "@@",
 			json: map[string]any{"a": map[string]any{"b": map[string]any{"x": int64(42)}}},
 			exp:  []any{true},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -155,19 +155,19 @@ func TestPath(t *testing.T) {
 func TestQueryErrors(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
-		name string
+		test string
 		path string
 		json any
 		err  string
 	}{
 		{
-			name: "out_of_bounds",
+			test: "out_of_bounds",
 			path: "strict $[1]",
 			json: []any{true},
 			err:  "exec: jsonpath array subscript is out of bounds",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -222,22 +222,22 @@ func TestPathParseErrors(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		path string
 		err  string
 	}{
 		{
-			name: "parse_error",
+			test: "parse_error",
 			path: "(.)",
 			err:  "parser: syntax error at 1:3",
 		},
 		{
-			name: "validation_error",
+			test: "validation_error",
 			path: "@ == 1",
 			err:  "parser: @ is not allowed in root expressions",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -288,14 +288,14 @@ func TestScanNilPath(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		path any
 	}{
 		{"nil", nil},
 		{"empty_string", ""},
 		{"no_bytes", []byte{}},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)

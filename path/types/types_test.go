@@ -10,7 +10,7 @@ func TestDateTime(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		obj  any
 	}{
 		{"date", &Date{}},
@@ -19,7 +19,7 @@ func TestDateTime(t *testing.T) {
 		{"timestamp", &Timestamp{}},
 		{"timestamptz", &TimestampTZ{}},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 

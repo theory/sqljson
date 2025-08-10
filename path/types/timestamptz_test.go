@@ -16,7 +16,7 @@ func TestTimestampTZ(t *testing.T) {
 	ctx := ContextWithTZ(context.Background(), tz)
 
 	for _, tc := range timestampTestCases(t) {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -53,7 +53,7 @@ func TestTimestampTZInvalidJSON(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name   string
+		test   string
 		value  string
 		format string
 	}{
@@ -65,7 +65,7 @@ func TestTimestampTZInvalidJSON(t *testing.T) {
 		{"pos_hours", `"i am not a timestamp+01"`, timestampTZHourFormat},
 		{"neg_hours", `"i am not a timestamp-01"`, timestampTZHourFormat},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			r := require.New(t)
 

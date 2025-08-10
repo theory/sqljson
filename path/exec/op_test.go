@@ -16,7 +16,7 @@ func TestExecBinaryNode(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name   string
+		test   string
 		node   *ast.BinaryNode
 		value  any
 		unwrap bool
@@ -26,7 +26,7 @@ func TestExecBinaryNode(t *testing.T) {
 		isErr  error
 	}{
 		{
-			name: "and",
+			test: "and",
 			node: ast.NewBinary(
 				ast.BinaryAnd,
 				ast.NewBinary(ast.BinaryEqual, ast.NewConst(ast.ConstRoot), ast.NewConst(ast.ConstRoot)),
@@ -36,7 +36,7 @@ func TestExecBinaryNode(t *testing.T) {
 			find: []any{true},
 		},
 		{
-			name: "or",
+			test: "or",
 			node: ast.NewBinary(
 				ast.BinaryOr,
 				ast.NewBinary(ast.BinaryEqual, ast.NewConst(ast.ConstRoot), ast.NewConst(ast.ConstRoot)),
@@ -46,99 +46,99 @@ func TestExecBinaryNode(t *testing.T) {
 			find: []any{true},
 		},
 		{
-			name: "eq",
+			test: "eq",
 			node: ast.NewBinary(ast.BinaryEqual, ast.NewInteger("42"), ast.NewInteger("42")),
 			exp:  statusOK,
 			find: []any{true},
 		},
 		{
-			name: "ne",
+			test: "ne",
 			node: ast.NewBinary(ast.BinaryNotEqual, ast.NewInteger("42"), ast.NewInteger("42")),
 			exp:  statusOK,
 			find: []any{false},
 		},
 		{
-			name: "lt",
+			test: "lt",
 			node: ast.NewBinary(ast.BinaryLess, ast.NewInteger("41"), ast.NewInteger("42")),
 			exp:  statusOK,
 			find: []any{true},
 		},
 		{
-			name: "gt",
+			test: "gt",
 			node: ast.NewBinary(ast.BinaryLess, ast.NewInteger("42"), ast.NewInteger("42")),
 			exp:  statusOK,
 			find: []any{false},
 		},
 		{
-			name: "le",
+			test: "le",
 			node: ast.NewBinary(ast.BinaryLessOrEqual, ast.NewInteger("42"), ast.NewInteger("42")),
 			exp:  statusOK,
 			find: []any{true},
 		},
 		{
-			name: "ge",
+			test: "ge",
 			node: ast.NewBinary(ast.BinaryGreaterOrEqual, ast.NewInteger("42"), ast.NewInteger("42")),
 			exp:  statusOK,
 			find: []any{true},
 		},
 		{
-			name: "starts_with",
+			test: "starts_with",
 			node: ast.NewBinary(ast.BinaryStartsWith, ast.NewString("hi there"), ast.NewString("hi")),
 			exp:  statusOK,
 			find: []any{true},
 		},
 		{
-			name: "add",
+			test: "add",
 			node: ast.NewBinary(ast.BinaryAdd, ast.NewInteger("12"), ast.NewInteger("38")),
 			exp:  statusOK,
 			find: []any{int64(50)},
 		},
 		{
-			name: "sub",
+			test: "sub",
 			node: ast.NewBinary(ast.BinarySub, ast.NewInteger("42"), ast.NewInteger("12")),
 			exp:  statusOK,
 			find: []any{int64(30)},
 		},
 		{
-			name: "mul",
+			test: "mul",
 			node: ast.NewBinary(ast.BinaryMul, ast.NewInteger("5"), ast.NewInteger("6")),
 			exp:  statusOK,
 			find: []any{int64(30)},
 		},
 		{
-			name: "div",
+			test: "div",
 			node: ast.NewBinary(ast.BinaryDiv, ast.NewInteger("10"), ast.NewInteger("2")),
 			exp:  statusOK,
 			find: []any{int64(5)},
 		},
 		{
-			name: "mod",
+			test: "mod",
 			node: ast.NewBinary(ast.BinaryMod, ast.NewInteger("12"), ast.NewInteger("5")),
 			exp:  statusOK,
 			find: []any{int64(2)},
 		},
 		{
-			name:  "decimal",
+			test:  "decimal",
 			value: float64(12.233),
 			node:  ast.NewBinary(ast.BinaryDecimal, ast.NewInteger("4"), ast.NewInteger("2")),
 			exp:   statusOK,
 			find:  []any{float64(12.23)},
 		},
 		{
-			name:  "subscript",
+			test:  "subscript",
 			node:  ast.NewBinary(ast.BinarySubscript, nil, nil),
 			exp:   statusFailed,
 			err:   `exec: evaluating jsonpath subscript expression outside of array subscript`,
 			isErr: ErrExecution,
 		},
 		{
-			name: "unknown_op",
+			test: "unknown_op",
 			node: ast.NewBinary(ast.BinaryOperator(-1), nil, nil),
 			exp:  statusNotFound,
 			find: []any{},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -166,7 +166,7 @@ func TestExecUnaryNode(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name   string
+		test   string
 		node   *ast.UnaryNode
 		value  any
 		unwrap bool
@@ -176,7 +176,7 @@ func TestExecUnaryNode(t *testing.T) {
 		isErr  error
 	}{
 		{
-			name: "not",
+			test: "not",
 			node: ast.NewUnary(
 				ast.UnaryNot,
 				ast.NewUnary(ast.UnaryExists, ast.NewConst(ast.ConstRoot)),
@@ -185,7 +185,7 @@ func TestExecUnaryNode(t *testing.T) {
 			find: []any{false},
 		},
 		{
-			name: "filter",
+			test: "filter",
 			node: ast.NewUnary(
 				ast.UnaryFilter,
 				ast.NewBinary(
@@ -199,7 +199,7 @@ func TestExecUnaryNode(t *testing.T) {
 			find:  []any{"hi"},
 		},
 		{
-			name: "filter_false",
+			test: "filter_false",
 			node: ast.NewUnary(
 				ast.UnaryFilter,
 				ast.NewBinary(
@@ -213,7 +213,7 @@ func TestExecUnaryNode(t *testing.T) {
 			find:  []any{},
 		},
 		{
-			name: "filter_array",
+			test: "filter_array",
 			node: ast.NewUnary(
 				ast.UnaryFilter,
 				ast.NewBinary(
@@ -227,7 +227,7 @@ func TestExecUnaryNode(t *testing.T) {
 			find:  []any{[]any{"hi"}},
 		},
 		{
-			name: "filter_array_unwrap",
+			test: "filter_array_unwrap",
 			node: ast.NewUnary(
 				ast.UnaryFilter,
 				ast.NewBinary(
@@ -242,7 +242,7 @@ func TestExecUnaryNode(t *testing.T) {
 			find:   []any{"hi", "there"},
 		},
 		{
-			name: "filter_array_unwrap_false",
+			test: "filter_array_unwrap_false",
 			node: ast.NewUnary(
 				ast.UnaryFilter,
 				ast.NewBinary(
@@ -257,56 +257,56 @@ func TestExecUnaryNode(t *testing.T) {
 			find:   []any{},
 		},
 		{
-			name:  "plus",
+			test:  "plus",
 			node:  ast.NewUnary(ast.UnaryPlus, ast.NewConst(ast.ConstRoot)),
 			exp:   statusOK,
 			value: int64(-42),
 			find:  []any{int64(-42)},
 		},
 		{
-			name:  "minus",
+			test:  "minus",
 			node:  ast.NewUnary(ast.UnaryMinus, ast.NewConst(ast.ConstRoot)),
 			exp:   statusOK,
 			value: int64(-42),
 			find:  []any{int64(42)},
 		},
 		{
-			name:  "datetime",
+			test:  "datetime",
 			node:  ast.NewUnary(ast.UnaryDateTime, nil),
 			exp:   statusOK,
 			value: "2024-06-14",
 			find:  []any{types.NewDate(time.Date(2024, 6, 14, 0, 0, 9, 9, time.UTC))},
 		},
 		{
-			name:  "date",
+			test:  "date",
 			node:  ast.NewUnary(ast.UnaryDateTime, nil),
 			exp:   statusOK,
 			value: "2024-06-14",
 			find:  []any{types.NewDate(time.Date(2024, 6, 14, 0, 0, 0, 0, time.UTC))},
 		},
 		{
-			name:  "time",
+			test:  "time",
 			node:  ast.NewUnary(ast.UnaryTime, nil),
 			exp:   statusOK,
 			value: "14:23:54",
 			find:  []any{types.NewTime(time.Date(0, 1, 1, 14, 23, 54, 0, time.UTC))},
 		},
 		{
-			name:  "timetz",
+			test:  "timetz",
 			node:  ast.NewUnary(ast.UnaryTimeTZ, nil),
 			exp:   statusOK,
 			value: "14:23:54+01",
 			find:  []any{types.NewTimeTZ(time.Date(0, 1, 1, 14, 23, 54, 0, time.FixedZone("", 60*60)))},
 		},
 		{
-			name:  "timestamp",
+			test:  "timestamp",
 			node:  ast.NewUnary(ast.UnaryTimestamp, nil),
 			exp:   statusOK,
 			value: "2024-06-14T14:23:54",
 			find:  []any{types.NewTimestamp(time.Date(2024, 6, 14, 14, 23, 54, 0, time.UTC))},
 		},
 		{
-			name:  "timestamptz",
+			test:  "timestamptz",
 			node:  ast.NewUnary(ast.UnaryTimestampTZ, nil),
 			exp:   statusOK,
 			value: "2024-06-14T14:23:54+01",
@@ -316,7 +316,7 @@ func TestExecUnaryNode(t *testing.T) {
 			)},
 		},
 		{
-			name:  "datetime_array",
+			test:  "datetime_array",
 			node:  ast.NewUnary(ast.UnaryDateTime, nil),
 			value: []any{"2024-06-14", "2024-06-14T14:23:54+01"},
 			exp:   statusFailed,
@@ -324,7 +324,7 @@ func TestExecUnaryNode(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:   "datetime_array_unwrap",
+			test:   "datetime_array_unwrap",
 			node:   ast.NewUnary(ast.UnaryDateTime, nil),
 			exp:    statusOK,
 			value:  []any{"2024-06-14", "2024-06-14T14:23:54+01"},
@@ -338,13 +338,13 @@ func TestExecUnaryNode(t *testing.T) {
 			},
 		},
 		{
-			name: "unknown_op",
+			test: "unknown_op",
 			node: ast.NewUnary(ast.UnaryOperator(-1), nil),
 			exp:  statusNotFound,
 			find: []any{},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -373,7 +373,7 @@ func TestExecRegexNode(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		regex string
 		value any
 		exp   resultStatus
@@ -382,28 +382,28 @@ func TestExecRegexNode(t *testing.T) {
 		isErr error
 	}{
 		{
-			name:  "regex_match",
+			test:  "regex_match",
 			regex: "^hi",
 			value: "hi there",
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "regex_no_match",
+			test:  "regex_no_match",
 			regex: "^hi",
 			value: "say hi there",
 			exp:   statusOK,
 			find:  []any{false},
 		},
 		{
-			name:  "regex_not_string",
+			test:  "regex_not_string",
 			regex: "^hi",
 			value: map[string]any{"x": "hi"},
 			exp:   statusOK,
 			find:  []any{nil},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -435,7 +435,7 @@ func TestExecAnyNode(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		node  ast.Node
 		value any
 		exp   resultStatus
@@ -444,14 +444,14 @@ func TestExecAnyNode(t *testing.T) {
 		isErr error
 	}{
 		{
-			name:  "map_unbounded",
+			test:  "map_unbounded",
 			node:  ast.NewAny(0, -1),
 			value: map[string]any{"x": true, "y": true},
 			exp:   statusOK,
 			find:  []any{map[string]any{"x": true, "y": true}, true, true},
 		},
 		{
-			name:  "map_2_levels",
+			test:  "map_2_levels",
 			node:  ast.NewAny(0, 1),
 			value: map[string]any{"x": map[string]any{"y": map[string]any{"z": "hi"}}},
 			exp:   statusOK,
@@ -461,7 +461,7 @@ func TestExecAnyNode(t *testing.T) {
 			},
 		},
 		{
-			name:  "map_3_levels",
+			test:  "map_3_levels",
 			node:  ast.NewAny(0, 2),
 			value: map[string]any{"x": map[string]any{"y": map[string]any{"z": "hi"}}},
 			exp:   statusOK,
@@ -472,7 +472,7 @@ func TestExecAnyNode(t *testing.T) {
 			},
 		},
 		{
-			name:  "map_1_2_levels",
+			test:  "map_1_2_levels",
 			node:  ast.NewAny(1, 2),
 			value: map[string]any{"x": map[string]any{"y": map[string]any{"z": "hi"}}},
 			exp:   statusOK,
@@ -482,7 +482,7 @@ func TestExecAnyNode(t *testing.T) {
 			},
 		},
 		{
-			name:  "array_unbounded",
+			test:  "array_unbounded",
 			node:  ast.NewAny(0, -1),
 			value: []any{"x", "y", map[string]any{"x": "hi"}},
 			exp:   statusOK,
@@ -494,7 +494,7 @@ func TestExecAnyNode(t *testing.T) {
 			},
 		},
 		{
-			name:  "array_2_levels",
+			test:  "array_2_levels",
 			node:  ast.NewAny(0, 1),
 			value: []any{"x", "y", map[string]any{"x": "hi"}},
 			exp:   statusOK,
@@ -505,7 +505,7 @@ func TestExecAnyNode(t *testing.T) {
 			},
 		},
 		{
-			name:  "array_1_levels",
+			test:  "array_1_levels",
 			node:  ast.NewAny(1, 1),
 			value: []any{"x", "y", map[string]any{"x": "hi"}},
 			exp:   statusOK,
@@ -515,21 +515,21 @@ func TestExecAnyNode(t *testing.T) {
 			},
 		},
 		{
-			name:  "not_object_or_array",
+			test:  "not_object_or_array",
 			node:  ast.NewAny(1, -1),
 			value: true,
 			exp:   statusNotFound,
 			find:  []any{},
 		},
 		{
-			name:  "map_next",
+			test:  "map_next",
 			node:  ast.LinkNodes([]ast.Node{ast.NewAny(1, 1), ast.NewMethod(ast.MethodString)}),
 			value: map[string]any{"x": true, "y": true},
 			exp:   statusOK,
 			find:  []any{"true", "true"},
 		},
 		{
-			name:  "map_next_error",
+			test:  "map_next_error",
 			node:  ast.LinkNodes([]ast.Node{ast.NewAny(1, 1), ast.NewMethod(ast.MethodFloor)}),
 			value: map[string]any{"x": "hi"},
 			exp:   statusFailed,
@@ -537,14 +537,14 @@ func TestExecAnyNode(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "nested_array",
+			test:  "nested_array",
 			node:  ast.NewAny(1, -1),
 			value: []any{[]any{"hi", true}},
 			exp:   statusOK,
 			find:  []any{[]any{"hi", true}, "hi", true},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -591,34 +591,34 @@ func TestCollection(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		value any
 		exp   []any
 	}{
 		{
-			name:  "slice",
+			test:  "slice",
 			value: []any{"hi", "yo"},
 			exp:   []any{"hi", "yo"},
 		},
 		{
-			name:  "map",
+			test:  "map",
 			value: map[string]any{"x": "hi", "y": "hi"},
 			exp:   []any{"hi", "hi"},
 		},
 		{
-			name:  "int",
+			test:  "int",
 			value: int64(42),
 		},
 		{
-			name:  "bool",
+			test:  "bool",
 			value: true,
 		},
 		{
-			name:  "nil",
+			test:  "nil",
 			value: nil,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -632,7 +632,7 @@ func TestExecuteAnyItem(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name   string
+		test   string
 		node   ast.Node
 		value  []any
 		ignore bool
@@ -643,14 +643,14 @@ func TestExecuteAnyItem(t *testing.T) {
 		isErr  error
 	}{
 		{
-			name:  "flat_all",
+			test:  "flat_all",
 			node:  ast.NewAny(0, -1),
 			value: []any{"hi", true},
 			exp:   statusOK,
 			find:  []any{"hi", true},
 		},
 		{
-			name:  "nest_map_all",
+			test:  "nest_map_all",
 			node:  ast.NewAny(0, -1),
 			value: []any{"hi", map[string]any{"x": map[string]any{"y": map[string]any{"z": "yo"}}}},
 			exp:   statusOK,
@@ -669,7 +669,7 @@ func TestExecuteAnyItem(t *testing.T) {
 			},
 		},
 		{
-			name:  "nest_map_0_2",
+			test:  "nest_map_0_2",
 			node:  ast.NewAny(0, 2),
 			value: []any{"hi", map[string]any{"x": map[string]any{"y": map[string]any{"z": "yo"}}}},
 			exp:   statusOK,
@@ -684,7 +684,7 @@ func TestExecuteAnyItem(t *testing.T) {
 			},
 		},
 		{
-			name:  "nest_map_1_2",
+			test:  "nest_map_1_2",
 			node:  ast.NewAny(1, 2),
 			value: []any{"hi", map[string]any{"x": map[string]any{"y": map[string]any{"z": "yo"}}}},
 			exp:   statusOK,
@@ -696,7 +696,7 @@ func TestExecuteAnyItem(t *testing.T) {
 			},
 		},
 		{
-			name:  "nest_array_all",
+			test:  "nest_array_all",
 			node:  ast.NewAny(0, -1),
 			value: []any{"hi", []any{"yo", []any{"x", []any{true}}}},
 			exp:   statusOK,
@@ -720,7 +720,7 @@ func TestExecuteAnyItem(t *testing.T) {
 			},
 		},
 		{
-			name:  "nest_array_0_2",
+			test:  "nest_array_0_2",
 			node:  ast.NewAny(0, 2),
 			value: []any{"hi", []any{"yo", []any{"x", []any{true}}}},
 			exp:   statusOK,
@@ -739,7 +739,7 @@ func TestExecuteAnyItem(t *testing.T) {
 			},
 		},
 		{
-			name:  "nest_array_1_2",
+			test:  "nest_array_1_2",
 			node:  ast.NewAny(1, 2),
 			value: []any{"hi", []any{"yo", []any{"x", []any{true}}}},
 			exp:   statusOK,
@@ -754,28 +754,28 @@ func TestExecuteAnyItem(t *testing.T) {
 			},
 		},
 		{
-			name:  "level_gt_last",
+			test:  "level_gt_last",
 			node:  ast.NewAny(0, 0),
 			value: []any{"hi", true},
 			exp:   statusNotFound,
 			find:  []any{},
 		},
 		{
-			name:  "next_item",
+			test:  "next_item",
 			node:  ast.LinkNodes([]ast.Node{ast.NewAny(0, -1), ast.NewMethod(ast.MethodString)}),
 			value: []any{"hi", true},
 			exp:   statusOK,
 			find:  []any{"hi", "true"},
 		},
 		{
-			name:  "next_item_level",
+			test:  "next_item_level",
 			node:  ast.LinkNodes([]ast.Node{ast.NewAny(0, -1), ast.NewMethod(ast.MethodString)}),
 			value: []any{[]any{"hi", true}},
 			exp:   statusOK,
 			find:  []any{"hi", "true", "hi", "true", "hi", "true"},
 		},
 		{
-			name:  "next_item_error",
+			test:  "next_item_error",
 			node:  ast.LinkNodes([]ast.Node{ast.NewAny(0, -1), ast.NewMethod(ast.MethodNumber)}),
 			value: []any{"hi", true},
 			exp:   statusFailed,
@@ -783,7 +783,7 @@ func TestExecuteAnyItem(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "next_item_level_error",
+			test:  "next_item_level_error",
 			node:  ast.LinkNodes([]ast.Node{ast.NewAny(0, -1), ast.NewMethod(ast.MethodNumber)}),
 			value: []any{"hi", []any{"hi", true}},
 			exp:   statusFailed,
@@ -791,7 +791,7 @@ func TestExecuteAnyItem(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -861,42 +861,42 @@ func TestExecuteStartsWith(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name   string
+		test   string
 		str    any
 		prefix any
 		exp    predOutcome
 	}{
 		{
-			name:   "full_string",
+			test:   "full_string",
 			str:    "hi there",
 			prefix: "hi there",
 			exp:    predTrue,
 		},
 		{
-			name:   "prefix",
+			test:   "prefix",
 			str:    "hi there",
 			prefix: "hi ",
 			exp:    predTrue,
 		},
 		{
-			name:   "not_prefix",
+			test:   "not_prefix",
 			str:    "hi there",
 			prefix: " hi",
 			exp:    predFalse,
 		},
 		{
-			name: "not_string",
+			test: "not_string",
 			str:  true,
 			exp:  predUnknown,
 		},
 		{
-			name:   "not_string_prefix",
+			test:   "not_string_prefix",
 			str:    "hi",
 			prefix: int64(42),
 			exp:    predUnknown,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)

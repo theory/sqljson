@@ -26,7 +26,7 @@ func TestExecMethodNode(t *testing.T) {
 	offset := deltaBetween(value, value[0])
 
 	for _, tc := range []struct {
-		name   string
+		test   string
 		node   ast.Node
 		value  any
 		unwrap bool
@@ -36,14 +36,14 @@ func TestExecMethodNode(t *testing.T) {
 		isErr  error
 	}{
 		{
-			name:  "number",
+			test:  "number",
 			node:  ast.NewMethod(ast.MethodNumber),
 			value: "42",
 			exp:   statusOK,
 			find:  []any{float64(42)},
 		},
 		{
-			name:   "number_unwrap",
+			test:   "number_unwrap",
 			node:   ast.NewMethod(ast.MethodNumber),
 			value:  []any{"42", "98.6"},
 			exp:    statusOK,
@@ -51,7 +51,7 @@ func TestExecMethodNode(t *testing.T) {
 			find:   []any{float64(42), float64(98.6)},
 		},
 		{
-			name:  "number_no_unwrap",
+			test:  "number_no_unwrap",
 			node:  ast.NewMethod(ast.MethodNumber),
 			value: []any{"42", "98.6"},
 			exp:   statusFailed,
@@ -59,21 +59,21 @@ func TestExecMethodNode(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "number_next",
+			test:  "number_next",
 			node:  ast.LinkNodes([]ast.Node{ast.NewMethod(ast.MethodNumber), ast.NewMethod(ast.MethodString)}),
 			value: "42",
 			exp:   statusOK,
 			find:  []any{"42"},
 		},
 		{
-			name:  "abs",
+			test:  "abs",
 			node:  ast.NewMethod(ast.MethodAbs),
 			value: int64(-42),
 			exp:   statusOK,
 			find:  []any{int64(42)},
 		},
 		{
-			name:   "abs_unwrap",
+			test:   "abs_unwrap",
 			node:   ast.NewMethod(ast.MethodAbs),
 			value:  []any{int64(-42), float64(98.6)},
 			unwrap: true,
@@ -81,7 +81,7 @@ func TestExecMethodNode(t *testing.T) {
 			find:   []any{int64(42), float64(98.6)},
 		},
 		{
-			name:  "abs_no_unwrap",
+			test:  "abs_no_unwrap",
 			node:  ast.NewMethod(ast.MethodAbs),
 			value: []any{int64(-42), float64(98.6)},
 			exp:   statusFailed,
@@ -89,14 +89,14 @@ func TestExecMethodNode(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "floor",
+			test:  "floor",
 			node:  ast.NewMethod(ast.MethodFloor),
 			value: float64(42.8),
 			exp:   statusOK,
 			find:  []any{float64(42)},
 		},
 		{
-			name:   "floor_unwrap",
+			test:   "floor_unwrap",
 			node:   ast.NewMethod(ast.MethodFloor),
 			value:  []any{float64(42.8), float64(99.1)},
 			unwrap: true,
@@ -104,7 +104,7 @@ func TestExecMethodNode(t *testing.T) {
 			find:   []any{float64(42), float64(99)},
 		},
 		{
-			name:  "floor_no_unwrap",
+			test:  "floor_no_unwrap",
 			node:  ast.NewMethod(ast.MethodFloor),
 			value: []any{float64(42.8), float64(99.1)},
 			exp:   statusFailed,
@@ -112,14 +112,14 @@ func TestExecMethodNode(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "ceiling",
+			test:  "ceiling",
 			node:  ast.NewMethod(ast.MethodCeiling),
 			value: float64(41.2),
 			exp:   statusOK,
 			find:  []any{float64(42)},
 		},
 		{
-			name:   "ceiling_unwrap",
+			test:   "ceiling_unwrap",
 			node:   ast.NewMethod(ast.MethodCeiling),
 			value:  []any{float64(41.2), float64(98.6)},
 			unwrap: true,
@@ -127,7 +127,7 @@ func TestExecMethodNode(t *testing.T) {
 			find:   []any{float64(42), float64(99)},
 		},
 		{
-			name:  "ceiling_no_unwrap",
+			test:  "ceiling_no_unwrap",
 			node:  ast.NewMethod(ast.MethodCeiling),
 			value: []any{float64(41.2), float64(98.6)},
 			exp:   statusFailed,
@@ -135,14 +135,14 @@ func TestExecMethodNode(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "type",
+			test:  "type",
 			node:  ast.NewMethod(ast.MethodType),
 			value: types.NewDate(time.Now()),
 			exp:   statusOK,
 			find:  []any{"date"},
 		},
 		{
-			name:   "type_does_not_unwrap",
+			test:   "type_does_not_unwrap",
 			node:   ast.NewMethod(ast.MethodType),
 			value:  []any{"hi", types.NewDate(time.Now())},
 			unwrap: true,
@@ -150,35 +150,35 @@ func TestExecMethodNode(t *testing.T) {
 			find:   []any{"array"},
 		},
 		{
-			name:  "type_no_unwrap",
+			test:  "type_no_unwrap",
 			node:  ast.NewMethod(ast.MethodType),
 			value: []any{"hi", types.NewDate(time.Now())},
 			exp:   statusOK,
 			find:  []any{"array"},
 		},
 		{
-			name:  "size",
+			test:  "size",
 			node:  ast.NewMethod(ast.MethodSize),
 			value: []any{true, false},
 			exp:   statusOK,
 			find:  []any{int64(2)},
 		},
 		{
-			name:  "size_not_array",
+			test:  "size_not_array",
 			node:  ast.NewMethod(ast.MethodSize),
 			value: "xxx",
 			exp:   statusOK,
 			find:  []any{int64(1)},
 		},
 		{
-			name:  "double",
+			test:  "double",
 			node:  ast.NewMethod(ast.MethodDouble),
 			value: "42",
 			exp:   statusOK,
 			find:  []any{float64(42)},
 		},
 		{
-			name:   "double_unwrap",
+			test:   "double_unwrap",
 			node:   ast.NewMethod(ast.MethodDouble),
 			value:  []any{"42", int64(2), float64(98.6)},
 			unwrap: true,
@@ -186,7 +186,7 @@ func TestExecMethodNode(t *testing.T) {
 			find:   []any{float64(42), float64(2), float64(98.6)},
 		},
 		{
-			name:  "double_no_unwrap",
+			test:  "double_no_unwrap",
 			node:  ast.NewMethod(ast.MethodDouble),
 			value: []any{"42", int64(2), float64(98.6)},
 			exp:   statusFailed,
@@ -194,14 +194,14 @@ func TestExecMethodNode(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "integer",
+			test:  "integer",
 			node:  ast.NewMethod(ast.MethodInteger),
 			value: "42",
 			exp:   statusOK,
 			find:  []any{int64(42)},
 		},
 		{
-			name:   "integer_unwrap",
+			test:   "integer_unwrap",
 			node:   ast.NewMethod(ast.MethodInteger),
 			value:  []any{"42", int64(2)},
 			exp:    statusOK,
@@ -209,7 +209,7 @@ func TestExecMethodNode(t *testing.T) {
 			find:   []any{int64(42), int64(2)},
 		},
 		{
-			name:  "integer_no_unwrap",
+			test:  "integer_no_unwrap",
 			node:  ast.NewMethod(ast.MethodInteger),
 			value: []any{"42", int64(2)},
 			exp:   statusFailed,
@@ -217,14 +217,14 @@ func TestExecMethodNode(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "bigint",
+			test:  "bigint",
 			node:  ast.NewMethod(ast.MethodBigInt),
 			value: "42",
 			exp:   statusOK,
 			find:  []any{int64(42)},
 		},
 		{
-			name:   "bigint_unwrap",
+			test:   "bigint_unwrap",
 			node:   ast.NewMethod(ast.MethodBigInt),
 			value:  []any{"42", int64(2)},
 			exp:    statusOK,
@@ -232,7 +232,7 @@ func TestExecMethodNode(t *testing.T) {
 			find:   []any{int64(42), int64(2)},
 		},
 		{
-			name:  "bigint_no_unwrap",
+			test:  "bigint_no_unwrap",
 			node:  ast.NewMethod(ast.MethodBigInt),
 			value: []any{"42", int64(2)},
 			exp:   statusFailed,
@@ -240,7 +240,7 @@ func TestExecMethodNode(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "string",
+			test:  "string",
 			node:  ast.NewMethod(ast.MethodString),
 			value: true,
 			exp:   statusOK,
@@ -248,7 +248,7 @@ func TestExecMethodNode(t *testing.T) {
 		},
 		{
 			// https://www.postgresql.org/message-id/A64AE04F-4410-42B7-A141-7A7349260F4D@justatheory.com
-			name:   "string_does_not_unwrap",
+			test:   "string_does_not_unwrap",
 			node:   ast.NewMethod(ast.MethodString),
 			value:  []any{true, int64(42)},
 			unwrap: true,
@@ -256,7 +256,7 @@ func TestExecMethodNode(t *testing.T) {
 			find:   []any{"true", "42"},
 		},
 		{
-			name:  "string_no_unwrap",
+			test:  "string_no_unwrap",
 			node:  ast.NewMethod(ast.MethodString),
 			value: []any{true, int64(42)},
 			exp:   statusFailed,
@@ -264,14 +264,14 @@ func TestExecMethodNode(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "boolean",
+			test:  "boolean",
 			node:  ast.NewMethod(ast.MethodBoolean),
 			value: "t",
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:   "boolean_unwrap",
+			test:   "boolean_unwrap",
 			node:   ast.NewMethod(ast.MethodBoolean),
 			value:  []any{"t", "n"},
 			unwrap: true,
@@ -279,7 +279,7 @@ func TestExecMethodNode(t *testing.T) {
 			find:   []any{true, false},
 		},
 		{
-			name:  "boolean_no_unwrap",
+			test:  "boolean_no_unwrap",
 			node:  ast.NewMethod(ast.MethodBoolean),
 			value: []any{"t", "n"},
 			exp:   statusFailed,
@@ -287,14 +287,14 @@ func TestExecMethodNode(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "keyvalue",
+			test:  "keyvalue",
 			node:  ast.NewMethod(ast.MethodKeyValue),
 			value: map[string]any{"x": "hi"},
 			exp:   statusOK,
 			find:  []any{map[string]any{"id": int64(0), "key": "x", "value": "hi"}},
 		},
 		{
-			name:   "keyvalue_wrap",
+			test:   "keyvalue_wrap",
 			node:   ast.NewMethod(ast.MethodKeyValue),
 			value:  value,
 			unwrap: true,
@@ -305,7 +305,7 @@ func TestExecMethodNode(t *testing.T) {
 			},
 		},
 		{
-			name:  "keyvalue_no_wrap",
+			test:  "keyvalue_no_wrap",
 			node:  ast.NewMethod(ast.MethodKeyValue),
 			value: value,
 			exp:   statusFailed,
@@ -313,7 +313,7 @@ func TestExecMethodNode(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "unknown_method",
+			test:  "unknown_method",
 			node:  ast.NewMethod(ast.MethodName(-1)),
 			value: struct{}{},
 			exp:   statusFailed,
@@ -321,7 +321,7 @@ func TestExecMethodNode(t *testing.T) {
 			isErr: ErrInvalid,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -364,7 +364,7 @@ func TestExecMethodNode(t *testing.T) {
 }
 
 type methodTestCase struct {
-	name   string
+	test   string
 	path   *ast.AST
 	silent bool
 	node   ast.Node
@@ -418,105 +418,105 @@ func TestExecMethodType(t *testing.T) {
 
 	for _, tc := range []methodTestCase{
 		{
-			name:  "object",
+			test:  "object",
 			node:  meth,
 			value: map[string]any{},
 			exp:   statusOK,
 			find:  []any{"object"},
 		},
 		{
-			name:  "object_next",
+			test:  "object_next",
 			node:  ast.LinkNodes([]ast.Node{ast.NewMethod(ast.MethodType), ast.NewMethod(ast.MethodSize)}),
 			value: map[string]any{},
 			exp:   statusOK,
 			find:  []any{int64(1)},
 		},
 		{
-			name:  "array",
+			test:  "array",
 			node:  meth,
 			value: []any{},
 			exp:   statusOK,
 			find:  []any{"array"},
 		},
 		{
-			name:  "string",
+			test:  "string",
 			node:  meth,
 			value: "hi",
 			exp:   statusOK,
 			find:  []any{"string"},
 		},
 		{
-			name:  "int_number",
+			test:  "int_number",
 			node:  meth,
 			value: int64(1),
 			exp:   statusOK,
 			find:  []any{"number"},
 		},
 		{
-			name:  "float_number",
+			test:  "float_number",
 			node:  meth,
 			value: float64(1),
 			exp:   statusOK,
 			find:  []any{"number"},
 		},
 		{
-			name:  "json_number",
+			test:  "json_number",
 			node:  meth,
 			value: json.Number("1"),
 			exp:   statusOK,
 			find:  []any{"number"},
 		},
 		{
-			name:  "bool",
+			test:  "bool",
 			node:  meth,
 			value: true,
 			exp:   statusOK,
 			find:  []any{"boolean"},
 		},
 		{
-			name:  "date",
+			test:  "date",
 			node:  meth,
 			value: types.NewDate(time.Now()),
 			exp:   statusOK,
 			find:  []any{"date"},
 		},
 		{
-			name:  "time",
+			test:  "time",
 			node:  meth,
 			value: types.NewTime(time.Now()),
 			exp:   statusOK,
 			find:  []any{"time without time zone"},
 		},
 		{
-			name:  "timetz",
+			test:  "timetz",
 			node:  meth,
 			value: types.NewTimeTZ(time.Now()),
 			exp:   statusOK,
 			find:  []any{"time with time zone"},
 		},
 		{
-			name:  "timestamp",
+			test:  "timestamp",
 			node:  meth,
 			value: types.NewTimestamp(time.Now()),
 			exp:   statusOK,
 			find:  []any{"timestamp without time zone"},
 		},
 		{
-			name:  "timestampTZ",
+			test:  "timestampTZ",
 			node:  meth,
 			value: types.NewTimestampTZ(context.Background(), time.Now()),
 			exp:   statusOK,
 			find:  []any{"timestamp with time zone"},
 		},
 		{
-			name:  "nil",
+			test:  "nil",
 			node:  meth,
 			value: nil,
 			exp:   statusOK,
 			find:  []any{"null"},
 		},
 		{
-			name:  "struct",
+			test:  "struct",
 			node:  meth,
 			value: struct{}{},
 			exp:   statusFailed,
@@ -524,7 +524,7 @@ func TestExecMethodType(t *testing.T) {
 			isErr: ErrInvalid,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 
 			// Make sure we have a .type() node.
@@ -546,42 +546,42 @@ func TestExecMethodSize(t *testing.T) {
 
 	for _, tc := range []methodTestCase{
 		{
-			name:  "array_size_2",
+			test:  "array_size_2",
 			node:  meth,
 			value: []any{1, 3},
 			exp:   statusOK,
 			find:  []any{int64(2)},
 		},
 		{
-			name:  "array_size_6",
+			test:  "array_size_6",
 			node:  meth,
 			value: []any{1, 3, 2, 4, 6, 8},
 			exp:   statusOK,
 			find:  []any{int64(6)},
 		},
 		{
-			name:  "bool",
+			test:  "bool",
 			node:  meth,
 			value: true,
 			exp:   statusOK,
 			find:  []any{int64(1)},
 		},
 		{
-			name:  "nil",
+			test:  "nil",
 			node:  meth,
 			value: nil,
 			exp:   statusOK,
 			find:  []any{int64(1)},
 		},
 		{
-			name:  "object",
+			test:  "object",
 			node:  meth,
 			value: map[string]any{"x": true, "y": false},
 			exp:   statusOK,
 			find:  []any{int64(1)},
 		},
 		{
-			name:  "strict_not_array",
+			test:  "strict_not_array",
 			path:  strictRootPath,
 			node:  meth,
 			value: true,
@@ -590,7 +590,7 @@ func TestExecMethodSize(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:   "strict_not_array_silent",
+			test:   "strict_not_array_silent",
 			node:   meth,
 			value:  true,
 			silent: true,
@@ -598,7 +598,7 @@ func TestExecMethodSize(t *testing.T) {
 			find:   []any{int64(1)},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 
 			// Make sure we have a .size() node.
@@ -620,7 +620,7 @@ func TestExecMethodDouble(t *testing.T) {
 
 	for _, tc := range []methodTestCase{
 		{
-			name:   "array_unwrap",
+			test:   "array_unwrap",
 			node:   meth,
 			value:  []any{"1", "3.2"},
 			unwrap: true,
@@ -628,7 +628,7 @@ func TestExecMethodDouble(t *testing.T) {
 			find:   []any{float64(1), float64(3.2)},
 		},
 		{
-			name:  "array_no_unwrap",
+			test:  "array_no_unwrap",
 			node:  meth,
 			value: []any{"1", "3.2"},
 			exp:   statusFailed,
@@ -636,56 +636,56 @@ func TestExecMethodDouble(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "int",
+			test:  "int",
 			node:  meth,
 			value: int64(42),
 			exp:   statusOK,
 			find:  []any{float64(42)},
 		},
 		{
-			name:  "max_int",
+			test:  "max_int",
 			node:  meth,
 			value: int64(math.MaxInt64),
 			exp:   statusOK,
 			find:  []any{float64(math.MaxInt64)},
 		},
 		{
-			name:  "min_int",
+			test:  "min_int",
 			node:  meth,
 			value: int64(math.MinInt64),
 			exp:   statusOK,
 			find:  []any{float64(math.MinInt64)},
 		},
 		{
-			name:  "float",
+			test:  "float",
 			node:  meth,
 			value: float64(98.6),
 			exp:   statusOK,
 			find:  []any{float64(98.6)},
 		},
 		{
-			name:  "max_float",
+			test:  "max_float",
 			node:  meth,
 			value: float64(math.MaxFloat64),
 			exp:   statusOK,
 			find:  []any{float64(math.MaxFloat64)},
 		},
 		{
-			name:  "min_float",
+			test:  "min_float",
 			node:  meth,
 			value: float64(math.SmallestNonzeroFloat64),
 			exp:   statusOK,
 			find:  []any{float64(math.SmallestNonzeroFloat64)},
 		},
 		{
-			name:  "json",
+			test:  "json",
 			node:  meth,
 			value: json.Number("98.6"),
 			exp:   statusOK,
 			find:  []any{float64(98.6)},
 		},
 		{
-			name:  "json_invalid",
+			test:  "json_invalid",
 			node:  meth,
 			value: json.Number("hi"),
 			exp:   statusFailed,
@@ -693,14 +693,14 @@ func TestExecMethodDouble(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "string",
+			test:  "string",
 			node:  meth,
 			value: "98.6",
 			exp:   statusOK,
 			find:  []any{float64(98.6)},
 		},
 		{
-			name:  "string_invalid",
+			test:  "string_invalid",
 			node:  meth,
 			value: "hi",
 			exp:   statusFailed,
@@ -708,7 +708,7 @@ func TestExecMethodDouble(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "bool",
+			test:  "bool",
 			node:  meth,
 			value: true,
 			exp:   statusFailed,
@@ -716,7 +716,7 @@ func TestExecMethodDouble(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "inf",
+			test:  "inf",
 			node:  meth,
 			value: "inf",
 			exp:   statusFailed,
@@ -724,7 +724,7 @@ func TestExecMethodDouble(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "neg_inf",
+			test:  "neg_inf",
 			node:  meth,
 			value: "-inf",
 			exp:   statusFailed,
@@ -732,7 +732,7 @@ func TestExecMethodDouble(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "nan",
+			test:  "nan",
 			node:  meth,
 			value: "nan",
 			exp:   statusFailed,
@@ -740,14 +740,14 @@ func TestExecMethodDouble(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "json_next",
+			test:  "json_next",
 			node:  ast.LinkNodes([]ast.Node{ast.NewMethod(ast.MethodDouble), ast.NewMethod(ast.MethodString)}),
 			value: json.Number("98.6"),
 			exp:   statusOK,
 			find:  []any{"98.6"},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 
 			// Make sure we have a .double() node.
@@ -769,28 +769,28 @@ func TestExecMethodInteger(t *testing.T) {
 
 	for _, tc := range []methodTestCase{
 		{
-			name:  "int",
+			test:  "int",
 			node:  meth,
 			value: int64(42),
 			exp:   statusOK,
 			find:  []any{int64(42)},
 		},
 		{
-			name:  "max_int",
+			test:  "max_int",
 			node:  meth,
 			value: int64(math.MaxInt32),
 			exp:   statusOK,
 			find:  []any{int64(math.MaxInt32)},
 		},
 		{
-			name:  "min_int",
+			test:  "min_int",
 			node:  meth,
 			value: int64(math.MinInt32),
 			exp:   statusOK,
 			find:  []any{int64(math.MinInt32)},
 		},
 		{
-			name:  "over_max_int",
+			test:  "over_max_int",
 			node:  meth,
 			value: int64(math.MaxInt32 + 1),
 			exp:   statusFailed,
@@ -801,7 +801,7 @@ func TestExecMethodInteger(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "under_min_int",
+			test:  "under_min_int",
 			node:  meth,
 			value: int64(math.MinInt32 - 1),
 			exp:   statusFailed,
@@ -812,42 +812,42 @@ func TestExecMethodInteger(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "float_round_up",
+			test:  "float_round_up",
 			node:  meth,
 			value: float64(98.6),
 			exp:   statusOK,
 			find:  []any{int64(99)},
 		},
 		{
-			name:  "float_round_down",
+			test:  "float_round_down",
 			node:  meth,
 			value: float64(42.3),
 			exp:   statusOK,
 			find:  []any{int64(42)},
 		},
 		{
-			name:  "json_number_int",
+			test:  "json_number_int",
 			node:  meth,
 			value: json.Number("42"),
 			exp:   statusOK,
 			find:  []any{int64(42)},
 		},
 		{
-			name:  "json_number_float_down",
+			test:  "json_number_float_down",
 			node:  meth,
 			value: json.Number("42.3"),
 			exp:   statusOK,
 			find:  []any{int64(42)},
 		},
 		{
-			name:  "json_number_float_up",
+			test:  "json_number_float_up",
 			node:  meth,
 			value: json.Number("42.5"),
 			exp:   statusOK,
 			find:  []any{int64(43)},
 		},
 		{
-			name:  "json_number_invalid",
+			test:  "json_number_invalid",
 			node:  meth,
 			value: json.Number("hi"),
 			exp:   statusFailed,
@@ -855,14 +855,14 @@ func TestExecMethodInteger(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "string",
+			test:  "string",
 			node:  meth,
 			value: "42",
 			exp:   statusOK,
 			find:  []any{int64(42)},
 		},
 		{
-			name:  "string_float",
+			test:  "string_float",
 			node:  meth,
 			value: "42.3",
 			exp:   statusFailed,
@@ -870,7 +870,7 @@ func TestExecMethodInteger(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "invalid_string",
+			test:  "invalid_string",
 			node:  meth,
 			value: "hi",
 			exp:   statusFailed,
@@ -878,7 +878,7 @@ func TestExecMethodInteger(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "inf",
+			test:  "inf",
 			node:  meth,
 			value: "inf",
 			exp:   statusFailed,
@@ -886,7 +886,7 @@ func TestExecMethodInteger(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "neg_inf",
+			test:  "neg_inf",
 			node:  meth,
 			value: "-inf",
 			exp:   statusFailed,
@@ -894,7 +894,7 @@ func TestExecMethodInteger(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "nan",
+			test:  "nan",
 			node:  meth,
 			value: "nan",
 			exp:   statusFailed,
@@ -902,14 +902,14 @@ func TestExecMethodInteger(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "int_next",
+			test:  "int_next",
 			node:  ast.LinkNodes([]ast.Node{ast.NewMethod(ast.MethodInteger), ast.NewMethod(ast.MethodString)}),
 			value: int64(42),
 			exp:   statusOK,
 			find:  []any{"42"},
 		},
 		{
-			name:  "invalid_value",
+			test:  "invalid_value",
 			node:  meth,
 			value: true,
 			exp:   statusFailed,
@@ -917,14 +917,14 @@ func TestExecMethodInteger(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "int_next",
+			test:  "int_next",
 			node:  ast.LinkNodes([]ast.Node{ast.NewMethod(ast.MethodInteger), ast.NewMethod(ast.MethodString)}),
 			value: int64(42),
 			exp:   statusOK,
 			find:  []any{"42"},
 		},
 		{
-			name:  "array",
+			test:  "array",
 			node:  meth,
 			value: []any{int64(42)},
 			exp:   statusFailed,
@@ -932,7 +932,7 @@ func TestExecMethodInteger(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:   "array_unwrap",
+			test:   "array_unwrap",
 			node:   meth,
 			value:  []any{float64(42.2), "88"},
 			unwrap: true,
@@ -940,7 +940,7 @@ func TestExecMethodInteger(t *testing.T) {
 			find:   []any{int64(42), int64(88)},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 
 			// Make sure we have a .Integer() node.
@@ -962,42 +962,42 @@ func TestExecMethodBigInt(t *testing.T) {
 
 	for _, tc := range []methodTestCase{
 		{
-			name:  "int",
+			test:  "int",
 			node:  meth,
 			value: int64(42),
 			exp:   statusOK,
 			find:  []any{int64(42)},
 		},
 		{
-			name:  "max_int",
+			test:  "max_int",
 			node:  meth,
 			value: int64(math.MaxInt64),
 			exp:   statusOK,
 			find:  []any{int64(math.MaxInt64)},
 		},
 		{
-			name:  "min_int",
+			test:  "min_int",
 			node:  meth,
 			value: int64(math.MinInt64),
 			exp:   statusOK,
 			find:  []any{int64(math.MinInt64)},
 		},
 		{
-			name:  "float_up",
+			test:  "float_up",
 			node:  meth,
 			value: float64(98.6),
 			exp:   statusOK,
 			find:  []any{int64(99)},
 		},
 		{
-			name:  "float_down",
+			test:  "float_down",
 			node:  meth,
 			value: float64(98.4),
 			exp:   statusOK,
 			find:  []any{int64(98)},
 		},
 		{
-			name:  "float_upper_bound",
+			test:  "float_upper_bound",
 			node:  meth,
 			value: float64(math.MaxUint64),
 			exp:   statusFailed,
@@ -1008,7 +1008,7 @@ func TestExecMethodBigInt(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "float_lower_bound",
+			test:  "float_lower_bound",
 			node:  meth,
 			value: float64(-math.MaxUint64),
 			exp:   statusFailed,
@@ -1019,28 +1019,28 @@ func TestExecMethodBigInt(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "json_int",
+			test:  "json_int",
 			node:  meth,
 			value: json.Number("42"),
 			exp:   statusOK,
 			find:  []any{int64(42)},
 		},
 		{
-			name:  "json_float_down",
+			test:  "json_float_down",
 			node:  meth,
 			value: json.Number("-42.3"),
 			exp:   statusOK,
 			find:  []any{int64(-42)},
 		},
 		{
-			name:  "json_float_up",
+			test:  "json_float_up",
 			node:  meth,
 			value: json.Number("98.6"),
 			exp:   statusOK,
 			find:  []any{int64(99)},
 		},
 		{
-			name:  "json_float_upper_bound",
+			test:  "json_float_upper_bound",
 			node:  meth,
 			value: json.Number("18446744073709551615.123"),
 			exp:   statusFailed,
@@ -1048,7 +1048,7 @@ func TestExecMethodBigInt(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "json_float_lower_bound",
+			test:  "json_float_lower_bound",
 			node:  meth,
 			value: json.Number("-18446744073709551615.123"),
 			exp:   statusFailed,
@@ -1056,7 +1056,7 @@ func TestExecMethodBigInt(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "invalid_json",
+			test:  "invalid_json",
 			node:  meth,
 			value: json.Number("hi"),
 			exp:   statusFailed,
@@ -1064,28 +1064,28 @@ func TestExecMethodBigInt(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "string_int",
+			test:  "string_int",
 			node:  meth,
 			value: "42",
 			exp:   statusOK,
 			find:  []any{int64(42)},
 		},
 		{
-			name:  "string_max_big_int",
+			test:  "string_max_big_int",
 			node:  meth,
 			value: strconv.FormatInt(math.MaxInt64, 10),
 			exp:   statusOK,
 			find:  []any{int64(math.MaxInt64)},
 		},
 		{
-			name:  "string_min_big_int",
+			test:  "string_min_big_int",
 			node:  meth,
 			value: strconv.FormatInt(math.MinInt64, 10),
 			exp:   statusOK,
 			find:  []any{int64(math.MinInt64)},
 		},
 		{
-			name:  "string_float",
+			test:  "string_float",
 			node:  meth,
 			value: "42.8",
 			exp:   statusFailed,
@@ -1093,7 +1093,7 @@ func TestExecMethodBigInt(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "invalid_string",
+			test:  "invalid_string",
 			node:  meth,
 			value: "hi",
 			exp:   statusFailed,
@@ -1101,7 +1101,7 @@ func TestExecMethodBigInt(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "inf",
+			test:  "inf",
 			node:  meth,
 			value: "inf",
 			exp:   statusFailed,
@@ -1109,7 +1109,7 @@ func TestExecMethodBigInt(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "neg_inf",
+			test:  "neg_inf",
 			node:  meth,
 			value: "-inf",
 			exp:   statusFailed,
@@ -1117,7 +1117,7 @@ func TestExecMethodBigInt(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "nan",
+			test:  "nan",
 			node:  meth,
 			value: "nan",
 			exp:   statusFailed,
@@ -1125,14 +1125,14 @@ func TestExecMethodBigInt(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "int_next",
+			test:  "int_next",
 			node:  ast.LinkNodes([]ast.Node{ast.NewMethod(ast.MethodBigInt), ast.NewMethod(ast.MethodString)}),
 			value: int64(42),
 			exp:   statusOK,
 			find:  []any{"42"},
 		},
 		{
-			name:  "invalid_value",
+			test:  "invalid_value",
 			node:  meth,
 			value: true,
 			exp:   statusFailed,
@@ -1140,7 +1140,7 @@ func TestExecMethodBigInt(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "array",
+			test:  "array",
 			node:  meth,
 			value: []any{int64(42)},
 			exp:   statusFailed,
@@ -1148,7 +1148,7 @@ func TestExecMethodBigInt(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:   "array_unwrap",
+			test:   "array_unwrap",
 			node:   meth,
 			value:  []any{int64(42), "1024"},
 			unwrap: true,
@@ -1156,7 +1156,7 @@ func TestExecMethodBigInt(t *testing.T) {
 			find:   []any{int64(42), int64(1024)},
 		},
 		{
-			name:   "array_unwrap_next",
+			test:   "array_unwrap_next",
 			node:   ast.LinkNodes([]ast.Node{ast.NewMethod(ast.MethodBigInt), ast.NewMethod(ast.MethodString)}),
 			value:  []any{int64(42), "1024"},
 			unwrap: true,
@@ -1164,7 +1164,7 @@ func TestExecMethodBigInt(t *testing.T) {
 			find:   []any{"42", "1024"},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 
 			// Make sure we have a .BigInt() node.
@@ -1187,84 +1187,84 @@ func TestExecMethodString(t *testing.T) {
 
 	for _, tc := range []methodTestCase{
 		{
-			name:  "string",
+			test:  "string",
 			node:  meth,
 			value: "hi",
 			exp:   statusOK,
 			find:  []any{"hi"},
 		},
 		{
-			name:  "date",
+			test:  "date",
 			node:  meth,
 			value: types.NewDate(now),
 			exp:   statusOK,
 			find:  []any{types.NewDate(now).String()},
 		},
 		{
-			name:  "time",
+			test:  "time",
 			node:  meth,
 			value: types.NewTime(now),
 			exp:   statusOK,
 			find:  []any{types.NewTime(now).String()},
 		},
 		{
-			name:  "timetz",
+			test:  "timetz",
 			node:  meth,
 			value: types.NewTimeTZ(now),
 			exp:   statusOK,
 			find:  []any{types.NewTimeTZ(now).String()},
 		},
 		{
-			name:  "timestamp",
+			test:  "timestamp",
 			node:  meth,
 			value: types.NewTimestamp(now),
 			exp:   statusOK,
 			find:  []any{types.NewTimestamp(now).String()},
 		},
 		{
-			name:  "timestamptz",
+			test:  "timestamptz",
 			node:  meth,
 			value: types.NewTimestampTZ(ctx, now),
 			exp:   statusOK,
 			find:  []any{types.NewTimestampTZ(ctx, now).String()},
 		},
 		{
-			name:  "stringer_json_number",
+			test:  "stringer_json_number",
 			node:  meth,
 			value: json.Number("188.2"),
 			exp:   statusOK,
 			find:  []any{"188.2"},
 		},
 		{
-			name:  "int",
+			test:  "int",
 			node:  meth,
 			value: int64(42),
 			exp:   statusOK,
 			find:  []any{"42"},
 		},
 		{
-			name:  "float",
+			test:  "float",
 			node:  meth,
 			value: float64(98.6),
 			exp:   statusOK,
 			find:  []any{"98.6"},
 		},
 		{
-			name:  "true",
+			test:  "true",
 			node:  meth,
 			value: true,
 			exp:   statusOK,
 			find:  []any{"true"},
 		},
 		{
-			name:  "false",
+			test:  "false",
 			node:  meth,
 			value: false,
 			exp:   statusOK,
 			find:  []any{"false"},
 		},
 		{
-			name:  "nil",
+			test:  "nil",
 			node:  meth,
 			value: nil,
 			exp:   statusFailed,
@@ -1272,7 +1272,7 @@ func TestExecMethodString(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "obj",
+			test:  "obj",
 			node:  meth,
 			value: map[string]any{},
 			exp:   statusFailed,
@@ -1280,7 +1280,7 @@ func TestExecMethodString(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "array",
+			test:  "array",
 			node:  meth,
 			value: []any{int64(42), true},
 			exp:   statusFailed,
@@ -1288,7 +1288,7 @@ func TestExecMethodString(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:   "array_unwrap",
+			test:   "array_unwrap",
 			node:   meth,
 			value:  []any{int64(42), true},
 			unwrap: true,
@@ -1296,14 +1296,14 @@ func TestExecMethodString(t *testing.T) {
 			find:   []any{"42", "true"},
 		},
 		{
-			name:  "string_next",
+			test:  "string_next",
 			node:  ast.LinkNodes([]ast.Node{ast.NewMethod(ast.MethodString), ast.NewMethod(ast.MethodInteger)}),
 			value: "42",
 			exp:   statusOK,
 			find:  []any{int64(42)},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 
 			// Make sure we have a .String() node.
@@ -1325,84 +1325,84 @@ func TestExecMethodBoolean(t *testing.T) {
 
 	for _, tc := range []methodTestCase{
 		{
-			name:  "true",
+			test:  "true",
 			node:  meth,
 			value: true,
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "false",
+			test:  "false",
 			node:  meth,
 			value: false,
 			exp:   statusOK,
 			find:  []any{false},
 		},
 		{
-			name:  "int1",
+			test:  "int1",
 			node:  meth,
 			value: int64(1),
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "int1000",
+			test:  "int1000",
 			node:  meth,
 			value: int64(1000),
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "int_neg10",
+			test:  "int_neg10",
 			node:  meth,
 			value: int64(-10),
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "int0",
+			test:  "int0",
 			node:  meth,
 			value: int64(0),
 			exp:   statusOK,
 			find:  []any{false},
 		},
 		{
-			name:  "int_neg0",
+			test:  "int_neg0",
 			node:  meth,
 			value: int64(-0),
 			exp:   statusOK,
 			find:  []any{false},
 		},
 		{
-			name:  "float1",
+			test:  "float1",
 			node:  meth,
 			value: float64(1.0),
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "float1000",
+			test:  "float1000",
 			node:  meth,
 			value: float64(1000.0),
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "float_neg0",
+			test:  "float_neg0",
 			node:  meth,
 			value: float64(-10),
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "float0",
+			test:  "float0",
 			node:  meth,
 			value: float64(0),
 			exp:   statusOK,
 			find:  []any{false},
 		},
 		{
-			name:  "float_dot_one",
+			test:  "float_dot_one",
 			node:  meth,
 			value: float64(1.1),
 			exp:   statusFailed,
@@ -1410,7 +1410,7 @@ func TestExecMethodBoolean(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "float_dot_nine",
+			test:  "float_dot_nine",
 			node:  meth,
 			value: float64(1.9),
 			exp:   statusFailed,
@@ -1418,7 +1418,7 @@ func TestExecMethodBoolean(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "float_neg000_dot_nine",
+			test:  "float_neg000_dot_nine",
 			node:  meth,
 			value: float64(-1000.9),
 			exp:   statusFailed,
@@ -1426,63 +1426,63 @@ func TestExecMethodBoolean(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "json_int1",
+			test:  "json_int1",
 			node:  meth,
 			value: json.Number("1"),
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "json_int0",
+			test:  "json_int0",
 			node:  meth,
 			value: json.Number("0"),
 			exp:   statusOK,
 			find:  []any{false},
 		},
 		{
-			name:  "json_int1_dot0",
+			test:  "json_int1_dot0",
 			node:  meth,
 			value: json.Number("1.0"),
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "json_int0_dot0",
+			test:  "json_int0_dot0",
 			node:  meth,
 			value: json.Number("0.0"),
 			exp:   statusOK,
 			find:  []any{false},
 		},
 		{
-			name:  "json_float1000",
+			test:  "json_float1000",
 			node:  meth,
 			value: json.Number("1000.0"),
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "json_float_neg10",
+			test:  "json_float_neg10",
 			node:  meth,
 			value: json.Number("-10.0"),
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "json_float_0",
+			test:  "json_float_0",
 			node:  meth,
 			value: json.Number("0.0"),
 			exp:   statusOK,
 			find:  []any{false},
 		},
 		{
-			name:  "json_float_neg0",
+			test:  "json_float_neg0",
 			node:  meth,
 			value: json.Number("-0.0"),
 			exp:   statusOK,
 			find:  []any{false},
 		},
 		{
-			name:  "json_float_dot_one",
+			test:  "json_float_dot_one",
 			node:  meth,
 			value: json.Number("1.1"),
 			exp:   statusFailed,
@@ -1490,7 +1490,7 @@ func TestExecMethodBoolean(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "float_dot_nine",
+			test:  "float_dot_nine",
 			node:  meth,
 			value: json.Number("1.9"),
 			exp:   statusFailed,
@@ -1498,7 +1498,7 @@ func TestExecMethodBoolean(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "json_float_neg_1000_dot_nine",
+			test:  "json_float_neg_1000_dot_nine",
 			node:  meth,
 			value: json.Number("-1000.9"),
 			exp:   statusFailed,
@@ -1506,35 +1506,35 @@ func TestExecMethodBoolean(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "string_t",
+			test:  "string_t",
 			node:  meth,
 			value: "t",
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "string_f",
+			test:  "string_f",
 			node:  meth,
 			value: "f",
 			exp:   statusOK,
 			find:  []any{false},
 		},
 		{
-			name:  "string_y",
+			test:  "string_y",
 			node:  meth,
 			value: "y",
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "string_n",
+			test:  "string_n",
 			node:  meth,
 			value: "n",
 			exp:   statusOK,
 			find:  []any{false},
 		},
 		{
-			name:  "invalid_string",
+			test:  "invalid_string",
 			node:  meth,
 			value: "nope",
 			exp:   statusFailed,
@@ -1542,7 +1542,7 @@ func TestExecMethodBoolean(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "object",
+			test:  "object",
 			node:  meth,
 			value: map[string]any{"x": true},
 			exp:   statusFailed,
@@ -1550,7 +1550,7 @@ func TestExecMethodBoolean(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "array",
+			test:  "array",
 			node:  meth,
 			value: []any{true, false},
 			exp:   statusFailed,
@@ -1558,7 +1558,7 @@ func TestExecMethodBoolean(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:   "array_unwrap",
+			test:   "array_unwrap",
 			node:   meth,
 			value:  []any{true, false},
 			unwrap: true,
@@ -1566,14 +1566,14 @@ func TestExecMethodBoolean(t *testing.T) {
 			find:   []any{true, false},
 		},
 		{
-			name:  "bool_next",
+			test:  "bool_next",
 			node:  ast.LinkNodes([]ast.Node{ast.NewMethod(ast.MethodBoolean), ast.NewMethod(ast.MethodString)}),
 			value: true,
 			exp:   statusOK,
 			find:  []any{"true"},
 		},
 		{
-			name:   "array_unwrap_next",
+			test:   "array_unwrap_next",
 			node:   ast.LinkNodes([]ast.Node{ast.NewMethod(ast.MethodBoolean), ast.NewMethod(ast.MethodString)}),
 			value:  []any{"t", "f"},
 			unwrap: true,
@@ -1581,7 +1581,7 @@ func TestExecMethodBoolean(t *testing.T) {
 			find:   []any{"true", "false"},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 
 			// Make sure we have a .Boolean() node.
@@ -1600,209 +1600,209 @@ func TestExecBooleanString(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		val   string
 		exp   bool
 		err   string
 		isErr error
 	}{
 		{
-			name:  "empty_string",
+			test:  "empty_string",
 			val:   "",
 			err:   `exec: argument "" of jsonpath item method .boolean() is invalid for type boolean`,
 			isErr: ErrVerbose,
 		},
 		{
-			name: "t",
+			test: "t",
 			val:  "t",
 			exp:  true,
 		},
 		{
-			name: "T",
+			test: "T",
 			val:  "T",
 			exp:  true,
 		},
 		{
-			name: "true",
+			test: "true",
 			val:  "true",
 			exp:  true,
 		},
 		{
-			name: "TRUE",
+			test: "TRUE",
 			val:  "TRUE",
 			exp:  true,
 		},
 		{
-			name: "TruE",
+			test: "TruE",
 			val:  "TruE",
 			exp:  true,
 		},
 		{
-			name:  "tru",
+			test:  "tru",
 			val:   "tru",
 			err:   `exec: argument "tru" of jsonpath item method .boolean() is invalid for type boolean`,
 			isErr: ErrVerbose,
 		},
 		{
-			name: "f",
+			test: "f",
 			val:  "f",
 			exp:  false,
 		},
 		{
-			name: "F",
+			test: "F",
 			val:  "F",
 			exp:  false,
 		},
 		{
-			name: "false",
+			test: "false",
 			val:  "false",
 			exp:  false,
 		},
 		{
-			name: "FALSE",
+			test: "FALSE",
 			val:  "FALSE",
 			exp:  false,
 		},
 		{
-			name: "FalSe",
+			test: "FalSe",
 			val:  "FalSe",
 			exp:  false,
 		},
 		{
-			name:  "fal",
+			test:  "fal",
 			val:   "fal",
 			err:   `exec: argument "fal" of jsonpath item method .boolean() is invalid for type boolean`,
 			isErr: ErrVerbose,
 		},
 		{
-			name: "y",
+			test: "y",
 			val:  "y",
 			exp:  true,
 		},
 		{
-			name: "Y",
+			test: "Y",
 			val:  "Y",
 			exp:  true,
 		},
 		{
-			name: "yes",
+			test: "yes",
 			val:  "yes",
 			exp:  true,
 		},
 		{
-			name: "YES",
+			test: "YES",
 			val:  "YES",
 			exp:  true,
 		},
 		{
-			name: "Yes",
+			test: "Yes",
 			val:  "Yes",
 			exp:  true,
 		},
 		{
-			name:  "ye",
+			test:  "ye",
 			val:   "ye",
 			err:   `exec: argument "ye" of jsonpath item method .boolean() is invalid for type boolean`,
 			isErr: ErrVerbose,
 		},
 		{
-			name: "n",
+			test: "n",
 			val:  "n",
 			exp:  false,
 		},
 		{
-			name: "N",
+			test: "N",
 			val:  "N",
 			exp:  false,
 		},
 		{
-			name: "no",
+			test: "no",
 			val:  "no",
 			exp:  false,
 		},
 		{
-			name: "NO",
+			test: "NO",
 			val:  "NO",
 			exp:  false,
 		},
 		{
-			name:  "non",
+			test:  "non",
 			val:   "non",
 			err:   `exec: argument "non" of jsonpath item method .boolean() is invalid for type boolean`,
 			isErr: ErrVerbose,
 		},
 		{
-			name: "on",
+			test: "on",
 			val:  "on",
 			exp:  true,
 		},
 		{
-			name: "ON",
+			test: "ON",
 			val:  "ON",
 			exp:  true,
 		},
 		{
-			name: "oN",
+			test: "oN",
 			val:  "oN",
 			exp:  true,
 		},
 		{
-			name: "off",
+			test: "off",
 			val:  "off",
 			exp:  false,
 		},
 		{
-			name: "OFF",
+			test: "OFF",
 			val:  "OFF",
 			exp:  false,
 		},
 		{
-			name: "Off",
+			test: "Off",
 			val:  "Off",
 			exp:  false,
 		},
 		{
-			name:  "oof",
+			test:  "oof",
 			val:   "oof",
 			err:   `exec: argument "oof" of jsonpath item method .boolean() is invalid for type boolean`,
 			isErr: ErrVerbose,
 		},
 		{
-			name: "1",
+			test: "1",
 			val:  "1",
 			exp:  true,
 		},
 		{
-			name: "0",
+			test: "0",
 			val:  "0",
 			exp:  false,
 		},
 		{
-			name:  "1_space",
+			test:  "1_space",
 			val:   "1 ",
 			err:   `exec: argument "1 " of jsonpath item method .boolean() is invalid for type boolean`,
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "0_space",
+			test:  "0_space",
 			val:   "0 ",
 			err:   `exec: argument "0 " of jsonpath item method .boolean() is invalid for type boolean`,
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "t_space",
+			test:  "t_space",
 			val:   "t ",
 			err:   `exec: argument "t " of jsonpath item method .boolean() is invalid for type boolean`,
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "f_space",
+			test:  "f_space",
 			val:   " f",
 			err:   `exec: argument " f" of jsonpath item method .boolean() is invalid for type boolean`,
 			isErr: ErrVerbose,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -1827,49 +1827,49 @@ func TestExecuteNumberMethod(t *testing.T) {
 
 	for _, tc := range []methodTestCase{
 		{
-			name:  "float",
+			test:  "float",
 			node:  number,
 			value: float64(98.6),
 			exp:   statusOK,
 			find:  []any{float64(98.6)},
 		},
 		{
-			name:  "int",
+			test:  "int",
 			node:  number,
 			value: int64(42),
 			exp:   statusOK,
 			find:  []any{float64(42)},
 		},
 		{
-			name:  "max_int",
+			test:  "max_int",
 			node:  number,
 			value: int64(math.MaxInt64),
 			exp:   statusOK,
 			find:  []any{float64(math.MaxInt64)},
 		},
 		{
-			name:  "min_int",
+			test:  "min_int",
 			node:  number,
 			value: int64(math.MinInt64),
 			exp:   statusOK,
 			find:  []any{float64(math.MinInt64)},
 		},
 		{
-			name:  "json_int",
+			test:  "json_int",
 			node:  number,
 			value: json.Number("42"),
 			exp:   statusOK,
 			find:  []any{float64(42)},
 		},
 		{
-			name:  "json_float",
+			test:  "json_float",
 			node:  number,
 			value: json.Number("98.6"),
 			exp:   statusOK,
 			find:  []any{float64(98.6)},
 		},
 		{
-			name:  "number_invalid_json",
+			test:  "number_invalid_json",
 			node:  number,
 			value: json.Number("hi"),
 			exp:   statusFailed,
@@ -1877,7 +1877,7 @@ func TestExecuteNumberMethod(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "invalid_json_decimal",
+			test:  "invalid_json_decimal",
 			node:  decimal,
 			value: json.Number("hi"),
 			exp:   statusFailed,
@@ -1885,35 +1885,35 @@ func TestExecuteNumberMethod(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "string_int",
+			test:  "string_int",
 			node:  number,
 			value: "42",
 			exp:   statusOK,
 			find:  []any{float64(42)},
 		},
 		{
-			name:  "string_float",
+			test:  "string_float",
 			node:  number,
 			value: "98.6",
 			exp:   statusOK,
 			find:  []any{float64(98.6)},
 		},
 		{
-			name:  "string_max_int",
+			test:  "string_max_int",
 			node:  number,
 			value: strconv.FormatInt(math.MaxInt64, 10),
 			exp:   statusOK,
 			find:  []any{float64(math.MaxInt64)},
 		},
 		{
-			name:  "string_max_float",
+			test:  "string_max_float",
 			node:  number,
 			value: fmt.Sprintf("%v", math.MaxFloat64),
 			exp:   statusOK,
 			find:  []any{float64(math.MaxFloat64)},
 		},
 		{
-			name:  "object_number",
+			test:  "object_number",
 			node:  number,
 			value: map[string]any{"x": "42"},
 			exp:   statusFailed,
@@ -1921,7 +1921,7 @@ func TestExecuteNumberMethod(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "decimal_number",
+			test:  "decimal_number",
 			node:  decimal,
 			value: map[string]any{"x": "42"},
 			exp:   statusFailed,
@@ -1929,7 +1929,7 @@ func TestExecuteNumberMethod(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "array",
+			test:  "array",
 			node:  number,
 			value: []any{"42", float64(98.6)},
 			exp:   statusFailed,
@@ -1937,7 +1937,7 @@ func TestExecuteNumberMethod(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:   "array_unwrap",
+			test:   "array_unwrap",
 			node:   number,
 			value:  []any{"42", float64(98.6)},
 			unwrap: true,
@@ -1945,7 +1945,7 @@ func TestExecuteNumberMethod(t *testing.T) {
 			find:   []any{float64(42), float64(98.6)},
 		},
 		{
-			name:  "inf",
+			test:  "inf",
 			node:  number,
 			value: "inf",
 			exp:   statusFailed,
@@ -1953,7 +1953,7 @@ func TestExecuteNumberMethod(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "neg_inf",
+			test:  "neg_inf",
 			node:  number,
 			value: "-inf",
 			exp:   statusFailed,
@@ -1961,7 +1961,7 @@ func TestExecuteNumberMethod(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "nan",
+			test:  "nan",
 			node:  number,
 			value: "nan",
 			exp:   statusFailed,
@@ -1969,7 +1969,7 @@ func TestExecuteNumberMethod(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "inf_decimal",
+			test:  "inf_decimal",
 			node:  decimal,
 			value: "inf",
 			exp:   statusFailed,
@@ -1977,28 +1977,28 @@ func TestExecuteNumberMethod(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "float_decimal",
+			test:  "float_decimal",
 			node:  decimal,
 			value: float64(98.6),
 			exp:   statusOK,
 			find:  []any{float64(98.6)},
 		},
 		{
-			name:  "float_decimal_precision",
+			test:  "float_decimal_precision",
 			node:  ast.NewBinary(ast.BinaryDecimal, ast.NewInteger("4"), nil),
 			value: float64(12.2),
 			exp:   statusOK,
 			find:  []any{float64(12)},
 		},
 		{
-			name:  "float_decimal_precision_scale",
+			test:  "float_decimal_precision_scale",
 			node:  ast.NewBinary(ast.BinaryDecimal, ast.NewInteger("4"), ast.NewInteger("2")),
 			value: float64(12.233),
 			exp:   statusOK,
 			find:  []any{float64(12.23)},
 		},
 		{
-			name:  "float_decimal_error",
+			test:  "float_decimal_error",
 			node:  ast.NewBinary(ast.BinaryDecimal, ast.NewInteger("3"), ast.NewInteger("2")),
 			value: float64(12.233),
 			exp:   statusFailed,
@@ -2006,7 +2006,7 @@ func TestExecuteNumberMethod(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 
 			// Determine the method.
@@ -2028,7 +2028,7 @@ func TestExecuteDecimalMethod(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		node  *ast.BinaryNode
 		value any
 		num   float64
@@ -2037,49 +2037,49 @@ func TestExecuteDecimalMethod(t *testing.T) {
 		isErr error
 	}{
 		{
-			name: "not_decimal",
+			test: "not_decimal",
 			node: ast.NewBinary(ast.BinaryAdd, nil, nil),
 			num:  float64(98.6),
 			exp:  float64(98.6),
 		},
 		{
-			name: "no_args",
+			test: "no_args",
 			node: ast.NewBinary(ast.BinaryDecimal, nil, nil),
 			num:  float64(98.6),
 			exp:  float64(98.6),
 		},
 		{
-			name:  "invalid_precision",
+			test:  "invalid_precision",
 			node:  ast.NewBinary(ast.BinaryDecimal, ast.NewString("hi"), nil),
 			err:   `exec: invalid jsonpath item type for .decimal() precision`,
 			isErr: ErrExecution,
 		},
 		{
-			name:  "precision_zero",
+			test:  "precision_zero",
 			node:  ast.NewBinary(ast.BinaryDecimal, ast.NewInteger("0"), nil),
 			err:   `exec: NUMERIC precision 0 must be between 1 and 1000`,
 			isErr: ErrExecution,
 		},
 		{
-			name:  "precision_1001",
+			test:  "precision_1001",
 			node:  ast.NewBinary(ast.BinaryDecimal, ast.NewInteger("1001"), nil),
 			err:   `exec: NUMERIC precision 1001 must be between 1 and 1000`,
 			isErr: ErrExecution,
 		},
 		{
-			name: "precision_1000",
+			test: "precision_1000",
 			node: ast.NewBinary(ast.BinaryDecimal, ast.NewInteger("1000"), nil),
 			num:  float64(98.6),
 			exp:  float64(99),
 		},
 		{
-			name: "precision_10",
+			test: "precision_10",
 			node: ast.NewBinary(ast.BinaryDecimal, ast.NewInteger("10"), nil),
 			num:  float64(98.6),
 			exp:  float64(99),
 		},
 		{
-			name:  "precision_too_small",
+			test:  "precision_too_small",
 			node:  ast.NewBinary(ast.BinaryDecimal, ast.NewInteger("1"), nil),
 			value: float64(98.6),
 			num:   float64(98.6),
@@ -2087,37 +2087,37 @@ func TestExecuteDecimalMethod(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "invalid_scale",
+			test:  "invalid_scale",
 			node:  ast.NewBinary(ast.BinaryDecimal, ast.NewInteger("10"), ast.NewString("hi")),
 			err:   `exec: invalid jsonpath item type for .decimal() scale`,
 			isErr: ErrExecution,
 		},
 		{
-			name:  "scale_neg_1001",
+			test:  "scale_neg_1001",
 			node:  ast.NewBinary(ast.BinaryDecimal, ast.NewInteger("10"), ast.NewInteger("-1001")),
 			err:   `exec: NUMERIC scale -1001 must be between -1000 and 1000`,
 			isErr: ErrExecution,
 		},
 		{
-			name:  "scale_1001",
+			test:  "scale_1001",
 			node:  ast.NewBinary(ast.BinaryDecimal, ast.NewInteger("10"), ast.NewInteger("1001")),
 			err:   `exec: NUMERIC scale 1001 must be between -1000 and 1000`,
 			isErr: ErrExecution,
 		},
 		{
-			name: "precision_scale_ok",
+			test: "precision_scale_ok",
 			node: ast.NewBinary(ast.BinaryDecimal, ast.NewInteger("5"), ast.NewInteger("3")),
 			num:  float64(12.333),
 			exp:  float64(12.333),
 		},
 		{
-			name: "scale_down",
+			test: "scale_down",
 			node: ast.NewBinary(ast.BinaryDecimal, ast.NewInteger("5"), ast.NewInteger("2")),
 			num:  float64(12.333),
 			exp:  float64(12.33),
 		},
 		{
-			name:  "scale_short",
+			test:  "scale_short",
 			node:  ast.NewBinary(ast.BinaryDecimal, ast.NewInteger("3"), ast.NewInteger("2")),
 			value: float64(12.333),
 			num:   float64(12.333),
@@ -2125,7 +2125,7 @@ func TestExecuteDecimalMethod(t *testing.T) {
 			isErr: ErrExecution,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -2216,7 +2216,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 	}{
 		{
 			methodTestCase: methodTestCase{
-				name:  "int_abs",
+				test:  "int_abs",
 				path:  laxRootPath,
 				node:  abs,
 				value: int64(-42),
@@ -2227,7 +2227,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:  "float_abs",
+				test:  "float_abs",
 				path:  laxRootPath,
 				node:  abs,
 				value: float64(-42.2),
@@ -2238,7 +2238,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:  "json_int_abs",
+				test:  "json_int_abs",
 				path:  laxRootPath,
 				node:  abs,
 				value: json.Number("-42"),
@@ -2249,7 +2249,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:  "json_float_abs",
+				test:  "json_float_abs",
 				path:  laxRootPath,
 				node:  abs,
 				value: json.Number("-42.2"),
@@ -2260,7 +2260,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:  "invalid_json_number",
+				test:  "invalid_json_number",
 				path:  laxRootPath,
 				node:  abs,
 				value: json.Number("hi"),
@@ -2271,7 +2271,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:  "object",
+				test:  "object",
 				path:  laxRootPath,
 				node:  abs,
 				value: map[string]any{"hi": true},
@@ -2282,7 +2282,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:  "array",
+				test:  "array",
 				path:  laxRootPath,
 				node:  abs,
 				value: []any{int64(-42), float64(-42.2)},
@@ -2293,7 +2293,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:   "abs_array_unwrap",
+				test:   "abs_array_unwrap",
 				path:   laxRootPath,
 				node:   abs,
 				value:  []any{int64(-42), float64(-42.2)},
@@ -2306,7 +2306,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:  "int_floor",
+				test:  "int_floor",
 				path:  laxRootPath,
 				node:  floor,
 				value: int64(-42),
@@ -2317,7 +2317,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:  "float_floor",
+				test:  "float_floor",
 				path:  laxRootPath,
 				node:  floor,
 				value: float64(-42.2),
@@ -2328,7 +2328,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:  "json_int_floor",
+				test:  "json_int_floor",
 				path:  laxRootPath,
 				node:  floor,
 				value: json.Number("42"),
@@ -2339,7 +2339,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:  "json_float_floor",
+				test:  "json_float_floor",
 				path:  laxRootPath,
 				node:  floor,
 				value: json.Number("42.2"),
@@ -2350,7 +2350,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:  "invalid_json_number",
+				test:  "invalid_json_number",
 				path:  laxRootPath,
 				node:  floor,
 				value: json.Number("hi"),
@@ -2361,7 +2361,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:   "floor_array_unwrap",
+				test:   "floor_array_unwrap",
 				path:   laxRootPath,
 				node:   floor,
 				value:  []any{int64(42), float64(42.8)},
@@ -2375,7 +2375,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 
 		{
 			methodTestCase: methodTestCase{
-				name:  "int_ceil",
+				test:  "int_ceil",
 				path:  laxRootPath,
 				node:  ceil,
 				value: int64(-42),
@@ -2386,7 +2386,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:  "float_ceil",
+				test:  "float_ceil",
 				path:  laxRootPath,
 				node:  ceil,
 				value: float64(-42.2),
@@ -2397,7 +2397,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:  "json_int_ceil",
+				test:  "json_int_ceil",
 				path:  laxRootPath,
 				node:  ceil,
 				value: json.Number("42"),
@@ -2408,7 +2408,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:  "json_float_ceil",
+				test:  "json_float_ceil",
 				path:  laxRootPath,
 				node:  ceil,
 				value: json.Number("42.2"),
@@ -2419,7 +2419,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:  "invalid_json_number",
+				test:  "invalid_json_number",
 				path:  laxRootPath,
 				node:  ceil,
 				value: json.Number("hi"),
@@ -2430,7 +2430,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 		},
 		{
 			methodTestCase: methodTestCase{
-				name:   "ceil_array_unwrap",
+				test:   "ceil_array_unwrap",
 				path:   laxRootPath,
 				node:   ceil,
 				value:  []any{int64(42), float64(42.8)},
@@ -2442,7 +2442,7 @@ func TestExecuteNumericItemMethod(t *testing.T) {
 			floatCB: math.Ceil,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 
 			e, list := tc.prep()

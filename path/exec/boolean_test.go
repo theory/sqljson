@@ -17,7 +17,7 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		path  string
 		op    ast.BinaryOperator
 		value any
@@ -26,14 +26,14 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 		isErr error
 	}{
 		{
-			name:  "binary_and",
+			test:  "binary_and",
 			path:  "$ == $ && $ == $",
 			value: true,
 			op:    ast.BinaryAnd,
 			exp:   predTrue,
 		},
 		{
-			name:  "binary_and_unknown_left",
+			test:  "binary_and_unknown_left",
 			path:  "$ == $x && $ == $",
 			value: true,
 			op:    ast.BinaryAnd,
@@ -42,7 +42,7 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "binary_and_unknown_right",
+			test:  "binary_and_unknown_right",
 			path:  "$ == $ && $ == $x",
 			value: true,
 			op:    ast.BinaryAnd,
@@ -51,28 +51,28 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "binary_or",
+			test:  "binary_or",
 			path:  "$ == $ || $ == $",
 			value: true,
 			op:    ast.BinaryOr,
 			exp:   predTrue,
 		},
 		{
-			name:  "binary_or_both",
+			test:  "binary_or_both",
 			path:  "$ == false || $ == $",
 			value: true,
 			op:    ast.BinaryOr,
 			exp:   predTrue,
 		},
 		{
-			name:  "binary_or_false",
+			test:  "binary_or_false",
 			path:  "$ == false || $ == false",
 			value: true,
 			op:    ast.BinaryOr,
 			exp:   predFalse,
 		},
 		{
-			name:  "binary_or_unknown_left",
+			test:  "binary_or_unknown_left",
 			path:  "$ == $x || $ == $",
 			value: true,
 			op:    ast.BinaryOr,
@@ -81,7 +81,7 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "binary_or_unknown_right",
+			test:  "binary_or_unknown_right",
 			path:  "$ == false || $ == $x",
 			value: true,
 			op:    ast.BinaryOr,
@@ -90,21 +90,21 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "binary_eq_true",
+			test:  "binary_eq_true",
 			path:  "$ == $",
 			value: true,
 			op:    ast.BinaryEqual,
 			exp:   predTrue,
 		},
 		{
-			name:  "binary_eq_false",
+			test:  "binary_eq_false",
 			path:  "$ == false",
 			value: true,
 			op:    ast.BinaryEqual,
 			exp:   predFalse,
 		},
 		{
-			name:  "binary_eq_unknown",
+			test:  "binary_eq_unknown",
 			path:  "$ == $x",
 			value: true,
 			op:    ast.BinaryEqual,
@@ -113,21 +113,21 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "binary_ne_false",
+			test:  "binary_ne_false",
 			path:  "$ != $",
 			value: true,
 			op:    ast.BinaryNotEqual,
 			exp:   predFalse,
 		},
 		{
-			name:  "binary_ne_true",
+			test:  "binary_ne_true",
 			path:  "$ != false",
 			value: true,
 			op:    ast.BinaryNotEqual,
 			exp:   predTrue,
 		},
 		{
-			name:  "binary_ne_unknown",
+			test:  "binary_ne_unknown",
 			path:  "$ != $x",
 			value: true,
 			op:    ast.BinaryNotEqual,
@@ -136,21 +136,21 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "binary_lt_true",
+			test:  "binary_lt_true",
 			path:  "$ < 3",
 			value: int64(1),
 			op:    ast.BinaryLess,
 			exp:   predTrue,
 		},
 		{
-			name:  "binary_lt_false",
+			test:  "binary_lt_false",
 			path:  "$ < 3",
 			value: int64(3),
 			op:    ast.BinaryLess,
 			exp:   predFalse,
 		},
 		{
-			name:  "binary_lt_unknown",
+			test:  "binary_lt_unknown",
 			path:  "$ < $x",
 			value: int64(3),
 			op:    ast.BinaryLess,
@@ -159,21 +159,21 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "binary_gt_true",
+			test:  "binary_gt_true",
 			path:  "$ > 3",
 			value: int64(5),
 			op:    ast.BinaryGreater,
 			exp:   predTrue,
 		},
 		{
-			name:  "binary_gt_false",
+			test:  "binary_gt_false",
 			path:  "$ > 3",
 			value: int64(3),
 			op:    ast.BinaryGreater,
 			exp:   predFalse,
 		},
 		{
-			name:  "binary_gt_unknown",
+			test:  "binary_gt_unknown",
 			path:  "$ > $x",
 			value: int64(3),
 			op:    ast.BinaryGreater,
@@ -182,28 +182,28 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "binary_le_true",
+			test:  "binary_le_true",
 			path:  "$ <= 3",
 			value: int64(2),
 			op:    ast.BinaryLessOrEqual,
 			exp:   predTrue,
 		},
 		{
-			name:  "binary_le_true_2",
+			test:  "binary_le_true_2",
 			path:  "$ <= 3",
 			value: int64(3),
 			op:    ast.BinaryLessOrEqual,
 			exp:   predTrue,
 		},
 		{
-			name:  "binary_le_false",
+			test:  "binary_le_false",
 			path:  "$ <= 3",
 			value: int64(4),
 			op:    ast.BinaryLessOrEqual,
 			exp:   predFalse,
 		},
 		{
-			name:  "binary_le_unknown",
+			test:  "binary_le_unknown",
 			path:  "$ <= $x",
 			value: int64(3),
 			op:    ast.BinaryLessOrEqual,
@@ -212,28 +212,28 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "binary_ge_true",
+			test:  "binary_ge_true",
 			path:  "$ >= 3",
 			value: int64(4),
 			op:    ast.BinaryGreaterOrEqual,
 			exp:   predTrue,
 		},
 		{
-			name:  "binary_le_true_2",
+			test:  "binary_le_true_2",
 			path:  "$ >= 3",
 			value: int64(3),
 			op:    ast.BinaryGreaterOrEqual,
 			exp:   predTrue,
 		},
 		{
-			name:  "binary_le_false",
+			test:  "binary_le_false",
 			path:  "$ >= 3",
 			value: int64(2),
 			op:    ast.BinaryGreaterOrEqual,
 			exp:   predFalse,
 		},
 		{
-			name:  "binary_le_unknown",
+			test:  "binary_le_unknown",
 			path:  "$ >= $x",
 			value: int64(3),
 			op:    ast.BinaryGreaterOrEqual,
@@ -242,21 +242,21 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "starts_with_true",
+			test:  "starts_with_true",
 			path:  `$ starts with "a"`,
 			value: "abc",
 			op:    ast.BinaryStartsWith,
 			exp:   predTrue,
 		},
 		{
-			name:  "starts_with_false",
+			test:  "starts_with_false",
 			path:  `$ starts with "b"`,
 			value: "abc",
 			op:    ast.BinaryStartsWith,
 			exp:   predFalse,
 		},
 		{
-			name:  "starts_with_unknown",
+			test:  "starts_with_unknown",
 			path:  "$ starts with $x",
 			value: true,
 			op:    ast.BinaryStartsWith,
@@ -265,7 +265,7 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "unsupported_binary",
+			test:  "unsupported_binary",
 			path:  "$ + 4",
 			value: true,
 			op:    ast.BinaryAdd,
@@ -274,7 +274,7 @@ func TestExecuteBinaryBoolItem(t *testing.T) {
 			isErr: ErrInvalid,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -308,7 +308,7 @@ func TestExecuteUnaryBoolItem(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		path  string
 		op    ast.UnaryOperator
 		value any
@@ -317,21 +317,21 @@ func TestExecuteUnaryBoolItem(t *testing.T) {
 		isErr error
 	}{
 		{
-			name:  "unary_not_true",
+			test:  "unary_not_true",
 			path:  "!($ == false)",
 			value: true,
 			op:    ast.UnaryNot,
 			exp:   predTrue,
 		},
 		{
-			name:  "unary_not_false",
+			test:  "unary_not_false",
 			path:  "!($ == true)",
 			value: true,
 			op:    ast.UnaryNot,
 			exp:   predFalse,
 		},
 		{
-			name:  "unary_not_unknown",
+			test:  "unary_not_unknown",
 			path:  "!($ == $x)",
 			value: true,
 			op:    ast.UnaryNot,
@@ -340,42 +340,42 @@ func TestExecuteUnaryBoolItem(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "unary_is_unknown_true",
+			test:  "unary_is_unknown_true",
 			path:  "($ == $x) is unknown",
 			value: true,
 			op:    ast.UnaryIsUnknown,
 			exp:   predTrue,
 		},
 		{
-			name:  "unary_is_unknown_false",
+			test:  "unary_is_unknown_false",
 			path:  "($ == $) is unknown",
 			value: true,
 			op:    ast.UnaryIsUnknown,
 			exp:   predFalse,
 		},
 		{
-			name:  "unary_is_unknown_false_false",
+			test:  "unary_is_unknown_false_false",
 			path:  "($ == $) is unknown",
 			value: false,
 			op:    ast.UnaryIsUnknown,
 			exp:   predFalse,
 		},
 		{
-			name:  "unary_exists_true",
+			test:  "unary_exists_true",
 			path:  "exists ($)",
 			value: true,
 			op:    ast.UnaryExists,
 			exp:   predTrue,
 		},
 		{
-			name:  "unary_exists_false",
+			test:  "unary_exists_false",
 			path:  "exists ($.x)",
 			value: true,
 			op:    ast.UnaryExists,
 			exp:   predFalse,
 		},
 		{
-			name:  "unary_exists_unknown",
+			test:  "unary_exists_unknown",
 			path:  "exists ($x)",
 			value: true,
 			op:    ast.UnaryExists,
@@ -384,21 +384,21 @@ func TestExecuteUnaryBoolItem(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "unary_exists_strict_true",
+			test:  "unary_exists_strict_true",
 			path:  "strict exists ($[*])",
 			value: []any{"x", "y"},
 			op:    ast.UnaryExists,
 			exp:   predTrue,
 		},
 		{
-			name:  "unary_exists_strict_false",
+			test:  "unary_exists_strict_false",
 			path:  "strict exists ($[*])",
 			value: []any{},
 			op:    ast.UnaryExists,
 			exp:   predFalse,
 		},
 		{
-			name:  "unary_exists_strict_unknown",
+			test:  "unary_exists_strict_unknown",
 			path:  "strict exists ($x[*])",
 			value: []any{},
 			op:    ast.UnaryExists,
@@ -407,7 +407,7 @@ func TestExecuteUnaryBoolItem(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "unary_not_boolean",
+			test:  "unary_not_boolean",
 			path:  "-$",
 			op:    ast.UnaryMinus,
 			exp:   predUnknown,
@@ -415,7 +415,7 @@ func TestExecuteUnaryBoolItem(t *testing.T) {
 			isErr: ErrInvalid,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -448,7 +448,7 @@ func TestExecuteBoolItem(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name        string
+		test        string
 		path        string
 		value       any
 		canHaveNext bool
@@ -457,7 +457,7 @@ func TestExecuteBoolItem(t *testing.T) {
 		isErr       error
 	}{
 		{
-			name:  "no_next",
+			test:  "no_next",
 			path:  "$ ?($ == $).x",
 			value: true,
 			exp:   predUnknown,
@@ -465,21 +465,21 @@ func TestExecuteBoolItem(t *testing.T) {
 			isErr: ErrInvalid,
 		},
 		{
-			name:        "next_ok_true",
+			test:        "next_ok_true",
 			path:        "($.x == $.x).x",
 			value:       map[string]any{"x": true},
 			canHaveNext: true,
 			exp:         predTrue,
 		},
 		{
-			name:        "next_ok_false",
+			test:        "next_ok_false",
 			path:        "($.x != $.x).x",
 			value:       map[string]any{"x": true},
 			canHaveNext: true,
 			exp:         predFalse,
 		},
 		{
-			name:        "next_ok_unknown",
+			test:        "next_ok_unknown",
 			path:        "($.x == $x).x",
 			value:       map[string]any{"x": true},
 			canHaveNext: true,
@@ -488,25 +488,25 @@ func TestExecuteBoolItem(t *testing.T) {
 			isErr:       ErrExecution,
 		},
 		{
-			name:  "binary",
+			test:  "binary",
 			path:  "$ == $",
 			value: true,
 			exp:   predTrue,
 		},
 		{
-			name:  "unary",
+			test:  "unary",
 			path:  "exists ($)",
 			value: true,
 			exp:   predTrue,
 		},
 		{
-			name:  "regex",
+			test:  "regex",
 			path:  `$ like_regex "^a"`,
 			value: "abc",
 			exp:   predTrue,
 		},
 		{
-			name:  "invalid_boolean",
+			test:  "invalid_boolean",
 			path:  `$`,
 			value: true,
 			exp:   predUnknown,
@@ -514,7 +514,7 @@ func TestExecuteBoolItem(t *testing.T) {
 			isErr: ErrInvalid,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -543,7 +543,7 @@ func TestAppendBoolResult(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name    string
+		test    string
 		path    string
 		found   []any
 		passOut predOutcome
@@ -553,7 +553,7 @@ func TestAppendBoolResult(t *testing.T) {
 		isErr   error
 	}{
 		{
-			name:    "passed_error",
+			test:    "passed_error",
 			path:    "$",
 			passErr: fmt.Errorf("%w: OOPS", ErrExecution),
 			exp:     statusFailed,
@@ -561,50 +561,50 @@ func TestAppendBoolResult(t *testing.T) {
 			isErr:   ErrExecution,
 		},
 		{
-			name:    "pass_unknown",
+			test:    "pass_unknown",
 			path:    "$",
 			passOut: predUnknown,
 			exp:     statusOK,
 		},
 		{
-			name:    "pass_unknown_found",
+			test:    "pass_unknown_found",
 			path:    "$",
 			passOut: predUnknown,
 			found:   []any{nil},
 			exp:     statusOK,
 		},
 		{
-			name: "no_found_ok",
+			test: "no_found_ok",
 			path: "$",
 			exp:  statusOK,
 		},
 		{
-			name:    "true_no_next",
+			test:    "true_no_next",
 			path:    "$",
 			passOut: predTrue,
 			exp:     statusOK,
 		},
 		{
-			name:    "false_no_next",
+			test:    "false_no_next",
 			path:    "$",
 			passOut: predFalse,
 			exp:     statusOK,
 		},
 		{
-			name:    "okay_next",
+			test:    "okay_next",
 			path:    "($ == $).x",
 			passOut: predTrue,
 			exp:     statusNotFound,
 		},
 		{
-			name:    "add_ok",
+			test:    "add_ok",
 			path:    "$ + $",
 			passOut: predTrue,
 			found:   []any{true},
 			exp:     statusOK,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -642,7 +642,7 @@ func TestExecuteNestedBoolItem(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name    string
+		test    string
 		path    string
 		root    any
 		current any
@@ -652,7 +652,7 @@ func TestExecuteNestedBoolItem(t *testing.T) {
 		isErr   error
 	}{
 		{
-			name:    "switch_current",
+			test:    "switch_current",
 			path:    "$ == $",
 			root:    true,
 			current: "foo",
@@ -660,7 +660,7 @@ func TestExecuteNestedBoolItem(t *testing.T) {
 			exp:     predTrue,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)

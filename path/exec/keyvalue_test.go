@@ -16,43 +16,43 @@ func TestAddrOf(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		value any
 		noID  bool
 	}{
 		{
-			name:  "map",
+			test:  "map",
 			value: map[string]any{"hi": 1},
 		},
 		{
-			name:  "slice",
+			test:  "slice",
 			value: []any{1, 2},
 		},
 		{
-			name:  "vars",
+			test:  "vars",
 			value: Vars{"x": true},
 		},
 		{
-			name:  "int",
+			test:  "int",
 			value: int64(42),
 			noID:  true,
 		},
 		{
-			name:  "bool",
+			test:  "bool",
 			value: true,
 			noID:  true,
 		},
 		{
-			name: "nil",
+			test: "nil",
 			noID: true,
 		},
 		{
-			name:  "datetime",
+			test:  "datetime",
 			value: types.NewDate(time.Now()),
 			noID:  true,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
@@ -89,29 +89,29 @@ func TestKVBaseObject(t *testing.T) {
 	mapArrayOff := deltaBetween(mapArray, mapArray["x"])
 
 	for _, tc := range []struct {
-		name string
+		test string
 		base any
 		path string
 		exp  int64
 	}{
 		{
-			name: "sub-map",
+			test: "sub-map",
 			base: map[string]any{"x": map[string]any{"y": 1}},
 			path: "$.x",
 		},
 		{
-			name: "sub-sub-map",
+			test: "sub-sub-map",
 			base: map[string]any{"x": map[string]any{"y": map[string]any{"z": 1}}},
 			path: "$.x.y",
 		},
 		{
-			name: "sub-array",
+			test: "sub-array",
 			base: mapArray,
 			path: "$.x",
 			exp:  mapArrayOff,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -166,13 +166,13 @@ func TestExecuteKeyValueMethod(t *testing.T) {
 
 	for _, tc := range []execTestCase{
 		{
-			name: "kv_single",
+			test: "kv_single",
 			path: "$.keyvalue()",
 			json: map[string]any{"x": true},
 			exp:  []any{map[string]any{"key": "x", "value": true, "id": int64(0)}},
 		},
 		{
-			name: "kv_double",
+			test: "kv_double",
 			path: "$.keyvalue()",
 			json: map[string]any{"x": true, "y": "hi"},
 			exp: []any{
@@ -182,7 +182,7 @@ func TestExecuteKeyValueMethod(t *testing.T) {
 			rand: true, // Results can be in any order
 		},
 		{
-			name: "kv_sequence",
+			test: "kv_sequence",
 			path: "$.keyvalue().keyvalue()",
 			json: map[string]any{"x": true, "y": "hi"},
 			exp: []any{
@@ -196,7 +196,7 @@ func TestExecuteKeyValueMethod(t *testing.T) {
 			rand: true, // Results can be in any order
 		},
 		{
-			name: "kv_nested",
+			test: "kv_nested",
 			path: "$.keyvalue()",
 			json: map[string]any{"foo": map[string]any{"x": true, "y": "hi"}},
 			exp: []any{
@@ -205,7 +205,7 @@ func TestExecuteKeyValueMethod(t *testing.T) {
 			rand: true, // Results can be in any order
 		},
 		{
-			name: "kv_nested_sequence",
+			test: "kv_nested_sequence",
 			path: "$.keyvalue().keyvalue()",
 			json: map[string]any{"foo": map[string]any{"x": true, "y": "hi"}},
 			exp: []any{
@@ -216,7 +216,7 @@ func TestExecuteKeyValueMethod(t *testing.T) {
 			rand: true, // Results can be in any order
 		},
 		{
-			name: "kv_multi_nested_sequence",
+			test: "kv_multi_nested_sequence",
 			path: "$.keyvalue().keyvalue()",
 			json: map[string]any{"foo": map[string]any{"x": true, "y": "hi"}, "bar": 2, "baz": 1},
 			exp: []any{
@@ -233,7 +233,7 @@ func TestExecuteKeyValueMethod(t *testing.T) {
 			rand: true, // Results can be in any order
 		},
 		{
-			name: "kv_variable",
+			test: "kv_variable",
 			path: "$foo.keyvalue()",
 			vars: vars,
 			json: `""`,
@@ -244,34 +244,34 @@ func TestExecuteKeyValueMethod(t *testing.T) {
 			rand: true, // Results can be in any order
 		},
 		{
-			name: "kv_empty",
+			test: "kv_empty",
 			path: "$.keyvalue()",
 			json: map[string]any{},
 			exp:  []any{},
 		},
 		{
-			name: "kv_null",
+			test: "kv_null",
 			path: "$.keyvalue()",
 			json: nil,
 			err:  "exec: jsonpath item method .keyvalue() can only be applied to an object",
 			exp:  []any{},
 		},
 		{
-			name: "array_no_unwrap",
+			test: "array_no_unwrap",
 			path: "strict $.keyvalue()",
 			json: []any{map[string]any{"x": true}},
 			err:  "exec: jsonpath item method .keyvalue() can only be applied to an object",
 			exp:  []any{},
 		},
 		{
-			name: "next_error",
+			test: "next_error",
 			path: "$.keyvalue().string()",
 			json: map[string]any{"x": []any{}},
 			err:  "exec: jsonpath item method .string() can only be applied to a boolean, string, numeric, or datetime value",
 			exp:  []any{},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 
 			tc.run(t)

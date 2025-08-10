@@ -16,7 +16,7 @@ func TestTime(t *testing.T) {
 	ctx := ContextWithTZ(context.Background(), loc)
 
 	for _, tc := range timestampTestCases(t) {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)

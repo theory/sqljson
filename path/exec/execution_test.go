@@ -17,7 +17,7 @@ func TestQuery(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		path  string
 		value any
 		vars  Vars
@@ -29,14 +29,14 @@ func TestQuery(t *testing.T) {
 		isErr error
 	}{
 		{
-			name:  "lax_root",
+			test:  "lax_root",
 			path:  "$",
 			value: "hi",
 			exp:   statusOK,
 			find:  []any{"hi"},
 		},
 		{
-			name:  "var_method",
+			test:  "var_method",
 			path:  "strict $x.string()",
 			value: "hi",
 			vars:  Vars{"x": int64(42)},
@@ -44,7 +44,7 @@ func TestQuery(t *testing.T) {
 			find:  []any{"42"},
 		},
 		{
-			name:  "no_var",
+			test:  "no_var",
 			path:  "strict $x",
 			value: "hi",
 			exp:   statusFailed,
@@ -52,7 +52,7 @@ func TestQuery(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "use_tz",
+			test:  "use_tz",
 			path:  "$.time()",
 			value: "12:42:53+01",
 			useTZ: true,
@@ -60,7 +60,7 @@ func TestQuery(t *testing.T) {
 			find:  []any{types.NewTime(time.Date(0, 1, 1, 12, 42, 53, 0, time.UTC))},
 		},
 		{
-			name:  "no_tz",
+			test:  "no_tz",
 			path:  "$.time()",
 			value: "12:42:53+01",
 			useTZ: false,
@@ -69,35 +69,35 @@ func TestQuery(t *testing.T) {
 			isErr: ErrExecution,
 		},
 		{
-			name:  "strict_root",
+			test:  "strict_root",
 			path:  "strict $",
 			value: "hi",
 			exp:   statusOK,
 			find:  []any{"hi"},
 		},
 		{
-			name:  "filtered_not_found",
+			test:  "filtered_not_found",
 			path:  "$ ?(@ == 1)",
 			value: "hi",
 			exp:   statusNotFound,
 			find:  []any{},
 		},
 		{
-			name:  "strict filtered_not_found",
+			test:  "strict filtered_not_found",
 			path:  "strict $ ?(@ == 1)",
 			value: "hi",
 			exp:   statusNotFound,
 			find:  []any{},
 		},
 		{
-			name:  "filtered_subset",
+			test:  "filtered_subset",
 			path:  "$ ?(@ >= 2)",
 			value: []any{int64(1), int64(3), int64(4), int64(2), int64(0), int64(99)},
 			exp:   statusOK,
 			find:  []any{int64(3), int64(4), int64(2), int64(99)},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -142,7 +142,7 @@ func TestExecuteItem(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		path  string
 		value any
 		exp   resultStatus
@@ -151,28 +151,28 @@ func TestExecuteItem(t *testing.T) {
 		isErr error
 	}{
 		{
-			name:  "root",
+			test:  "root",
 			path:  "$",
 			value: true,
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "strict_root",
+			test:  "strict_root",
 			path:  "strict $",
 			value: true,
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "unwrap",
+			test:  "unwrap",
 			path:  "$.string()",
 			value: []any{int64(42), true},
 			exp:   statusOK,
 			find:  []any{"42", "true"},
 		},
 		{
-			name:  "strict_no_unwrap",
+			test:  "strict_no_unwrap",
 			path:  "strict $.string()",
 			value: []any{int64(42), true},
 			exp:   statusFailed,
@@ -180,21 +180,21 @@ func TestExecuteItem(t *testing.T) {
 			isErr: ErrVerbose,
 		},
 		{
-			name:  "filtered_subset",
+			test:  "filtered_subset",
 			path:  "$ ?(@ >= 2)",
 			value: []any{int64(1), int64(3), int64(4), int64(2), int64(0), int64(99)},
 			exp:   statusOK,
 			find:  []any{int64(3), int64(4), int64(2), int64(99)},
 		},
 		{
-			name:  "filtered_not_found",
+			test:  "filtered_not_found",
 			path:  "$ ?(@ == 1)",
 			value: "hi",
 			exp:   statusNotFound,
 			find:  []any{},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -239,7 +239,7 @@ func TestExecuteItemOptUnwrapResult(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name   string
+		test   string
 		path   string
 		value  any
 		unwrap bool
@@ -249,21 +249,21 @@ func TestExecuteItemOptUnwrapResult(t *testing.T) {
 		isErr  error
 	}{
 		{
-			name:  "root",
+			test:  "root",
 			path:  "$",
 			value: true,
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "strict_root",
+			test:  "strict_root",
 			path:  "strict $",
 			value: true,
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:   "unwrap",
+			test:   "unwrap",
 			path:   "$.string()",
 			value:  []any{int64(42), true},
 			unwrap: true,
@@ -271,7 +271,7 @@ func TestExecuteItemOptUnwrapResult(t *testing.T) {
 			find:   []any{"42", "true"},
 		},
 		{
-			name:   "unwrap_strict",
+			test:   "unwrap_strict",
 			path:   "strict $.string()",
 			value:  []any{int64(42), true},
 			unwrap: true,
@@ -280,7 +280,7 @@ func TestExecuteItemOptUnwrapResult(t *testing.T) {
 			isErr:  ErrVerbose,
 		},
 		{
-			name:   "unwrap_error",
+			test:   "unwrap_error",
 			path:   "$.integer()",
 			value:  []any{true},
 			unwrap: true,
@@ -289,14 +289,14 @@ func TestExecuteItemOptUnwrapResult(t *testing.T) {
 			isErr:  ErrVerbose,
 		},
 		{
-			name:  "no_unwrap_lax",
+			test:  "no_unwrap_lax",
 			path:  "$.string()",
 			value: []any{int64(42), true},
 			exp:   statusOK,
 			find:  []any{"42", "true"},
 		},
 		{
-			name:   "nested_unwrap",
+			test:   "nested_unwrap",
 			path:   "$",
 			value:  []any{int64(42), []any{true, float64(98.6)}},
 			unwrap: true,
@@ -304,7 +304,7 @@ func TestExecuteItemOptUnwrapResult(t *testing.T) {
 			find:   []any{int64(42), []any{true, float64(98.6)}},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -349,7 +349,7 @@ func TestExecuteItemOptUnwrapTarget(t *testing.T) {
 	type wrapNode struct{ ast.Node }
 
 	for _, tc := range []struct {
-		name   string
+		test   string
 		cancel bool
 		node   ast.Node
 		value  any
@@ -361,7 +361,7 @@ func TestExecuteItemOptUnwrapTarget(t *testing.T) {
 		isErr  error
 	}{
 		{
-			name:   "cancel",
+			test:   "cancel",
 			cancel: true,
 			node:   ast.NewConst(ast.ConstRoot),
 			value:  true,
@@ -370,80 +370,80 @@ func TestExecuteItemOptUnwrapTarget(t *testing.T) {
 			isErr:  ErrExecution,
 		},
 		{
-			name:  "const",
+			test:  "const",
 			node:  ast.NewConst(ast.ConstRoot),
 			value: true,
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name: "string",
+			test: "string",
 			node: ast.NewString("hi"),
 			exp:  statusOK,
 			find: []any{"hi"},
 		},
 		{
-			name: "integer",
+			test: "integer",
 			node: ast.NewInteger("42"),
 			exp:  statusOK,
 			find: []any{int64(42)},
 		},
 		{
-			name: "numeric",
+			test: "numeric",
 			node: ast.NewNumeric("98.6"),
 			exp:  statusOK,
 			find: []any{float64(98.6)},
 		},
 		{
-			name: "variable",
+			test: "variable",
 			node: ast.NewVariable("x"),
 			vars: Vars{"x": "hi"},
 			exp:  statusOK,
 			find: []any{"hi"},
 		},
 		{
-			name:  "key",
+			test:  "key",
 			node:  ast.NewKey("x"),
 			value: map[string]any{"x": "hi"},
 			exp:   statusOK,
 			find:  []any{"hi"},
 		},
 		{
-			name:  "binary",
+			test:  "binary",
 			node:  ast.NewBinary(ast.BinaryAdd, ast.NewConst(ast.ConstRoot), ast.NewConst(ast.ConstRoot)),
 			value: int64(21),
 			exp:   statusOK,
 			find:  []any{int64(42)},
 		},
 		{
-			name: "unary",
+			test: "unary",
 			node: ast.NewUnary(ast.UnaryMinus, ast.NewInteger("42")),
 			exp:  statusOK,
 			find: []any{int64(-42)},
 		},
 		{
-			name:  "regex",
+			test:  "regex",
 			node:  rx,
 			value: "hex",
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "method",
+			test:  "method",
 			node:  ast.NewMethod(ast.MethodString),
 			value: true,
 			exp:   statusOK,
 			find:  []any{"true"},
 		},
 		{
-			name:  "any",
+			test:  "any",
 			node:  ast.NewAny(0, -1),
 			value: map[string]any{"x": "y"},
 			exp:   statusOK,
 			find:  []any{map[string]any{"x": "y"}, "y"},
 		},
 		{
-			name: "array_index",
+			test: "array_index",
 			node: ast.NewArrayIndex([]ast.Node{
 				ast.NewBinary(ast.BinarySubscript, ast.NewInteger("1"), ast.NewInteger("2")),
 			}),
@@ -452,14 +452,14 @@ func TestExecuteItemOptUnwrapTarget(t *testing.T) {
 			find:  []any{"y", "z"},
 		},
 		{
-			name:  "unknown_node",
+			test:  "unknown_node",
 			node:  wrapNode{},
 			exp:   statusFailed,
 			err:   `exec invalid: Unknown node type exec.wrapNode`,
 			isErr: ErrInvalid,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -503,7 +503,7 @@ func TestExecuteNextItem(t *testing.T) {
 	ctx := context.Background()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		cur   ast.Node
 		next  ast.Node
 		value any
@@ -513,20 +513,20 @@ func TestExecuteNextItem(t *testing.T) {
 		isErr error
 	}{
 		{
-			name:  "nil_nil",
+			test:  "nil_nil",
 			value: true,
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "nil_next",
+			test:  "nil_next",
 			next:  ast.NewMethod(ast.MethodString),
 			value: true,
 			exp:   statusOK,
 			find:  []any{"true"},
 		},
 		{
-			name:  "current_next",
+			test:  "current_next",
 			cur:   ast.NewMethod(ast.MethodBoolean),
 			next:  ast.NewMethod(ast.MethodString),
 			value: "t",
@@ -534,21 +534,21 @@ func TestExecuteNextItem(t *testing.T) {
 			find:  []any{"t"},
 		},
 		{
-			name:  "current_next_nil",
+			test:  "current_next_nil",
 			next:  ast.NewConst(ast.ConstRoot),
 			value: true,
 			exp:   statusOK,
 			find:  []any{true},
 		},
 		{
-			name:  "current_next_method",
+			test:  "current_next_method",
 			next:  ast.LinkNodes([]ast.Node{ast.NewConst(ast.ConstRoot), ast.NewMethod(ast.MethodString)}),
 			value: true,
 			exp:   statusOK,
 			find:  []any{"true"},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)

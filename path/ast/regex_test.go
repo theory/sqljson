@@ -37,7 +37,7 @@ func TestRegexFlags(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		expr string
 		exp  regexFlags
 		str  string
@@ -46,12 +46,12 @@ func TestRegexFlags(t *testing.T) {
 		err  string
 	}{
 		{
-			name: "empty",
+			test: "empty",
 			exp:  regexFlags(0),
 			syn:  syntax.OneLine | syntax.ClassNL | syntax.PerlX,
 		},
 		{
-			name: "i",
+			test: "i",
 			expr: "i",
 			exp:  regexFlags(regexICase),
 			str:  ` flag "i"`,
@@ -59,7 +59,7 @@ func TestRegexFlags(t *testing.T) {
 			ref:  "(?i)",
 		},
 		{
-			name: "s",
+			test: "s",
 			expr: "s",
 			exp:  regexFlags(regexDotAll),
 			str:  ` flag "s"`,
@@ -67,7 +67,7 @@ func TestRegexFlags(t *testing.T) {
 			ref:  "(?s)",
 		},
 		{
-			name: "m",
+			test: "m",
 			expr: "m",
 			exp:  regexFlags(regexMLine),
 			str:  ` flag "m"`,
@@ -75,38 +75,38 @@ func TestRegexFlags(t *testing.T) {
 			ref:  "(?m)",
 		},
 		{
-			name: "x",
+			test: "x",
 			expr: "x",
 			err:  `XQuery "x" flag (expanded regular expressions) is not implemented`,
 		},
 		{
-			name: "q",
+			test: "q",
 			expr: "q",
 			exp:  regexFlags(regexQuote),
 			str:  ` flag "q"`,
 			syn:  syntax.OneLine | syntax.ClassNL | syntax.PerlX | syntax.Literal,
 		},
 		{
-			name: "q",
+			test: "q",
 			expr: "q",
 			exp:  regexFlags(regexQuote),
 			str:  ` flag "q"`,
 			syn:  syntax.OneLine | syntax.ClassNL | syntax.PerlX | syntax.Literal,
 		},
 		{
-			name: "unknown",
+			test: "unknown",
 			expr: "y",
 			err:  `Unrecognized flag character "y" in LIKE_REGEX predicate`,
 		},
 		{
-			name: "qx",
+			test: "qx",
 			expr: "qx",
 			exp:  regexFlags(regexQuote | regexWSpace),
 			str:  ` flag "xq"`,
 			syn:  syntax.OneLine | syntax.ClassNL | syntax.PerlX | syntax.Literal,
 		},
 		{
-			name: "qi",
+			test: "qi",
 			expr: "qi",
 			exp:  regexFlags(regexQuote | regexICase),
 			str:  ` flag "iq"`,
@@ -114,14 +114,14 @@ func TestRegexFlags(t *testing.T) {
 			ref:  "(?i)",
 		},
 		{
-			name: "qmsx",
+			test: "qmsx",
 			expr: "qmsx",
 			exp:  regexFlags(regexQuote | regexMLine | regexDotAll | regexWSpace),
 			str:  ` flag "smxq"`,
 			syn:  syntax.OneLine | syntax.ClassNL | syntax.PerlX | syntax.Literal,
 		},
 		{
-			name: "msi",
+			test: "msi",
 			expr: "msi",
 			exp:  regexFlags(regexICase | regexDotAll | regexMLine),
 			str:  ` flag "ism"`,
@@ -129,7 +129,7 @@ func TestRegexFlags(t *testing.T) {
 			ref:  "(?ism)",
 		},
 		{
-			name: "dupes_okay",
+			test: "dupes_okay",
 			expr: "msmm",
 			exp:  regexFlags(regexMLine | regexDotAll),
 			str:  ` flag "sm"`,
@@ -137,7 +137,7 @@ func TestRegexFlags(t *testing.T) {
 			ref:  "(?sm)",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
@@ -160,37 +160,37 @@ func TestValidateRegex(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name  string
+		test  string
 		re    string
 		flags regexFlags
 		str   string
 		err   string
 	}{
 		{
-			name: "dot",
+			test: "dot",
 			re:   ".",
 		},
 		{
-			name:  "case_insensitive",
+			test:  "case_insensitive",
 			re:    "[abc]",
 			flags: regexFlags(regexICase),
 		},
 		{
-			name: "digits",
+			test: "digits",
 			re:   `\d+`,
 		},
 		{
-			name:  "all_flags_but_x",
+			test:  "all_flags_but_x",
 			re:    "[abc]",
 			flags: regexFlags(regexICase | regexDotAll | regexMLine | regexQuote),
 		},
 		{
-			name: "parse_failure",
+			test: "parse_failure",
 			re:   "(oops",
 			err:  "error parsing regexp: missing closing ): `(oops`",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			r := require.New(t)
 

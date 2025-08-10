@@ -13,7 +13,7 @@ func TestPredOutcome(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name string
+		test string
 		out  predOutcome
 	}{
 		{"FALSE", predFalse},
@@ -21,11 +21,11 @@ func TestPredOutcome(t *testing.T) {
 		{"UNKNOWN", predUnknown},
 		{"UNKNOWN_PREDICATE_OUTCOME", predOutcome(255)},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 
-			a.Equal(tc.name, tc.out.String())
+			a.Equal(tc.test, tc.out.String())
 		})
 	}
 
@@ -54,7 +54,7 @@ func TestExecutePredicate(t *testing.T) {
 	rx, _ := ast.NewRegex(ast.NewConst(ast.ConstRoot), ".", "")
 
 	for _, tc := range []struct {
-		name     string
+		test     string
 		path     *ast.AST
 		pred     ast.Node
 		left     ast.Node
@@ -67,7 +67,7 @@ func TestExecutePredicate(t *testing.T) {
 		isErr    error
 	}{
 		{
-			name:     "left_unknown",
+			test:     "left_unknown",
 			path:     laxRootPath,
 			left:     ast.NewMethod(ast.MethodBigInt),
 			value:    "hi",
@@ -75,7 +75,7 @@ func TestExecutePredicate(t *testing.T) {
 			exp:      predUnknown,
 		},
 		{
-			name:     "right_unknown",
+			test:     "right_unknown",
 			path:     laxRootPath,
 			left:     ast.NewInteger("42"),
 			right:    ast.NewMethod(ast.MethodBigInt),
@@ -84,7 +84,7 @@ func TestExecutePredicate(t *testing.T) {
 			exp:      predUnknown,
 		},
 		{
-			name:     "left_and_right_compare",
+			test:     "left_and_right_compare",
 			path:     laxRootPath,
 			pred:     ast.NewBinary(ast.BinaryEqual, nil, nil),
 			left:     ast.NewInteger("42"),
@@ -93,7 +93,7 @@ func TestExecutePredicate(t *testing.T) {
 			exp:      predTrue,
 		},
 		{
-			name:     "left_and_right_no_compare",
+			test:     "left_and_right_no_compare",
 			path:     laxRootPath,
 			pred:     ast.NewBinary(ast.BinaryEqual, nil, nil),
 			left:     ast.NewInteger("42"),
@@ -102,7 +102,7 @@ func TestExecutePredicate(t *testing.T) {
 			exp:      predFalse,
 		},
 		{
-			name:     "left_only_regex",
+			test:     "left_only_regex",
 			path:     laxRootPath,
 			pred:     rx,
 			left:     ast.NewString("hi"),
@@ -110,7 +110,7 @@ func TestExecutePredicate(t *testing.T) {
 			exp:      predTrue,
 		},
 		{
-			name:     "compare_error",
+			test:     "compare_error",
 			path:     laxRootPath,
 			pred:     rx,
 			left:     ast.NewString("hi"),
@@ -120,7 +120,7 @@ func TestExecutePredicate(t *testing.T) {
 			isErr:    ErrInvalid,
 		},
 		{
-			name:     "unknown_strict",
+			test:     "unknown_strict",
 			path:     strictRootPath,
 			pred:     rx,
 			left:     ast.NewInteger("42"),
@@ -128,7 +128,7 @@ func TestExecutePredicate(t *testing.T) {
 			exp:      predUnknown,
 		},
 		{
-			name:     "unknown_lax",
+			test:     "unknown_lax",
 			path:     laxRootPath,
 			pred:     rx,
 			left:     ast.NewInteger("42"),
@@ -136,7 +136,7 @@ func TestExecutePredicate(t *testing.T) {
 			exp:      predUnknown,
 		},
 		{
-			name:     "found_strict",
+			test:     "found_strict",
 			path:     strictRootPath,
 			pred:     rx,
 			left:     ast.NewString("hi"),
@@ -144,7 +144,7 @@ func TestExecutePredicate(t *testing.T) {
 			exp:      predTrue,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.test, func(t *testing.T) {
 			t.Parallel()
 			a := assert.New(t)
 			r := require.New(t)
