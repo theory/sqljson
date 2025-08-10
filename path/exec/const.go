@@ -85,7 +85,7 @@ func (exec *Executor) execAnyKey(
 	}
 
 	if !exec.ignoreStructuralErrors {
-		// https://github.com/postgres/postgres/blob/7bd752c/src/backend/utils/adt/jsonpath_exec.c#L872
+		// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/backend/utils/adt/jsonpath_exec.c#L872
 		return exec.returnVerboseError(fmt.Errorf(
 			"%w: jsonpath wildcard member accessor can only be applied to an object",
 			ErrVerbose,
@@ -114,7 +114,7 @@ func (exec *Executor) execAnyArray(
 	}
 
 	if !exec.ignoreStructuralErrors {
-		// https://github.com/postgres/postgres/blob/7bd752c/src/backend/utils/adt/jsonpath_exec.c#L849
+		// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/backend/utils/adt/jsonpath_exec.c#L849
 		return exec.returnVerboseError(fmt.Errorf(
 			"%w: jsonpath wildcard array accessor can only be applied to an array",
 			ErrVerbose,
@@ -132,7 +132,7 @@ func (exec *Executor) execLastConst(
 	found *valueList,
 ) (resultStatus, error) {
 	if exec.innermostArraySize < 0 {
-		// https://github.com/postgres/postgres/blob/7bd752c/src/backend/utils/adt/jsonpath_exec.c#L1241
+		// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/backend/utils/adt/jsonpath_exec.c#L1241
 		return statusFailed, fmt.Errorf(
 			"%w: evaluating jsonpath LAST outside of array subscript",
 			ErrExecution,

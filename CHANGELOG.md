@@ -13,7 +13,7 @@ All notable changes to this project will be documented in this file. It uses the
 
 Updated with all changes for PostgreSQL 18, which adds no new functionality
 but adds a few new tests, adjusts the formatting of error messages, and tweaks
-some documentation wording.
+the wording of some documentation.
 
 ### ⬆️ Dependency Updates
 

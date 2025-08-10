@@ -87,7 +87,7 @@ func (tc testCase) run(t *testing.T) {
 }
 
 func TestJSONPathString(t *testing.T) {
-	// https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath.sql#L3-L30
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonpath.sql#L3-L30
 	t.Parallel()
 
 	//nolint:paralleltest
@@ -237,7 +237,7 @@ func TestJSONPathString(t *testing.T) {
 }
 
 func TestJSONPathEscapesString(t *testing.T) {
-	// https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath.sql#L32-L35
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonpath.sql#L32-L35
 	t.Parallel()
 
 	//nolint:paralleltest
@@ -268,7 +268,7 @@ func TestJSONPathEscapesString(t *testing.T) {
 }
 
 func TestJSONPathFilterString(t *testing.T) {
-	// https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath.sql#L37-L50
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonpath.sql#L37-L50
 	t.Parallel()
 
 	//nolint:paralleltest
@@ -349,7 +349,7 @@ func TestJSONPathFilterString(t *testing.T) {
 }
 
 func TestJSONPathArrayStuffString(t *testing.T) {
-	// https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath.sql#L52-L64
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonpath.sql#L52-L64
 	t.Parallel()
 
 	//nolint:paralleltest
@@ -425,7 +425,7 @@ func TestJSONPathArrayStuffString(t *testing.T) {
 }
 
 func TestJSONPathMethodString(t *testing.T) {
-	// https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath.sql#L66-L88
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonpath.sql#L66-L88
 	t.Parallel()
 
 	//nolint:paralleltest
@@ -591,7 +591,7 @@ func TestJSONPathDecimal(t *testing.T) {
 }
 
 func TestJSONPathStartsWithString(t *testing.T) {
-	// https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath.sql#L90-L91
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonpath.sql#L90-L91
 	t.Parallel()
 
 	//nolint:paralleltest
@@ -612,7 +612,7 @@ func TestJSONPathStartsWithString(t *testing.T) {
 }
 
 func TestJSONPathRegexString(t *testing.T) {
-	// https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath.sql#L93-L103
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonpath.sql#L93-L103
 	t.Parallel()
 
 	//nolint:paralleltest
@@ -678,7 +678,7 @@ func TestJSONPathRegexString(t *testing.T) {
 }
 
 func TestJSONPathMathsString(t *testing.T) {
-	// https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath.sql#L105-107
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonpath.sql#L105-107
 	t.Parallel()
 
 	//nolint:paralleltest
@@ -704,7 +704,7 @@ func TestJSONPathMathsString(t *testing.T) {
 }
 
 func TestJSONPathNumericString(t *testing.T) {
-	// https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath.sql#L37-L50
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonpath.sql#L37-L50
 	t.Parallel()
 
 	//nolint:paralleltest
@@ -760,7 +760,7 @@ func TestJSONPathNumericString(t *testing.T) {
 }
 
 func TestJSONPathCompareNumbersString(t *testing.T) {
-	// https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath.sql#L37-L50
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonpath.sql#L37-L50
 	t.Parallel()
 
 	//nolint:paralleltest
@@ -1011,7 +1011,7 @@ func TestJSONPathCompareNumbersString(t *testing.T) {
 }
 
 func TestJSONPathNumericLiteralsString(t *testing.T) {
-	// https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath.sql#L170-205
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonpath.sql#L170-205
 	t.Parallel()
 
 	//nolint:paralleltest
@@ -1202,7 +1202,7 @@ func TestJSONPathNumericLiteralsString(t *testing.T) {
 }
 
 func TestJSONPathNonDecimalString(t *testing.T) {
-	// https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath.sql#L207-L223
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonpath.sql#L207-L223
 	t.Parallel()
 
 	//nolint:paralleltest
@@ -1276,7 +1276,7 @@ func TestJSONPathNonDecimalString(t *testing.T) {
 }
 
 func TestJSONPathUnderscoreNumberString(t *testing.T) {
-	// https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath.sql#L225-L251
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonpath.sql#L225-L251
 	t.Parallel()
 
 	//nolint:paralleltest
@@ -1392,7 +1392,7 @@ func TestJSONPathUnderscoreNumberString(t *testing.T) {
 }
 
 func TestJSONPathEncodingString(t *testing.T) {
-	// https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath_encoding.sql
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonpath_encoding.sql
 	t.Parallel()
 
 	//nolint:paralleltest

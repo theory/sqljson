@@ -55,7 +55,7 @@
 //		}
 //	}
 //
-// [jsonpath.c]: https://github.com/postgres/postgres/blob/7bd752c/src/backend/utils/adt/jsonpath.c
+// [jsonpath.c]: https://github.com/postgres/postgres/blob/REL_18_BETA2/src/backend/utils/adt/jsonpath.c
 package ast
 
 // Use golang.org/x/tools/cmd/stringer to generate the String method for enums

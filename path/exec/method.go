@@ -118,7 +118,7 @@ func (exec *Executor) execMethodSize(
 		size = len(value)
 	default:
 		if !exec.autoWrap() && !exec.ignoreStructuralErrors {
-			// https://github.com/postgres/postgres/blob/7bd752c/src/backend/utils/adt/jsonpath_exec.c#L1112
+			// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/backend/utils/adt/jsonpath_exec.c#L1112
 			return exec.returnVerboseError(fmt.Errorf(
 				"%w: jsonpath item method %v can only be applied to an array",
 				ErrVerbose, node.Name(),
@@ -381,7 +381,7 @@ func (exec *Executor) execMethodBoolean(
 		if unwrap {
 			return exec.executeItemUnwrapTargetArray(ctx, node, value, found)
 		}
-		// https://github.com/postgres/postgres/blob/7bd752c/src/backend/utils/adt/jsonpath_exec.c#L1385
+		// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/backend/utils/adt/jsonpath_exec.c#L1385
 		return exec.returnVerboseError(fmt.Errorf(
 			"%w: jsonpath item method %v can only be applied to a boolean, string, or numeric value",
 			ErrVerbose, name,
@@ -555,7 +555,7 @@ func (exec *Executor) executeNumberMethod(
 	return exec.executeNextItem(ctx, node, nil, num, found)
 }
 
-// https://github.com/postgres/postgres/blob/7bd752c/src/include/utils/numeric.h#L32-L35
+// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/include/utils/numeric.h#L32-L35
 const (
 	numericMaxPrecision = 1000
 	numericMinScale     = -1000
@@ -582,7 +582,7 @@ func (exec *Executor) executeDecimalMethod(
 	}
 
 	// Verify the precision
-	// https://github.com/postgres/postgres/blob/7bd752c/src/backend/utils/adt/numeric.c#L1335-L1339
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/backend/utils/adt/numeric.c#L1335-L1339
 	if precision < 1 || precision > numericMaxPrecision {
 		return 0, fmt.Errorf(
 			"%w: NUMERIC precision %d must be between 1 and %d",
@@ -599,7 +599,7 @@ func (exec *Executor) executeDecimalMethod(
 		}
 
 		// Verify the scale.
-		// https://github.com/postgres/postgres/blob/7bd752c/src/backend/utils/adt/numeric.c#L1340-L1344
+		// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/backend/utils/adt/numeric.c#L1340-L1344
 		if scale < numericMinScale || scale > numericMaxScale {
 			return 0, fmt.Errorf(
 				"%w: NUMERIC scale %d must be between %d and %d",

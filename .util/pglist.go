@@ -20,7 +20,7 @@ import (
 
 func main() {
 	srcRegex := regexp.MustCompile(`[.](?:go|md)`)
-	//  https://github.com/postgres/postgres/blob/7bd752c/src/test/regress/sql/jsonpath.sql#L52-L64
+	//  https://github.com/postgres/postgres/blob/REL_18_BETA2/src/test/regress/sql/jsonpath.sql#L52-L64
 	pgRegex := regexp.MustCompile(`postgres/postgres/blob/([^/]+)/([^#]+)`)
 
 	found := map[string][]string{}

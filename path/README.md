@@ -15,7 +15,7 @@ check expressions.
 > This section was ported from the [PostgreSQL docs].
 
 <!-- See ./tests/example_test.go for runnable versions of all the examples. -->
-<!-- https://github.com/postgres/postgres/blob/7bd752c/doc/src/sgml/func.sgml#L17709-L19028 -->
+<!-- https://github.com/postgres/postgres/blob/REL_18_BETA2/doc/src/sgml/func.sgml#L17709-L19028 -->
 
 SQL/JSON Path is a query language for JSON values. A path expression applied
 to a JSON value produces a JSON result.

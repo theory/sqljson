@@ -53,7 +53,7 @@ func (t *TimeTZ) ToTime(context.Context) *Time {
 // that the TZ offset contributes to this comparison; values with different
 // offsets are never considered to be the same.
 func (t *TimeTZ) Compare(u time.Time) int {
-	// https://github.com/postgres/postgres/blob/7bd752c/src/backend/utils/adt/date.c#L2507-L2532
+	// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/backend/utils/adt/date.c#L2507-L2532
 
 	// Primary sort is by true (GMT-equivalent) time.
 	cmp := t.Time.UTC().Compare(u.UTC())
