@@ -11,13 +11,18 @@ All notable changes to this project will be documented in this file. It uses the
 
 ### 📚 Improvements
 
-Updated with all changes for PostgreSQL 18, which adds no new functionality
-but adds a few new tests, adjusts the formatting of error messages, and tweaks
-the wording of some documentation.
+*   Updated with all changes for PostgreSQL 18, which adds no new
+    functionality but adds a few new tests, adjusts the formatting of error
+    messages, and tweaks the wording of some documentation.
 
 ### ⬆️ Dependency Updates
 
 *   Upgraded dependencies to the latest versions that still support Go v1.22.
+*   Upgraded to `golangci-lint` v2.3.1
+
+### 🪲 Bug Fixes
+
+*   Fixed test name scoping issues with testify objects.
 
   [v0.3.2]: https://github.com/theory/sqljson/compare/v0.3.1...v0.3.2
 
