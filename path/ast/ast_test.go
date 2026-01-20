@@ -857,7 +857,7 @@ func TestAnyNode(t *testing.T) {
 			a.Implements((*Node)(nil), node)
 			a.Equal(lowestPriority, node.priority())
 			a.Equal(tc.str, node.String())
-			//nolint:gosec // disable G115 (xxx fixed in https://github.com/securego/gosec/commit/9b13cd5?)
+			//nolint:gosec // disable G115, we know NewAny() compensates for them.
 			{
 				a.Equal(uint32(tc.first), node.first)
 				a.Equal(uint32(tc.first), node.First())

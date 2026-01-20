@@ -18,7 +18,7 @@ All notable changes to this project will be documented in this file. It uses the
 ### ⬆️ Dependency Updates
 
 *   Upgraded dependencies to the latest versions that still support Go v1.22.
-*   Upgraded to `golangci-lint` v2.3.1
+*   Upgraded to `golangci-lint` v2.8.0
 
 ### 🪲 Bug Fixes
 

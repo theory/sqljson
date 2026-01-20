@@ -10,7 +10,7 @@ jobs:
           - { icon: 🐧, name: AMD64 Linux, on: ubuntu-latest }
           - { icon: 🐧, name: ARM64 Linux, on: ubuntu-24.04-arm }
           - { icon: 🍎, name: ARM64 macOS, on: macos-latest }
-          - { icon: 🍎, name: AMD64 macOS, on: macos-13 }
+          - { icon: 🍎, name: AMD64 macOS, on: macos-15-intel }
           - { icon: 🪟, name: AMD64 Windows, on: windows-latest }
         go: ["1.24", "1.23", "1.22"]
     name: ${{ matrix.os.icon }} ${{ matrix.os.name }}, Go ${{ matrix.go }}

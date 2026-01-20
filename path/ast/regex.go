@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp/syntax"
+	"strings"
 )
 
 // Use golang.org/x/tools/cmd/stringer to generate the String method for the
@@ -76,11 +77,13 @@ func (f regexFlags) String() string {
 	flags := ` flag "`
 	bitMask := regexFlag(f)
 
+	var flagsSb79 strings.Builder
 	for _, flag := range []regexFlag{regexICase, regexDotAll, regexMLine, regexWSpace, regexQuote} {
 		if bitMask&flag > 0 {
-			flags += flag.String()
+			flagsSb79.WriteString(flag.String())
 		}
 	}
+	flags += flagsSb79.String()
 
 	return flags + `"`
 }
