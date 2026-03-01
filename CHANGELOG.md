@@ -21,7 +21,10 @@ All notable changes to this project will be documented in this file. It uses the
 
 ### ⬆️ Dependency Updates
 
-*   Upgraded dependencies to the latest versions that still support Go v1.22.
+*   Dropped support for Go v1.22.
+*   Switched from `golang.org/x/exp/maps` to `maps`, included in Go v1.23 and
+    later.
+*   Upgraded dependencies to the latest versions that still support Go v1.23.
 *   Upgraded to `golangci-lint` v2.10.1
 
 ### 🪲 Bug Fixes

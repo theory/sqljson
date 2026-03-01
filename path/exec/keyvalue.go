@@ -3,12 +3,12 @@ package exec
 import (
 	"context"
 	"fmt"
+	"maps"
 	"math"
 	"reflect"
 	"slices"
 
 	"github.com/theory/sqljson/path/ast"
-	"golang.org/x/exp/maps" // Switch to maps when go 1.22 dropped
 )
 
 // kvBaseObject represents the "base object" and its "id" for .keyvalue()
@@ -122,7 +122,7 @@ func (exec *Executor) executeKeyValueMethod(
 	id += int64(exec.baseObject.id) * tenTen
 
 	// Process the keys in a deterministic order for consistent ID assignment.
-	keys := maps.Keys(obj)
+	keys := slices.Collect(maps.Keys(obj))
 	slices.Sort(keys)
 
 	var res resultStatus

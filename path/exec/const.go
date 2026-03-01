@@ -3,9 +3,10 @@ package exec
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/theory/sqljson/path/ast"
-	"golang.org/x/exp/maps" // Switch to maps when go 1.22 dropped
 )
 
 // execConstNode Executes node against value.
@@ -75,7 +76,7 @@ func (exec *Executor) execAnyKey(
 	switch value := value.(type) {
 	case map[string]any:
 		return exec.executeAnyItem(
-			ctx, node.Next(), maps.Values(value), found,
+			ctx, node.Next(), slices.Collect(maps.Values(value)), found,
 			1, 1, 1, false, exec.autoUnwrap(),
 		)
 	case []any:
@@ -85,7 +86,7 @@ func (exec *Executor) execAnyKey(
 	}
 
 	if !exec.ignoreStructuralErrors {
-		// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/backend/utils/adt/jsonpath_exec.c#L872
+		// https://github.com/postgres/postgres/blob/REL_18_3/src/backend/utils/adt/jsonpath_exec.c#L872
 		return exec.returnVerboseError(fmt.Errorf(
 			"%w: jsonpath wildcard member accessor can only be applied to an object",
 			ErrVerbose,
@@ -114,7 +115,7 @@ func (exec *Executor) execAnyArray(
 	}
 
 	if !exec.ignoreStructuralErrors {
-		// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/backend/utils/adt/jsonpath_exec.c#L849
+		// https://github.com/postgres/postgres/blob/REL_18_3/src/backend/utils/adt/jsonpath_exec.c#L849
 		return exec.returnVerboseError(fmt.Errorf(
 			"%w: jsonpath wildcard array accessor can only be applied to an array",
 			ErrVerbose,
@@ -132,7 +133,7 @@ func (exec *Executor) execLastConst(
 	found *valueList,
 ) (resultStatus, error) {
 	if exec.innermostArraySize < 0 {
-		// https://github.com/postgres/postgres/blob/REL_18_BETA2/src/backend/utils/adt/jsonpath_exec.c#L1241
+		// https://github.com/postgres/postgres/blob/REL_18_3/src/backend/utils/adt/jsonpath_exec.c#L1241
 		return statusFailed, fmt.Errorf(
 			"%w: evaluating jsonpath LAST outside of array subscript",
 			ErrExecution,

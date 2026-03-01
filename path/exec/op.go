@@ -3,11 +3,12 @@ package exec
 import (
 	"context"
 	"fmt"
+	"maps"
 	"math"
+	"slices"
 	"strings"
 
 	"github.com/theory/sqljson/path/ast"
-	"golang.org/x/exp/maps" // Switch to maps when go 1.22 dropped
 )
 
 // execBinaryNode executes node's binary operation against value.
@@ -122,7 +123,7 @@ func (exec *Executor) execAnyNode(
 	switch value := value.(type) {
 	case map[string]any:
 		return exec.executeAnyItem(
-			ctx, next, maps.Values(value), found, 1,
+			ctx, next, slices.Collect(maps.Values(value)), found, 1,
 			node.First(), node.Last(), true, exec.autoUnwrap(),
 		)
 	case []any:
@@ -140,7 +141,7 @@ func (exec *Executor) execAnyNode(
 func collection(v any) []any {
 	switch v := v.(type) {
 	case map[string]any:
-		return maps.Values(v) // Just work with the values
+		return slices.Collect(maps.Values(v)) // Just work with the values
 	case []any:
 		return v
 	}
