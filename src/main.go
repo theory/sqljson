@@ -76,6 +76,7 @@ func execute(query, target, vars string, opts int) string {
 
 	// Execute the query against the JSON.
 	var res any
+
 	switch {
 	case opts&optQuery == optQuery:
 		res, err = jsonpath.Query(ctx, value, options...)
@@ -90,14 +91,17 @@ func execute(query, target, vars string, opts int) string {
 		if errors.Is(err, exec.NULL) {
 			return "null"
 		}
+
 		return fmt.Sprintf("Error %v", err)
 	}
 
 	// Serialize the result
 	var buf bytes.Buffer
+
 	enc := json.NewEncoder(&buf)
 	enc.SetEscapeHTML(false)
 	enc.SetIndent("", "  ")
+
 	if err := enc.Encode(res); err != nil {
 		return fmt.Sprintf("Error parsing results: %v", err)
 	}
