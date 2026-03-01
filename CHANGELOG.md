@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file. It uses the
   [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
     "Semantic Versioning 2.0.0"
 
-## [v0.3.2] — Unreleased
+## [v0.4.0] — 2026-03-01
 
 ### 📚 Improvements
 
@@ -31,7 +31,7 @@ All notable changes to this project will be documented in this file. It uses the
 
 *   Fixed test name scoping issues with testify objects.
 
-  [v0.3.2]: https://github.com/theory/sqljson/compare/v0.3.1...v0.3.2
+  [v0.4.0]: https://github.com/theory/sqljson/compare/v0.3.1...v0.4.0
 
 ## [v0.3.1] — 2025-04-25
 
