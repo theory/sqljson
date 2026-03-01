@@ -3,6 +3,7 @@ package exec
 import (
 	"context"
 	"fmt"
+	"math"
 	"reflect"
 	"slices"
 
@@ -13,30 +14,40 @@ import (
 // kvBaseObject represents the "base object" and its "id" for .keyvalue()
 // evaluation.
 type kvBaseObject struct {
-	addr uintptr
+	addr uint
 	id   int
 }
 
 // addrOf returns the pointer address of obj when obj is a valid JSON
 // container: one of map[string]any, []any, or Vars. Otherwise it returns 0.
 // Used for .keyvalue() ID generation.
-func addrOf(obj any) uintptr {
+func addrOf(obj any) uint {
 	switch obj := obj.(type) {
 	case []any, map[string]any, Vars:
-		return reflect.ValueOf(obj).Pointer()
+		return uint(reflect.ValueOf(obj).Pointer())
 	default:
 		return 0
 	}
 }
 
 // OffsetOf returns the offset of obj from bo. This is the difference between
-// their pointer addresses.
+// their pointer addresses. Panics if the address distance exceeds the max
+// int64 value.
 func (bo kvBaseObject) OffsetOf(obj any) int64 {
 	addr := addrOf(obj)
+	var offset uint64
 	if addr > bo.addr {
-		return int64(addr - bo.addr)
+		offset = uint64(addr - bo.addr)
+	} else {
+		offset = uint64(bo.addr - addr)
 	}
-	return int64(bo.addr - addr)
+
+	if offset > math.MaxInt64 {
+		// Should not happen.
+		panic(fmt.Sprintf("address-derived ID %v exceeded int64 max", offset))
+	}
+
+	return int64(offset)
 }
 
 // setTempBaseObject sets obj as exec.baseObject and returns a function that

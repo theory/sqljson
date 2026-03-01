@@ -14,7 +14,7 @@ func TestExecConstNode(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	path, _ := parser.Parse("$")
-	base := kvBaseObject{addr: uintptr(42), id: -1}
+	base := kvBaseObject{addr: uint(42), id: -1}
 	current := []any{"hi", true}
 
 	for _, tc := range []struct {

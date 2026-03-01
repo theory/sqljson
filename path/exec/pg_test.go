@@ -2292,6 +2292,7 @@ func TestPgQueryMethodChain(t *testing.T) {
 	}
 }
 
+//nolint:gosec // disable G115, it should never exceed int64.
 func offset(a, b any) int64 {
 	x := addrOf(a)
 	y := addrOf(b)

@@ -60,7 +60,7 @@ func TestAddrOf(t *testing.T) {
 			if tc.noID {
 				a.Zero(ptr)
 			} else {
-				a.Equal(ptr, reflect.ValueOf(tc.value).Pointer())
+				a.Equal(ptr, uint(reflect.ValueOf(tc.value).Pointer()))
 			}
 		})
 	}
@@ -71,6 +71,7 @@ func TestAddrOf(t *testing.T) {
 // the memory distance can vary at runtime, but should be consistent between
 // the same two literal values.
 func deltaBetween(collection, item any) int64 {
+	//nolint:gosec // disable G115, it should never exceed int64.
 	delta := int64(reflect.ValueOf(item).Pointer() - reflect.ValueOf(collection).Pointer())
 	if delta < 0 {
 		return -delta
@@ -144,17 +145,17 @@ func TestSetTempBaseObject(t *testing.T) {
 	a := assert.New(t)
 
 	// Set up a base object.
-	e := &Executor{baseObject: kvBaseObject{addr: uintptr(90210), id: 4}}
+	e := &Executor{baseObject: kvBaseObject{addr: uint(90210), id: 4}}
 
 	// Replace it.
 	obj := map[string]any{"x": 1}
 	done := e.setTempBaseObject(obj, 2)
-	a.Equal(reflect.ValueOf(obj).Pointer(), e.baseObject.addr)
+	a.Equal(uint(reflect.ValueOf(obj).Pointer()), e.baseObject.addr)
 	a.Equal(2, e.baseObject.id)
 
 	// Restore the original.
 	done()
-	a.Equal(uintptr(90210), e.baseObject.addr)
+	a.Equal(uint(90210), e.baseObject.addr)
 	a.Equal(4, e.baseObject.id)
 }
 

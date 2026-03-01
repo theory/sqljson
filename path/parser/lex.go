@@ -71,10 +71,10 @@ const (
 	null      = rune(0)
 
 	// Numeric bases.
-	decimal = 10
-	hex     = 16
-	octal   = 8
-	binary  = 2
+	decimal int32 = 10
+	hex     int32 = 16
+	octal   int32 = 8
+	binary  int32 = 2
 )
 
 // lexer lexes a path.
@@ -257,7 +257,7 @@ func (l *lexer) Lex(lval *pathSymType) int {
 
 redo:
 	// skip white space
-	for whitespace&(1<<uint64(ch)) != 0 {
+	for ch >= 0 && whitespace&(1<<ch) != 0 {
 		ch = l.next()
 	}
 
@@ -331,10 +331,10 @@ func isHex(ch rune) bool     { return '0' <= ch && ch <= '9' || 'a' <= lower(ch)
 // digits (bit 0 is set), or separators '_' (bit 1 is set).
 //
 //nolint:nonamedreturns
-func (l *lexer) digits(ch0 rune, base int, invalid *rune) (ch rune, digSep int) {
+func (l *lexer) digits(ch0 rune, base int32, invalid *rune) (ch rune, digSep int) {
 	ch = ch0
 	if base <= decimal {
-		maxCh := rune('0' + base)
+		maxCh := '0' + base
 		for isDecimal(ch) || ch == '_' {
 			ds := 1
 			if ch == '_' {

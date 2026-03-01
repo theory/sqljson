@@ -14,11 +14,15 @@ All notable changes to this project will be documented in this file. It uses the
 *   Updated with all changes for PostgreSQL 18, which adds no new
     functionality but adds a few new tests, adjusts the formatting of error
     messages, and tweaks the wording of some documentation.
+*   Eliminated or allow-listed (in tests) integer conversions reported as
+    overflow risks by golangci-lint.
+*   Replaced use of the Go-internal `uintptr` with `uint` in `.keyvalue()`'s
+    ID generation.
 
 ### ⬆️ Dependency Updates
 
 *   Upgraded dependencies to the latest versions that still support Go v1.22.
-*   Upgraded to `golangci-lint` v2.8.0
+*   Upgraded to `golangci-lint` v2.10.1
 
 ### 🪲 Bug Fixes
 

@@ -12,7 +12,7 @@ jobs:
           - { icon: 🍎, name: ARM64 macOS, on: macos-latest }
           - { icon: 🍎, name: AMD64 macOS, on: macos-15-intel }
           - { icon: 🪟, name: AMD64 Windows, on: windows-latest }
-        go: ["1.24", "1.23", "1.22"]
+        go: ["1.26", "1.25", "1.24", "1.23", "1.22"]
     name: ${{ matrix.os.icon }} ${{ matrix.os.name }}, Go ${{ matrix.go }}
     runs-on: ${{ matrix.os.on }}
     steps:
