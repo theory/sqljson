@@ -2152,7 +2152,7 @@ func TestNumericCallbacks(t *testing.T) {
 		t.Parallel()
 		a := assert.New(t)
 
-		a.IsType((intCallback)(nil), intCallback(intAbs))
+		a.IsType(intCallback(nil), intCallback(intAbs))
 		for i, n := range []int64{0, -1, 2, -3, 4, 5} {
 			a.Equal(int64(i), intAbs(n))
 		}
@@ -2162,7 +2162,7 @@ func TestNumericCallbacks(t *testing.T) {
 		t.Parallel()
 		a := assert.New(t)
 
-		a.IsType((intCallback)(nil), intCallback(intSelf))
+		a.IsType(intCallback(nil), intCallback(intSelf))
 		for _, n := range []int64{4, 42, -99, -100323, 4, 10030} {
 			a.Equal(n, intSelf(n))
 		}
@@ -2172,7 +2172,7 @@ func TestNumericCallbacks(t *testing.T) {
 		t.Parallel()
 		a := assert.New(t)
 
-		a.IsType((floatCallback)(nil), floatCallback(floatSelf))
+		a.IsType(floatCallback(nil), floatCallback(floatSelf))
 		for _, n := range []float64{-1, 12, 53, 98.6, 42.3, 100.99} {
 			//nolint:testifylint
 			a.Equal(n, floatSelf(n))
@@ -2183,7 +2183,7 @@ func TestNumericCallbacks(t *testing.T) {
 		t.Parallel()
 		a := assert.New(t)
 
-		a.IsType((intCallback)(nil), intCallback(intUMinus))
+		a.IsType(intCallback(nil), intCallback(intUMinus))
 		for _, n := range []int64{4, 42, -99, -100323, 4, 10030} {
 			a.Equal(-n, intUMinus(n))
 		}
@@ -2193,7 +2193,7 @@ func TestNumericCallbacks(t *testing.T) {
 		t.Parallel()
 		a := assert.New(t)
 
-		a.IsType((floatCallback)(nil), floatCallback(floatUMinus))
+		a.IsType(floatCallback(nil), floatCallback(floatUMinus))
 		for _, n := range []float64{-1, 12, 53, 98.6, 42.3, 100.99} {
 			//nolint:testifylint
 			a.Equal(-n, floatUMinus(n))

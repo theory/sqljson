@@ -14,6 +14,8 @@ linters:
     - wsl
     - wsl_v5
     - noinlineerr
+    - gomodguard # Deprecated, replaced by gomodguard_v2
+    - exhaustruct_v5 # Ignores Go rule that vars default to zero value
   settings:
     errcheck:
       disable-default-exclusions: false
@@ -41,6 +43,8 @@ linters:
       rules:
         - name: var-naming
           arguments: [[], [], [{ skip-package-name-checks: true }]]
+    goconst:
+      ignore-tests: true
   exclusions:
     generated: lax
     rules:

@@ -1172,11 +1172,30 @@ unavoidable differences and to-dos. These include:
     array should be stable through repeated query executions and calls to
     `keyvalue()`.
 
+## Strict No LLM/No AI Policy
+
+This software is 100% made by humans for humans and welcomes human
+contributions. That means:
+
+*   No LLM-generated content, whether it be code or prose.
+*   No paraphrasing LLM-generated content.
+*   No LLMs for editing, including fixing spelling or grammatical errors.
+*   No LLMs for translation. English is encouraged, but not required. You are
+    welcome to post in your native language and rely on others to have their
+    own translation tools of choice to interpret your words.
+*   No LLMs for brainstorming and then sharing the results of that
+    brainstorming, even if you create the prose. If you use a chatbot to give
+    you advice on a comment on the issue tracker, that comment is unwelcome.
+*   No LLMs for finding bugs.
+*   No talking about use of chatbot/LLM services.
+
+Borrowed from the [Zig Code of Conduct].
+
 ## Copyright
 
 Copyright © 1996-2025 The PostgreSQL Global Development Group
 
-Copyright © 2024-2025 David E. Wheeler
+Copyright © 2024-2026 David E. Wheeler
 
   [🛝 Playground]: https://theory.github.io/sqljson "Go SQL/JSON Path Playground"
   [TinyGo]: https://tinygo.org
@@ -1206,6 +1225,7 @@ Copyright © 2024-2025 David E. Wheeler
   [TimeZone GUC]: https://www.postgresql.org/docs/current/runtime-config-client.html#GUC-TIMEZONE
   [types.ContextWithTZ]: https://pkg.go.dev/github.com/theory/sqljson/path/types#ContextWithTZ
   [output format]: https://www.postgresql.org/docs/current/datatype-datetime.html#DATATYPE-DATETIME-OUTPUT
+  [Zig Code of Conduct]: https://ziglang.org/code-of-conduct/
 
   <!-- Playground Links -->
   [play01]: https://theory.github.io/sqljson/?p=%2524.track.segments&j=%257B%250A%2520%2520%2522track%2522%253A%2520%257B%250A%2520%2520%2520%2520%2522segments%2522%253A%2520%255B%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.763%252C%252013.4034%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A05%253A14%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%252073%250A%2520%2520%2520%2520%2520%2520%257D%252C%250A%2520%2520%2520%2520%2520%2520%257B%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522location%2522%253A%2520%2520%2520%255B%252047.706%252C%252013.2635%2520%255D%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522start%2520time%2522%253A%2520%25222018-10-14%252010%253A39%253A21%2522%252C%250A%2520%2520%2520%2520%2520%2520%2520%2520%2522HR%2522%253A%2520135%250A%2520%2520%2520%2520%2520%2520%257D%250A%2520%2520%2520%2520%255D%250A%2520%2520%257D%250A%257D&a=&o=33

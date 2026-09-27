@@ -43,9 +43,9 @@ func TestPredicateCallback(t *testing.T) {
 	a := assert.New(t)
 
 	e := newTestExecutor(laxRootPath, nil, true, false)
-	a.IsType((predicateCallback)(nil), predicateCallback(e.compareItems))
-	a.IsType((predicateCallback)(nil), predicateCallback(executeStartsWith))
-	a.IsType((predicateCallback)(nil), predicateCallback(e.executeLikeRegex))
+	a.IsType(predicateCallback(nil), predicateCallback(e.compareItems))
+	a.IsType(predicateCallback(nil), predicateCallback(executeStartsWith))
+	a.IsType(predicateCallback(nil), predicateCallback(e.executeLikeRegex))
 }
 
 func TestExecutePredicate(t *testing.T) {

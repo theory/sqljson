@@ -7,6 +7,27 @@ All notable changes to this project will be documented in this file. It uses the
   [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
     "Semantic Versioning 2.0.0"
 
+## [v0.5.0] — Unreleased
+
+
+### 📚 Documentation
+
+*   Added "Strict No LLM/No AI Policy" section do the README, borrowed from
+    the [Zig CoC]
+
+    ### ⬆️ Dependency Updates
+
+*   Upgraded TinyGo to v0.42.0, now supports Go v1.27.
+*   Dropped support for Go v1.23-1.25 in order to adopt golang.org/x/text CVE
+    fixes.
+*   Now testing Go v1.26 and v1.27
+*   Upgraded `github.com/stretchr/testify` to v1.12.1 and `golang.org/x/text`
+    to v0.42.0.
+*   Upgraded to `golangci-lint` v2.14.0, adopted minor refactorings.
+
+  [v0.5.0]: https://github.com/theory/sqljson/compare/v0.4.0...v0.5.0
+  [Zig CoC]: https://ziglang.org/code-of-conduct/ "Zig Code of Conduct"
+
 ## [v0.4.0] — 2026-03-01
 
 ### 📚 Improvements

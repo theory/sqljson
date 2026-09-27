@@ -12,14 +12,14 @@ jobs:
           - { icon: 🍎, name: ARM64 macOS, on: macos-latest }
           - { icon: 🍎, name: AMD64 macOS, on: macos-15-intel }
           - { icon: 🪟, name: AMD64 Windows, on: windows-latest }
-        go: ["1.26", "1.25", "1.24", "1.23"]
+        go: ["1.27", "1.26"]
     name: ${{ matrix.os.icon }} ${{ matrix.os.name }}, Go ${{ matrix.go }}
     runs-on: ${{ matrix.os.on }}
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with: { go-version: "${{ matrix.go }}", check-latest: true }
       - name: Run Tests
         run: make test
@@ -28,10 +28,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup TinyGo
-        uses: acifani/setup-tinygo@v2
-        with: { tinygo-version: 0.37.0 }
+        uses: acifani/setup-tinygo@v3
+        with: { tinygo-version: 0.42.0 }
       - name: Test WASM
         run: make wasm
   lint:
@@ -39,9 +39,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with: { go-version-file: go.mod, check-latest: true }
       - name: Install Dependencies
         run: make debian-lint-depends
@@ -50,7 +50,7 @@ jobs:
       - name: Run Test Coverage
         run: go test -race -coverprofile coverage.txt -covermode atomic ./...
       - name: Upload Coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: cover.out

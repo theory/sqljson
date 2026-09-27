@@ -210,7 +210,7 @@ func TestExecuteKeyValueMethod(t *testing.T) {
 			path: "$.keyvalue().keyvalue()",
 			json: map[string]any{"foo": map[string]any{"x": true, "y": "hi"}},
 			exp: []any{
-				map[string]any{"id": int64((20000000000)), "key": "id", "value": int64(0)},
+				map[string]any{"id": int64(20000000000), "key": "id", "value": int64(0)},
 				map[string]any{"id": int64(20000000000), "key": "key", "value": "foo"},
 				map[string]any{"id": int64(20000000000), "key": "value", "value": map[string]any{"x": true, "y": "hi"}},
 			},
