@@ -14,7 +14,7 @@ All notable changes to this project will be documented in this file. It uses the
 *   Added "Strict No LLM/No AI Policy" section do the README, borrowed from
     the [Zig CoC]
 
-    ### ⬆️ Dependency Updates
+### ⬆️ Dependency Updates
 
 *   Upgraded TinyGo to v0.42.0, now supports Go v1.27.
 *   Dropped support for Go v1.23-1.25 in order to adopt golang.org/x/text CVE
