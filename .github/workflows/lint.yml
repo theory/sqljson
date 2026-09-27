@@ -8,13 +8,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Go
-        uses: actions/setup-go@v5
-        with: { check-latest: true }
+        uses: actions/setup-go@v7
+        with: { go-version-file: go.mod, check-latest: true }
       - name: Setup TinyGo
-        uses: acifani/setup-tinygo@v2
-        with: { tinygo-version: 0.40.1 }
+        uses: acifani/setup-tinygo@v3
+        with: { tinygo-version: 0.42.0 }
       - name: Install Dependencies
         run: make debian-lint-depends
       - name: Run pre-commit
